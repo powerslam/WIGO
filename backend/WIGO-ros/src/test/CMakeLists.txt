@@ -23,7 +23,7 @@ include_directories(${CERES_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/src/VINS-Mobile/VINS_ios/delaunay)
 
 catkin_package(
-  CATKIN_DEPENDS cv_bridge roscpp sensor_msgs
+  CATKIN_DEPENDS cv_bridge roscpp sensor_msgs std_msgs
 )
 
 include_directories(
