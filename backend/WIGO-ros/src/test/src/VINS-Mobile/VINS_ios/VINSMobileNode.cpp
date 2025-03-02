@@ -39,6 +39,8 @@ VINSMobileNode::VINSMobileNode():
 
     img_sub = nh.subscribe("/usb_cam/image_raw", 1, &VINSMobileNode::processImage, this);
     imu_sub = nh.subscribe("/handsfree/imu", 1, &VINSMobileNode::imuStartUpdate, this);
+
+    init_status_pub = nh.advertise<std_msgs::Int16>("/init_status", 1);
 }
 
 void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
@@ -68,7 +70,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
             return;
         }
         //img_msg->header = lateast_imu_time;
-        img_msg->header = time_stamp;
+        img_msg->header = msg->header.stamp.toNSec();
         bool isNeedRotation = image.size() != frameSize;
         
         cv::Mat gray;
@@ -252,9 +254,11 @@ void VINSMobileNode::imuStartUpdate(const sensor_msgs::ImuConstPtr& msg){
     -msg->linear_acceleration.y * GRAVITY,
     -msg->linear_acceleration.z * GRAVITY;
 
-    imu_msg->gyr << -msg->angular_velocity.x * GRAVITY,
-    -msg->angular_velocity.y * GRAVITY,
-    -msg->angular_velocity.z * GRAVITY;
+    imu_msg->gyr << msg->angular_velocity.x,
+    msg->angular_velocity.y,
+    msg->angular_velocity.z;
+
+    lateast_imu_time = imu_msg->header;
 
     //img_msg callback
     {
@@ -550,6 +554,10 @@ void VINSMobileNode::process(){
         }
         waiting_lists--;    
     }
+
+    std_msgs::Int16 pub_msg;
+    pub_msg.data = vins.init_status;
+    init_status_pub.publish(pub_msg);
 }
 
 void VINSMobileNode::loop_thread(){

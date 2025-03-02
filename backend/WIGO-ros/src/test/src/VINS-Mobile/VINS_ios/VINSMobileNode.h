@@ -9,6 +9,7 @@
 #include "loop_closure.h"
 #include "draw_result.hpp"
 #include "global_param.hpp"
+#include <std_msgs/Int16.h>
 #include <sensor_msgs/Imu.h>
 #include <opencv2/opencv.hpp>
 #include "keyfame_database.h"
@@ -53,6 +54,8 @@ public:
     
     ros::Subscriber img_sub;
     ros::Subscriber imu_sub;
+
+    ros::Publisher init_status_pub;
 
 public:
     bool isCapturing;
