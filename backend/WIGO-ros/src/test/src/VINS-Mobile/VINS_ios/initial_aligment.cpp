@@ -156,67 +156,90 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
         tmp_b.setZero();
         
         double dt = frame_j->second.pre_integration->sum_dt;
-        
+
         tmp_A.block<3, 3>(0, 0) = -dt * Matrix3d::Identity();
         tmp_A.block<3, 3>(0, 6) = frame_i->second.R.transpose() * dt * dt / 2 * Matrix3d::Identity();
         tmp_A.block<3, 1>(0, 9) = frame_i->second.R.transpose() * (frame_j->second.T - frame_i->second.T) / 100.0;
+        
         Vector3d TIC;
-        TIC<<TIC_X,TIC_Y,TIC_Z;
+        TIC << TIC_X, TIC_Y, TIC_Z;
+        
+        // 🛠 IMU 데이터 NaN 검사 추가
+        if (!frame_j->second.pre_integration->delta_p.allFinite()) {
+            printf("Error: delta_p contains NaN/Inf values!\n");
+            return false;
+        }
+        if (!frame_j->second.pre_integration->delta_v.allFinite()) {
+            printf("Error: delta_v contains NaN/Inf values!\n");
+            return false;
+        }
+
         tmp_b.block<3, 1>(0, 0) = frame_j->second.pre_integration->delta_p + frame_i->second.R.transpose() * frame_j->second.R * TIC - TIC;
-        //tmp_b.block<3, 1>(0, 0) = imu_factors[i + 1]->pre_integration.delta_p;
-        //cout << "delta_p   " << frame_j->second.imu_factor->pre_integration.delta_p.transpose() << endl;
+        tmp_b.block<3, 1>(3, 0) = frame_j->second.pre_integration->delta_v;
+
         tmp_A.block<3, 3>(3, 0) = -Matrix3d::Identity();
         tmp_A.block<3, 3>(3, 3) = frame_i->second.R.transpose() * frame_j->second.R;
         tmp_A.block<3, 3>(3, 6) = frame_i->second.R.transpose() * dt * Matrix3d::Identity();
-        tmp_b.block<3, 1>(3, 0) = frame_j->second.pre_integration->delta_v;
-        //cout << "delta_v   " << frame_j->second.pre_integration.delta_v.transpose() << endl;
-        
+
         Matrix<double, 6, 6> cov_inv = Matrix<double, 6, 6>::Zero();
-        //cov.block<6, 6>(0, 0) = IMU_cov[i + 1];
-        //MatrixXd cov_inv = cov.inverse();
         cov_inv.setIdentity();
-        
+
         MatrixXd r_A = tmp_A.transpose() * cov_inv * tmp_A;
         VectorXd r_b = tmp_A.transpose() * cov_inv * tmp_b;
-        
+
         A.block<6, 6>(i * 3, i * 3) += r_A.topLeftCorner<6, 6>();
         b.segment<6>(i * 3) += r_b.head<6>();
-        
+
         A.bottomRightCorner<4, 4>() += r_A.bottomRightCorner<4, 4>();
         b.tail<4>() += r_b.tail<4>();
-        
+
         A.block<6, 4>(i * 3, n_state - 4) += r_A.topRightCorner<6, 4>();
         A.block<4, 6>(n_state - 4, i * 3) += r_A.bottomLeftCorner<4, 6>();
     }
+
+    // 🛠 행렬 A NaN/특이 행렬 검사 추가
+    if (A.determinant() == 0 || !A.allFinite()) {
+        printf("Error: Matrix A is singular or contains NaN/Inf values!\n");
+        return false;
+    }
+
     A = A * 1000.0;
     b = b * 1000.0;
     x = A.ldlt().solve(b);
+
     double s = x(n_state - 1) / 100.0;
-    printf("estimated scale: %f\n", s);
+    printf("Estimated scale: %f\n", s);
+
     g = x.segment<3>(n_state - 4);
-    cout << " result g     " << g.norm() << " " << g.transpose() << endl;
-    if(fabs(g.norm() - G_NORM) > G_THRESHOLD ||  s < 0)
-    {
+
+    // 🛠 중력 벡터 NaN 검사 추가
+    if (!g.allFinite()) {
+        printf("Error: Gravity vector g contains NaN/Inf values!\n");
         return false;
     }
-    
+
+    cout << "Result g     " << g.norm() << " " << g.transpose() << endl;
+
+    if (fabs(g.norm() - G_NORM) > G_THRESHOLD || s < 0) {
+        return false;
+    }
+
     RefineGravity(all_image_frame, g, x);
     s = (x.tail<1>())(0) / 100.0;
-    (x.tail<1>())(0) = s;
-    printf("refine estimated scale: %f", s);
-    cout << " refine     " << g.norm() << " " << g.transpose() << endl;
-    if(s > 0.0 )
-    {
-        printf("initial succ!\n");
-        
-    }
-    else
-    {
-        printf("initial fail\n");
+
+    printf("Refine estimated scale: %f", s);
+    cout << "Refine g     " << g.norm() << " " << g.transpose() << endl;
+
+    if (s > 0.0) {
+        printf("Initial success!\n");
+    } else {
+        printf("Initial fail\n");
         return false;
     }
+
     return true;
 }
+
 
 bool VisualIMUAlignment(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs, Vector3d &g, VectorXd &x)
 {
