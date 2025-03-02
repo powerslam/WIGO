@@ -82,7 +82,7 @@ enum StateOrder
 
 bool setGlobalParam(DeviceType device);
 
-#if 1
+#if 0
 #define TS(name) int64 t_##name = cv::getTickCount()
 #define TE(name) printf("TIMER_" #name ": %.2fms\n", \
 1000.*((cv::getTickCount() - t_##name) / cv::getTickFrequency()))
