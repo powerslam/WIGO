@@ -10,7 +10,7 @@
 
 int FeatureTracker::n_id = 0;
 FeatureTracker::FeatureTracker()
-:mask{ROW, COL, CV_8UC1},update_finished{false},img_cnt{0},current_time{-1.0},use_pnp{false}
+:update_finished{false},img_cnt{0},current_time{-1.0},use_pnp{false}
 {
     printf("init ok\n");
 }

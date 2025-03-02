@@ -23,8 +23,8 @@
 
 #define MAX_CNT 70
 #define MIN_DIST 30
-#define COL 480
-#define ROW 640
+#define COL 640
+#define ROW 480
 #define F_THRESHOLD 1.0
 #define EQUALIZE 1
 using namespace cv;
@@ -66,7 +66,7 @@ public:
      varialbles
      */
     int frame_cnt;
-    cv::Mat mask;
+    cv::Mat mask = cv::Mat(ROW, COL, CV_8UC1);
     cv::Mat cur_img, pre_img, forw_img;
     
     vector<cv::Point2f> n_pts,cur_pts,pre_pts,forw_pts;
