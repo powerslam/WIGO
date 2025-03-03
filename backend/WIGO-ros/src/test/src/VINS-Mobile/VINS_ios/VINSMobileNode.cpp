@@ -56,7 +56,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
         shared_ptr<IMG_MSG> img_msg(new IMG_MSG());
         //cout << (videoCamera->grayscaleMode) << endl;
         //img_msg->header = [[NSDate date] timeIntervalSince1970];
-        img_msg->header = ros::Time::now().toNSec();
+        // img_msg->header = ros::Time::now().toSec();
         float Group[2];
         Group[0] = lowPart;
         Group[1] = highPart;
@@ -70,7 +70,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
             return;
         }
         //img_msg->header = lateast_imu_time;
-        img_msg->header = msg->header.stamp.toNSec();
+        img_msg->header = msg->header.stamp.toSec();
         bool isNeedRotation = image.size() != frameSize;
         
         cv::Mat gray;
@@ -248,7 +248,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
 void VINSMobileNode::imuStartUpdate(const sensor_msgs::ImuConstPtr& msg){
     //interpolation
     shared_ptr<IMU_MSG> imu_msg(new IMU_MSG());
-    imu_msg->header = msg->header.stamp.toNSec();
+    imu_msg->header = msg->header.stamp.toSec();
 
     imu_msg->acc << -msg->linear_acceleration.x * GRAVITY,
     -msg->linear_acceleration.y * GRAVITY,
@@ -394,7 +394,7 @@ void VINSMobileNode::process(){
         vins.processImage(image,header,waiting_lists);
         TE(process_image);
         
-        double time_now = ros::Time::now().toNSec();
+        double time_now = ros::Time::now().toSec();
         double time_vins = vins.Headers[WINDOW_SIZE];
         ROS_INFO("vins delay %lf", time_now - time_vins);
         
