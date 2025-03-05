@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="100dp"
     android:padding="10dp"
-    android:background="#F4FFC3">
+    android:background="#F4FFC3"
+    >
 
     <!-- 왼쪽 이미지 -->
     <androidx.appcompat.widget.AppCompatImageView
@@ -52,7 +53,6 @@
         android:id="@+id/status_image"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:background="@drawable/baseline_cloud_download_24"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
