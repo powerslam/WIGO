@@ -77,4 +77,5 @@ target_link_libraries(vins_mobile_node
   ${Glog_LIBRARIES}
   ${CERES_LIBRARIES}
   ${OpenCV_LIBS}
+  ${OpenMP_CXX}
 )
