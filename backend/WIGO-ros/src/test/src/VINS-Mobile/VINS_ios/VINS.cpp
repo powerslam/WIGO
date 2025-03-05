@@ -7,6 +7,7 @@
 //
 
 #include "VINS.hpp"
+#include <ros/ros.h>
 
 bool LOOP_CLOSURE = true;
 
@@ -15,7 +16,7 @@ VINS::VINS()
 failure_hand{false},
 drawresult{0.0, 0.0, 0.0, 0.0, 0.0, 7.0}
 {
-    printf("init VINS begins\n");
+    // printf("init VINS begins\n");
     t_drift.setZero();
     r_drift.setIdentity();
     clearState();
@@ -68,9 +69,16 @@ void VINS::clearState()
     
     if (tmp_pre_integration != nullptr)
         delete tmp_pre_integration;
-    if (last_marginalization_info != nullptr)
+    if (last_marginalization_info != nullptr){
+        // ROS_INFO_STREAM("delete last_marginalization_info (Line 73)");
+        // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
+        //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
+        //         ROS_INFO_STREAM("address.. (Line 76) : " << last_marginalization_info->factors[i]->loss_function);        
+        //     }
+        // }
         delete last_marginalization_info;
-    
+    }
+
     tmp_pre_integration = nullptr;
     last_marginalization_info = nullptr;
     last_marginalization_parameter_blocks.clear();
@@ -136,7 +144,7 @@ void VINS::new2old()
     
     if (failure_occur)
     {
-        printf("failure recover %lf %lf %lf\n", last_P.x(), last_P.y(), last_P.z());
+        // printf("failure recover %lf %lf %lf\n", last_P.x(), last_P.y(), last_P.z());
         origin_R0 = Utility::R2ypr(last_R_old);
         origin_P0 = last_P_old;
     }
@@ -217,30 +225,30 @@ bool VINS::failureDetection()
     
     if (f_manager.last_track_num < 4)
     {
-        printf("failure little feature %d\n", f_manager.last_track_num);
+        // printf("failure little feature %d\n", f_manager.last_track_num);
         is_failure = true;
     }
     /*
      if (Bas[WINDOW_SIZE].norm() > 1)
      {
-     printf("failure  big IMU acc bias estimation %f\n", Bas[WINDOW_SIZE].norm());
+     // printf("failure  big IMU acc bias estimation %f\n", Bas[WINDOW_SIZE].norm());
      is_failure = true;
      }
      */
     if (Bgs[WINDOW_SIZE].norm() > 1)
     {
-        printf("failure  big IMU gyr bias estimation %f\n", Bgs[WINDOW_SIZE].norm());
+        // printf("failure  big IMU gyr bias estimation %f\n", Bgs[WINDOW_SIZE].norm());
         is_failure = true;
     }
     Vector3d tmp_P = Ps[WINDOW_SIZE];
     if ((tmp_P - last_P).norm() > 1)
     {
-        printf("failure big translation\n");
+        // printf("failure big translation\n");
         is_failure = true;
     }
     if (abs(tmp_P.z() - last_P.z()) > 0.5)
     {
-        printf("failure  big z translation\n");
+        // printf("failure  big z translation\n");
         is_failure = true;
     }
     Matrix3d tmp_R = Rs[WINDOW_SIZE];
@@ -250,7 +258,7 @@ bool VINS::failureDetection()
     delta_angle = acos(delta_Q.w()) * 2.0 / 3.14 * 180.0;
     if (delta_angle > 40)
     {
-        printf("failure  big delta_angle \n");
+        // printf("failure  big delta_angle \n");
         is_failure = true;
     }
     
@@ -258,7 +266,7 @@ bool VINS::failureDetection()
     {
         failure_hand = false;
         is_failure = true;
-        printf("failure by hand!\n");
+        // printf("failure by hand!\n");
     }
     
     return is_failure;
@@ -306,6 +314,7 @@ void VINS::reInit()
 
 void VINS::update_loop_correction()
 {
+    ROS_INFO("HELLO?");
     //update loop correct pointcloud
     correct_point_cloud.clear();
     for (auto &it_per_id : f_manager.feature)
@@ -328,6 +337,7 @@ void VINS::update_loop_correction()
         Matrix3d correct_r = r_drift * Rs[i];
         correct_Rs[i] = correct_r.cast<float>();
     }
+    ROS_INFO("Bye~");
 }
 
 void VINS::processIMU(double dt, const Vector3d &linear_acceleration, const Vector3d &angular_velocity)
@@ -377,19 +387,25 @@ void VINS::processIMU(double dt, const Vector3d &linear_acceleration, const Vect
 void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_num)
 {
     int track_num;
-    printf("adding feature points %lu\n", image_msg.size());
+    // printf("adding feature points %lu\n", image_msg.size());
     if (f_manager.addFeatureCheckParallax(frame_count, image_msg, track_num))
+        // 카메라 움직임이 충분하면, 가장 오래된 키프레임 마진화
         marginalization_flag = MARGIN_OLD;
     else
+        // 카메라 움직임이 충분하지 않으면, 가장 최근 키프레임 마진화
         marginalization_flag = MARGIN_SECOND_NEW;
+
+    // printf("marginalization_flag: %s\n", (marginalization_flag == MARGIN_OLD) ? "MARGIN_OLD" : "MARGIN_SECOND_NEW");        
     
-    //    printf("marginalization_flag %d\n", int(marginalization_flag));
-    //    printf("this frame is-------------------------------%s\n", marginalization_flag ? "reject" : "accept");
-    //    printf("Solving %d\n", frame_count);
-    printf("number of feature: %d %d\n", feature_num = f_manager.getFeatureCount(), track_num);
+    //    // printf("marginalization_flag %d\n", int(marginalization_flag));
+    //    // printf("this frame is-------------------------------%s\n", marginalization_flag ? "reject" : "accept");
+    //    // printf("Solving %d\n", frame_count);
+    // printf("number of feature: %d %d\n", feature_num = f_manager.getFeatureCount(), track_num);
     
     Headers[frame_count] = header;
     
+    ROS_INFO("solver_flag: %d", solver_flag);
+
     if(solver_flag == INITIAL)
     {
         ImageFrame imageframe(image_msg, header);
@@ -404,7 +420,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
                 clearState();
                 return;
             }
-            bool result = false;
+            bool result = false; // 초기화가 성공했는지를 의미
             if(header - initial_timestamp > 0.3)
             {
                 result = solveInitial();
@@ -413,9 +429,16 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
             if(result)
             {
                 solve_ceres(buf_num);
+                ROS_INFO("final_cost: %lf", final_cost);
                 if(final_cost > 200)  //initialization failed, need reinitialize
                 {
-                    printf("final cost %lf faild!\n",final_cost);
+                    // printf("final cost %lf faild!\n",final_cost);
+                    // ROS_INFO_STREAM("delete last_marginalization_info (Line 422)");
+                    // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
+                    //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
+                    //         ROS_INFO_STREAM("address.. (Line 430) : " << last_marginalization_info->factors[i]->loss_function);        
+                    //     }
+                    // }
                     delete last_marginalization_info;
                     last_marginalization_info = nullptr;
                     solver_flag = INITIAL;
@@ -425,13 +448,13 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
                 }
                 else
                 {
-                    printf("final cost %lf succ!\n",final_cost);
+                    // printf("final cost %lf succ!\n",final_cost);
                     failure_occur = 0;
                     //update init progress
                     initProgress = 100;
                     init_status = SUCC;
                     fail_times = 0;
-                    printf("Initialization finish---------------------------------------------------!\n");
+                    // printf("Initialization finish---------------------------------------------------!\n");
                     solver_flag = NON_LINEAR;
                     slideWindow();
                     f_manager.removeFailures();
@@ -479,6 +502,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
 
 void VINS::solve_ceres(int buf_num)
 {
+    ROS_INFO("VINS::solve_ceres");
     ceres::Problem problem;
     ceres::LossFunction *loss_function;
     
@@ -507,6 +531,7 @@ void VINS::solve_ceres(int buf_num)
     //marginalization factor
     if (last_marginalization_info != nullptr)
     {
+        ROS_INFO("AAAAAAAAAAAA");
         MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
         problem.AddResidualBlock(marginalization_factor, NULL,
                                  last_marginalization_parameter_blocks);
@@ -515,6 +540,7 @@ void VINS::solve_ceres(int buf_num)
     //IMU factor
     for (int i = 0; i < WINDOW_SIZE; i++)
     {
+        ROS_INFO("BBBBBBBBBBBBBBB");
         int j = i + 1;
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
@@ -548,7 +574,10 @@ void VINS::solve_ceres(int buf_num)
             
             ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
             problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]);
+            // ROS_INFO_STREAM("address of loss_function(Line 553): " << loss_function);
+            // ROS_INFO_STREAM("address of loss_function(Line 553): " << loss_function);
             
+
             f_m_cnt++;
             
             double **para = new double *[4];
@@ -575,7 +604,7 @@ void VINS::solve_ceres(int buf_num)
         if(front_pose.header != retrive_pose_data.header)
         {
             front_pose = retrive_pose_data;  //need lock
-            printf("use loop\n");
+            // printf("use loop\n");
         }
         if(!front_pose.measurements.empty())
         {
@@ -583,7 +612,7 @@ void VINS::solve_ceres(int buf_num)
             if(front_pose.header >= Headers[0])
             {
                 //tmp_retrive_pose_buf.push(front_pose);
-                printf("loop front pose  in window\n");
+                // printf("loop front pose  in window\n");
                 for(int i = 0; i < WINDOW_SIZE; i++)
                 {
                     if(front_pose.header == Headers[i])
@@ -619,8 +648,9 @@ void VINS::solve_ceres(int buf_num)
                                     //double ratio = 1.0;
                                     ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
                                     problem.AddResidualBlock(f, loss_function, para_Pose[start], front_pose.loop_pose, para_Ex_Pose[0], para_Feature[feature_index]);
-                                    
-                                    //printf("loop add factor %d %d %lf %lf %d\n",retrive_feature_index,feature_index,
+                                    // ROS_INFO_STREAM("address of loss_function(Line 625): " << loss_function);
+
+                                    //// printf("loop add factor %d %d %lf %lf %d\n",retrive_feature_index,feature_index,
                                     //                                         pts_j.x(), pts_i.x(),front_pose.features_ids.size());
                                     retrive_feature_index++;
                                     loop_factor_cnt++;
@@ -629,7 +659,7 @@ void VINS::solve_ceres(int buf_num)
                                 
                             }
                         }
-                        printf("add %d loop factor\n", loop_factor_cnt);
+                        // printf("add %d loop factor\n", loop_factor_cnt);
                     }
                 }
             }
@@ -655,10 +685,10 @@ void VINS::solve_ceres(int buf_num)
     ceres::Solver::Summary summary;
     //TE(prepare_solver);
     TS(ceres);
-    printf("solve\n");
+    // printf("solve\n");
     ceres::Solve(options, &problem, &summary);
     final_cost = summary.final_cost;
-    //cout << summary.FullReport() << endl;
+    //// cout << summary.FullReport() << endl;
     TE(ceres);
     
     if(LOOP_CLOSURE)
@@ -691,6 +721,8 @@ void VINS::solve_ceres(int buf_num)
     {
         MarginalizationInfo *marginalization_info = new MarginalizationInfo();
         old2new();
+
+        printf("!!!!!!!!!!!!last_marginalization_info : %p\n", last_marginalization_info);
         if (last_marginalization_info)
         {
             vector<int> drop_set;
@@ -744,8 +776,9 @@ void VINS::solve_ceres(int buf_num)
                     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(f, loss_function,
                                                                                    vector<double *>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]},
                                                                                    vector<int>{0, 3});
+                    // ROS_INFO_STREAM("address of loss_function(Line 751): " << loss_function);
+                    // ROS_INFO_STREAM("address of marginalization_info(Line 751): " << marginalization_info);
                     marginalization_info->addResidualBlockInfo(residual_block_info);
-                    
                 }
             }
         }
@@ -767,14 +800,22 @@ void VINS::solve_ceres(int buf_num)
             addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
         
         vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
-        if (last_marginalization_info)
+        if (last_marginalization_info){
+            // ROS_INFO_STREAM("delete last_marginalization_info (Line 778)");
+            // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
+            //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
+            //         ROS_INFO_STREAM("address.. (Line 791) : " << last_marginalization_info->factors[i]->loss_function);        
+            //     }
+            // }
             delete last_marginalization_info;
+        }
         last_marginalization_info = marginalization_info;
         last_marginalization_parameter_blocks = parameter_blocks;
     }
     //marginalize front
     else
     {
+        ROS_INFO_STREAM("marginalize front...");
         if (last_marginalization_info&&
             std::count(std::begin(last_marginalization_parameter_blocks), std::end(last_marginalization_parameter_blocks), para_Pose[WINDOW_SIZE - 1]))
         {
@@ -782,6 +823,7 @@ void VINS::solve_ceres(int buf_num)
             old2new();
             if (last_marginalization_info)
             {
+                ROS_INFO("last_marginalization_info");
                 vector<int> drop_set;
                 for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
                 {
@@ -821,8 +863,18 @@ void VINS::solve_ceres(int buf_num)
                 addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
             
             vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
-            if (last_marginalization_info)
+            if (last_marginalization_info){
+                // ROS_INFO_STREAM("delete last_marginalization_info (Line 835)");
+                
+                // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
+                //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
+                //         ROS_INFO_STREAM("address.. (Line 854) : " << last_marginalization_info->factors[i]->loss_function);        
+                //     }
+                // }
+
                 delete last_marginalization_info;
+            }
+
             last_marginalization_info = marginalization_info;
             last_marginalization_parameter_blocks = parameter_blocks;
             
@@ -832,7 +884,7 @@ void VINS::solve_ceres(int buf_num)
 
 bool VINS::solveInitial()
 {
-    printf("solve initial------------------------------------------\n");
+    // printf("solve initial------------------------------------------\n");
     printf("PS %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
     //check imu observibility
     /*
@@ -844,7 +896,7 @@ bool VINS::solveInitial()
      double dt = frame_it->second.pre_integration->sum_dt;
      if(dt == 0)
      {
-     printf("init IMU variation not enouth!\n");
+     // printf("init IMU variation not enouth!\n");
      init_status = FAIL_IMU;
      fail_times++;
      return false;
@@ -855,20 +907,20 @@ bool VINS::solveInitial()
      
      Vector3d aver_g;
      aver_g = sum_g * 1.0 / ((int)all_image_frame.size() - 1);
-     cout << "aver_g " << aver_g.transpose() << endl;
+     // cout << "aver_g " << aver_g.transpose() << endl;
      double var = 0;
      for (frame_it = all_image_frame.begin(), frame_it++; frame_it != all_image_frame.end(); frame_it++)
      {
      double dt = frame_it->second.pre_integration->sum_dt;
      Vector3d tmp_g = frame_it->second.pre_integration->delta_v / dt;
      var += (tmp_g - aver_g).transpose() * (tmp_g - aver_g);
-     //cout << "frame g " << tmp_g.transpose() << endl;
+     //// cout << "frame g " << tmp_g.transpose() << endl;
      }
      var = sqrt(var / ((int)all_image_frame.size() - 1));
-     printf("IMU variation %f!\n", var);
+     // printf("IMU variation %f!\n", var);
      if(var < 0.25)
      {
-     printf("init IMU variation not enouth!\n");
+     // printf("init IMU variation not enouth!\n");
      init_status = FAIL_IMU;
      fail_times++;
      return false;
@@ -899,14 +951,18 @@ bool VINS::solveInitial()
         Matrix3d relative_R;
         Vector3d relative_T;
         int l;
+        // 초기화 실패 1
+        // 첫 번째 프레임과 마지막 프레임 사이에서 5-point 알고리즘을 사용한 relative pose estimation 실패
         if (!relativePose(0, relative_R, relative_T, l))
         {
-            printf("init solve 5pts between first frame and last frame failed\n");
+            // printf("init solve 5pts between first frame and last frame failed\n");
             return false;
         }
         //update init progress
         initProgress = 30;
         
+        // 초기화 실패 2
+        // Global SFM 실패
         GlobalSFM sfm;
         if(!sfm.construct(frame_count + 1, Q, T, l,
                           relative_R, relative_T,
@@ -931,7 +987,7 @@ bool VINS::solveInitial()
         cv::Mat r, rvec, t, D, tmp_r;
         if((frame_it->first) == Headers[i])
         {
-            cout << "key frame " << i << endl;
+            // cout << "key frame " << i << endl;
             frame_it->second.is_key_frame = true;
             frame_it->second.R = Q[i].toRotationMatrix() * ric.transpose();
             frame_it->second.T = T[i];
@@ -954,8 +1010,8 @@ bool VINS::solveInitial()
         for (auto &id_pts : frame_it->second.points)
         {
             int feature_id = id_pts.first;
-            //cout << "feature id " << feature_id;
-            //cout << " pts image_frame " << (i_p.second.head<2>() * 460 ).transpose() << endl;
+            //// cout << "feature id " << feature_id;
+            //// cout << " pts image_frame " << (i_p.second.head<2>() * 460 ).transpose() << endl;
             it = sfm_tracked_points.find(feature_id);
             if(it != sfm_tracked_points.end())
             {
@@ -974,21 +1030,23 @@ bool VINS::solveInitial()
         
         if(pts_3_vector.size() < 6 )
         {
-            printf("init Not enough points for solve pnp !\n");
+            // printf("init Not enough points for solve pnp !\n");
             return false;
         }
+        // 초기화 실패 3
+        // solvePnP로 카메라 pose를 구하는 과정에서 실패
         if (!cv::solvePnP(pts_3_vector, pts_2_vector, K, D, rvec, t, 1))
         {
-            printf("init solve pnp fail!\n");
+            // printf("init solve pnp fail!\n");
             init_status = FAIL_PNP;
             fail_times++;
             return false;
         }
         cv::Rodrigues(rvec, r);
-        //cout << "r " << endl << r << endl;
+        //// cout << "r " << endl << r << endl;
         MatrixXd R_pnp,tmp_R_pnp;
         cv::cv2eigen(r, tmp_R_pnp);
-        //cout << "R_pnp " << endl << R_pnp << endl;
+        //// cout << "R_pnp " << endl << R_pnp << endl;
         R_pnp = tmp_R_pnp.transpose();
         MatrixXd T_pnp;
         cv::cv2eigen(t, T_pnp);
@@ -1002,7 +1060,7 @@ bool VINS::solveInitial()
     //update init progress
     initProgress = 75;
     
-    printf("init PS after pnp %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
+    // printf("init PS after pnp %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
     
     if (visualInitialAlign())
     {
@@ -1010,6 +1068,8 @@ bool VINS::solveInitial()
         //update init progress
         initProgress = 85;
     }
+    // 초기화 실패 4
+    // IMU 데이터와 Visual 데이터를 정렬하는 과정 실패
     else
     {
         init_status = FAIL_ALIGN;
@@ -1027,12 +1087,12 @@ bool VINS::visualInitialAlign()
     bool result = VisualIMUAlignment(all_image_frame, Bgs, g, x);
     if(!result)
     {
-        printf("solve g failed!");
-        printf("init PS alignment failed %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
+        // printf("solve g failed!");
+        // printf("init PS alignment failed %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
         return false;
     }
     TE(solve_g);
-    printf("init PS algnment succ %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
+    // printf("init PS algnment succ %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
     // change state
     for (int i = 0; i <= frame_count; i++)
     {
@@ -1061,7 +1121,7 @@ bool VINS::visualInitialAlign()
     for (int i = frame_count; i >= 0; i--)
         Ps[i] = s * Ps[i] - Rs[i] * tic - (s * Ps[0] - Rs[0] * tic);
     
-    printf("PS after scale %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
+    // printf("PS after scale %lf %lf %lf\n", Ps[0].x(),Ps[0].y(), Ps[0].z());
     
     int kv = -1;
     map<double, ImageFrame>::iterator frame_i;
@@ -1073,7 +1133,7 @@ bool VINS::visualInitialAlign()
             Vs[kv] = frame_i->second.R * x.segment<3>(kv * 3);
         }
     }
-    printf("init finish--------------------\n");
+    // printf("init finish--------------------\n");
     
     for (auto &it_per_id : f_manager.feature)
     {
@@ -1130,7 +1190,7 @@ bool VINS::relativePose(int camera_id, Matrix3d &relative_R, Vector3d &relative_
             if(m_estimator.solveRelativeRT(corres, relative_R, relative_T))
             {
                 l = i;
-                printf("average_parallax %f choose l %d and newest frame to triangulate the whole structure\n", average_parallax * 520, l);
+                // printf("average_parallax %f choose l %d and newest frame to triangulate the whole structure\n", average_parallax * 520, l);
                 return true;
             }
             else
@@ -1148,41 +1208,63 @@ bool VINS::relativePose(int camera_id, Matrix3d &relative_R, Vector3d &relative_
  */
 void VINS::slideWindow()
 {
+    ROS_INFO("enter slidewindow(1207)");
     //marginalize old keyframe
     if (marginalization_flag == MARGIN_OLD)
     {
+        ROS_INFO("marginalization_flag(1211) : %d", MARGIN_OLD);
         back_R0 = Rs[0];
         back_P0 = Ps[0];
         if (frame_count == WINDOW_SIZE)
         {
+            // ROS_INFO("process 10");
             for (int i = 0; i < WINDOW_SIZE; i++)
             {
+                // ROS_INFO("process 11 (1)");
                 Rs[i].swap(Rs[i + 1]);
+                // ROS_INFO("process 11 (2)");
                 std::swap(pre_integrations[i], pre_integrations[i + 1]);
+                // ROS_INFO("process 11 (3)");
                 dt_buf[i].swap(dt_buf[i + 1]);
+                // ROS_INFO("process 11 (4)");
                 linear_acceleration_buf[i].swap(linear_acceleration_buf[i + 1]);
+                // ROS_INFO("process 11 (5)");
                 angular_velocity_buf[i].swap(angular_velocity_buf[i + 1]);
+                // ROS_INFO("process 11 (6)");
                 Headers[i] = Headers[i + 1];
+                // ROS_INFO("process 11 (7)");
                 Ps[i].swap(Ps[i + 1]);
+                // ROS_INFO("process 11 (8)");
                 Vs[i].swap(Vs[i + 1]);
+                // ROS_INFO("process 11 (9)");
             }
+
+            // ROS_INFO("process 12");
             Headers[WINDOW_SIZE] = Headers[WINDOW_SIZE - 1];
             Ps[WINDOW_SIZE] = Ps[WINDOW_SIZE - 1];
             Vs[WINDOW_SIZE] = Vs[WINDOW_SIZE - 1];
             Rs[WINDOW_SIZE] = Rs[WINDOW_SIZE - 1];
             Bas[WINDOW_SIZE] = Bas[WINDOW_SIZE - 1];
             Bgs[WINDOW_SIZE] = Bgs[WINDOW_SIZE - 1];
+            // ROS_INFO("process 13");
             
+
             if(pre_integrations[WINDOW_SIZE] != NULL)
             {
+                // ROS_INFO("process 14");
                 delete pre_integrations[WINDOW_SIZE];
+                // ROS_INFO("process 15");
             }
+
             pre_integrations[WINDOW_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[WINDOW_SIZE], Bgs[WINDOW_SIZE]};
-            
+            // ROS_INFO("process 16");
+
             dt_buf[WINDOW_SIZE].clear();
             linear_acceleration_buf[WINDOW_SIZE].clear();
             angular_velocity_buf[WINDOW_SIZE].clear();
             
+            // ROS_INFO("process 17");
+
             if (solver_flag == INITIAL)
             {
                 double t_0 = Headers[0];
@@ -1191,50 +1273,73 @@ void VINS::slideWindow()
                 delete it_0->second.pre_integration;
                 all_image_frame.erase(all_image_frame.begin(), it_0);
             }
+
+
+            // ROS_INFO("process 18");
             slideWindowOld();
+
+            // ROS_INFO("process 19");
         }
     }
     else  //non keyframe
     {
+        ROS_INFO("marginalization_flag(1257) : %d", MARGIN_OLD);
         if (frame_count == WINDOW_SIZE)
         {
+            // ROS_INFO("process 1");
             for (unsigned int i = 0; i < dt_buf[frame_count].size(); i++)
             {
+                // ROS_INFO("process 2 (1)");
                 double tmp_dt = dt_buf[frame_count][i];
                 Vector3d tmp_linear_acceleration = linear_acceleration_buf[frame_count][i];
                 Vector3d tmp_angular_velocity = angular_velocity_buf[frame_count][i];
                 
+                // ROS_INFO("process 2 (2)");
                 pre_integrations[frame_count - 1]->push_back(tmp_dt, tmp_linear_acceleration, tmp_angular_velocity);
                 
                 dt_buf[frame_count - 1].push_back(tmp_dt);
                 linear_acceleration_buf[frame_count - 1].push_back(tmp_linear_acceleration);
                 angular_velocity_buf[frame_count - 1].push_back(tmp_angular_velocity);
+                
+                // ROS_INFO("process 2 (3)");
             }
             
+
+            // ROS_INFO("process 3");
             Headers[frame_count - 1] = Headers[frame_count];
             Ps[frame_count - 1] = Ps[frame_count];
             Vs[frame_count - 1] = Vs[frame_count];
             Rs[frame_count - 1] = Rs[frame_count];
             Bas[frame_count - 1] = Bas[frame_count];
             Bgs[frame_count - 1] = Bgs[frame_count];
+            
+            
+            // ROS_INFO("process 4");
             if(pre_integrations[WINDOW_SIZE]!=NULL)
             {
+                // ROS_INFO("process 5");
                 delete pre_integrations[WINDOW_SIZE];
+                // ROS_INFO("process 6");
             }
+
+            // ROS_INFO("process 7");
             pre_integrations[WINDOW_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[WINDOW_SIZE], Bgs[WINDOW_SIZE]};
             
             dt_buf[WINDOW_SIZE].clear();
             linear_acceleration_buf[WINDOW_SIZE].clear();
             angular_velocity_buf[WINDOW_SIZE].clear();
+            // ROS_INFO("process 8");
             
             slideWindowNew();
+
+            // ROS_INFO("process 9");
         }
     }
 }
 
 void VINS::slideWindowOld()
 {
-    printf("marginalize back\n");
+    // printf("marginalize back\n");
     point_cloud.clear();
     for (auto &it_per_id : f_manager.feature)
     {
@@ -1268,6 +1373,6 @@ void VINS::slideWindowOld()
 }
 void VINS::slideWindowNew()
 {
-    printf("marginalize front\n");
+    // printf("marginalize front\n");
     f_manager.removeFront(frame_count);
 }
