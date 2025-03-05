@@ -71,4 +71,5 @@
     <color name="on_custom">#FFFFFF</color> <!-- Custom 배경 위 텍스트 및 아이콘 색상 -->
     <color name="custom_container">#C9D6F0</color> <!-- Custom 컨테이너 색상 -->
     <color name="on_custom_container">#0D1B33</color> <!-- Custom 컨테이너 위 텍스트 색상 -->
+    <color name="major">#153E35</color>
 </resources>
