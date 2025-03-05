@@ -10,7 +10,7 @@
 
 vinsPnP::vinsPnP()
 {
-    printf("init VINS_pnp begins\n");
+    // printf("init VINS_pnp begins\n");
     clearState();
 }
 
@@ -21,7 +21,7 @@ void vinsPnP::setIMUModel()
 
 void vinsPnP::clearState()
 {
-    printf("clear state\n");
+    // printf("clear state\n");
     for (int i = 0; i <= PNP_SIZE; i++)
     {
         Rs[i].setIdentity();
@@ -57,7 +57,7 @@ void vinsPnP::setExtrinsic()
     TIC_Y,
     TIC_Z;
     ric = Utility::ypr2R(Vector3d(RIC_y,RIC_p,RIC_r));
-    printf("pnp set extrinsic %lf %lf %lf\n", tic.x(), tic.y(), tic.z());
+    // printf("pnp set extrinsic %lf %lf %lf\n", tic.x(), tic.y(), tic.z());
 }
 
 void vinsPnP::setInit(VINS_RESULT vins_result)
@@ -75,11 +75,11 @@ void vinsPnP::setInit(VINS_RESULT vins_result)
             Ps[i] = vins_result.P;
             Rs[i] = vins_result.R;
             Vs[i] = vins_result.V;
-            printf("pnp find new index %d\n", i);
+            // printf("pnp find new index %d\n", i);
         }
     }
-    //printf("pnp vins index %d header_vins %lf, header_pnp %lf \n", solved_index, vins_result.header, Headers[solved_index]);
-    //printf("pnp init value %lf %lf %lf\n",Ps[solved_index].x(), Ps[solved_index].y(), Ps[solved_index].z());
+    //// printf("pnp vins index %d header_vins %lf, header_pnp %lf \n", solved_index, vins_result.header, Headers[solved_index]);
+    //// printf("pnp init value %lf %lf %lf\n",Ps[solved_index].x(), Ps[solved_index].y(), Ps[solved_index].z());
 }
 
 void vinsPnP::updateFeatures(vector<IMG_MSG_LOCAL> &feature_msg)
@@ -126,8 +126,8 @@ void vinsPnP::old2new()
         para_Bias[i][3] = Bgs[i].x();
         para_Bias[i][4] = Bgs[i].y();
         para_Bias[i][5] = Bgs[i].z();
-        //printf("pnp before solve header %lf %d P: %lf %lf %lf Bgs: %lf %lf %lf\n",Headers[i], find_solved[i], Bas[i].x(), Bas[i].y(), Bas[i].z(), Bgs[i].x(), Bgs[i].y(), Bgs[i].z());
-        //printf("pnp before solve header %lf %d P: %lf %lf %lf\n",Headers[i], find_solved[i], Ps[i].x(), Ps[i].y(), Ps[i].z());
+        //// printf("pnp before solve header %lf %d P: %lf %lf %lf Bgs: %lf %lf %lf\n",Headers[i], find_solved[i], Bas[i].x(), Bas[i].y(), Bas[i].z(), Bgs[i].x(), Bgs[i].y(), Bgs[i].z());
+        //// printf("pnp before solve header %lf %d P: %lf %lf %lf\n",Headers[i], find_solved[i], Ps[i].x(), Ps[i].y(), Ps[i].z());
     }
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
@@ -150,7 +150,7 @@ void vinsPnP::new2old()
         if(find_solved[i])
         {
             solved_index = i;
-            printf("pnp find index %d\n", i);
+            // printf("pnp find index %d\n", i);
             break;
         }
     }
@@ -192,10 +192,10 @@ void vinsPnP::new2old()
         Bgs[i] = Vector3d(para_Bias[i][3],
                           para_Bias[i][4],
                           para_Bias[i][5]);
-        //printf("pnp after solve header %lf %d P: %lf %lf %lf Bgs: %lf %lf %lf\n",Headers[i], find_solved[i], Bas[i].x(), Bas[i].y(), Bas[i].z(), Bgs[i].x(), Bgs[i].y(), Bgs[i].z());
+        //// printf("pnp after solve header %lf %d P: %lf %lf %lf Bgs: %lf %lf %lf\n",Headers[i], find_solved[i], Bas[i].x(), Bas[i].y(), Bas[i].z(), Bgs[i].x(), Bgs[i].y(), Bgs[i].z());
         Vector3d R_ypr = Utility::R2ypr(Rs[i]);
-        //printf("pnp after solve header %lf %d P: %lf %lf %lf R: %lf %lf %lf\n",Headers[i], find_solved[i], Ps[i].x(), Ps[i].y(), Ps[i].z(), R_ypr.x(), R_ypr.y(), R_ypr.z());
-        //printf("pnp after solve header %lf %d\n",Headers[i], find_solved[i]);
+        //// printf("pnp after solve header %lf %d P: %lf %lf %lf R: %lf %lf %lf\n",Headers[i], find_solved[i], Ps[i].x(), Ps[i].y(), Ps[i].z(), R_ypr.x(), R_ypr.y(), R_ypr.z());
+        //// printf("pnp after solve header %lf %d\n",Headers[i], find_solved[i]);
     }
     
 }
@@ -244,7 +244,7 @@ void vinsPnP::processIMU(double dt, const Vector3d &linear_acceleration, const V
 void vinsPnP::processImage(vector<IMG_MSG_LOCAL> &feature_msg, double header, bool use_pnp)
 {
     int track_num;
-    printf("pnp %d adding feature points %lu\n", frame_count, feature_msg.size());
+    // printf("pnp %d adding feature points %lu\n", frame_count, feature_msg.size());
     //add feature
     features[frame_count] = feature_msg;
     Headers[frame_count] = header;
@@ -332,7 +332,7 @@ void vinsPnP::solve_ceres()
     
     ceres::Solver::Summary summary;
     TS(ceres_pnp);
-    printf("solve pnp\n");
+    // printf("solve pnp\n");
     ceres::Solve(options, &problem, &summary);
     TE(ceres_pnp);
     

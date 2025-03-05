@@ -230,7 +230,7 @@ Vector4f DrawResult::findPlane(vector<Vector3f> &point_cloud)
         }
         k++;
     }
-    std::cout << "Plane: " << pretotal << " iter:" << k<< std::endl;
+    // std::cout << "Plane: " << pretotal << " iter:" << k<< std::endl;
     return bestplane;
 }
 
@@ -388,7 +388,7 @@ void DrawResult::drawGround(cv::Mat &result, vector<Vector3f> &point_cloud, Vect
     }
     Delaunay triangulation;
     std::vector<Triangle> triangles = triangulation.triangulate(points);
-    //std::cout << triangles.size() << " triangles generated\n";
+    //std::// cout << triangles.size() << " triangles generated\n";
     std::vector<Edge> edges = triangulation.getEdges();
     
     for(auto e = begin(edges); e != end(edges); e++) {
@@ -524,19 +524,19 @@ void DrawResult::drawAR(cv::Mat &result, vector<Vector3f> &point_cloud, Vector3f
     Vector3f w_cam_z = R_latest * RIC * cam_z;
     if (acos(w_cam_z.dot(Vector3f(0, 0, 1))) * 180.0 / M_PI < 60)
     {
-        printf("look down\n");
+        // printf("look down\n");
         look_down = true;
     }
     else
     {
-        printf("not down\n");
+        // printf("not down\n");
         look_down = false;
     }
     
     Vector3f groundPlanePoint;
     vector<Vector3f> point_inlier;
     groundPlanePoint = findGround(point_cloud, point_inlier);
-    //printf("Ground inlier size %d\n", int(point_inlier.size()) );
+    //// printf("Ground inlier size %d\n", int(point_inlier.size()) );
     
     
     ///draw ground area
@@ -948,7 +948,7 @@ void DrawResult::Reprojection(cv::Mat &result, vector<Vector3f> &point_cloud, co
     
     Eigen::Matrix3f RIC;
     RIC = Utility::ypr2R(Vector3d(RIC_y,RIC_p,RIC_r)).cast<float>();
-    //std::cout << RIC << std::endl;
+    //std::// cout << RIC << std::endl;
     Eigen::Matrix3f R_v_c = Utility::ypr2R(Eigen::Vector3f{yaw, pitch, roll});
     Eigen::Vector3f T_v_c;
     T_v_c << Tx,

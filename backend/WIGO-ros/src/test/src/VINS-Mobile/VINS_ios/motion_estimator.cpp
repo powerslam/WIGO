@@ -199,7 +199,7 @@ namespace cv {
 
 bool MotionEstimator::solveRelativeRT(const vector<pair<Vector3d, Vector3d>> &corres, Matrix3d &Rotation, Vector3d &Translation)
 {
-    printf("init solve5: corre size before %lu\n", corres.size());
+    // printf("init solve5: corre size before %lu\n", corres.size());
     if (corres.size() >= 9)
     {
         vector<cv::Point2f> ll, rr;
@@ -213,7 +213,7 @@ bool MotionEstimator::solveRelativeRT(const vector<pair<Vector3d, Vector3d>> &co
         cv::Mat cameraMatrix = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
         cv::Mat rot, trans;
         int inlier_cnt = cv::recoverPose(E, ll, rr, rot, trans);
-        printf("init solve5: inlier size after %d\n", inlier_cnt);
+        // printf("init solve5: inlier size after %d\n", inlier_cnt);
         
         Eigen::Matrix3d R;
         Eigen::Vector3d T;
@@ -224,7 +224,7 @@ bool MotionEstimator::solveRelativeRT(const vector<pair<Vector3d, Vector3d>> &co
                 R(i, j) = rot.at<double>(i, j);
         }
         Eigen::Vector3d ypr = Utility::R2ypr(R);
-        cout << "init solve5: " << ypr.transpose() << endl;
+        // cout << "init solve5: " << ypr.transpose() << endl;
         Rotation = R.transpose();
         Translation = -R.transpose() * T;
         if(inlier_cnt > 10)

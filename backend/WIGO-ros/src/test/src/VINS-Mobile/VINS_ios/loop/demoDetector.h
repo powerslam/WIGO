@@ -129,9 +129,9 @@ demoDetector<TVocabulary, TDetector, TDescriptor>::demoDetector
     //params.k = 1; // a loop must be consistent with 1 previous matches
      // use direct index for geometrical checking
     //params.di_levels = 2; // use two direct index levels
-    //printf("load vocfile %s finish\n", vocfile);
+    //// printf("load vocfile %s finish\n", vocfile);
     
-    printf("loop image size width: %d height: %d\n", params.image_cols,params.image_rows);
+    // printf("loop image size width: %d height: %d\n", params.image_cols,params.image_rows);
 }
 
 // ---------------------------------------------------------------------------
@@ -160,56 +160,49 @@ bool demoDetector<TVocabulary, TDetector, TDescriptor>::run
     
   if(result.detection())
   {
-      cout << "- loop found with image " << result.match << "!"
-        << endl;
+      // cout << "- loop found with image " << result.match << "!" << endl;
       ++count;
-      cout << endl;
+      // cout << endl;
       old_index = result.match;
       return true;
   }
   else
   {
-      cout << "- No loop: ";
+      // cout << "- No loop: ";
       switch(result.status)
       {
         case CLOSE_MATCHES_ONLY:
-          cout << "All the images in the database are very recent" << endl;
+          // cout << "All the images in the database are very recent" << endl;
           break;
           
         case NO_DB_RESULTS:
-          cout << "There are no matches against the database (few features in"
-            " the image?)" << endl;
+          // cout << "There are no matches against the database (few features in the image?)" << endl;
           break;
           
         case LOW_NSS_FACTOR:
-          cout << "Little overlap between this image and the previous one"
-            << endl;
+          // cout << "Little overlap between this image and the previous one" << endl;
           break;
             
         case LOW_SCORES:
-          cout << "No match reaches the score threshold (alpha: " <<
-            params.alpha << ")" << endl;
+          // cout << "No match reaches the score threshold (alpha: " << params.alpha << ")" << endl;
           break;
           
         case NO_GROUPS:
-          cout << "Not enough close matches to create groups. "
-            << "Best candidate: " << result.match << endl;
+          // cout << "Not enough close matches to create groups. " << "Best candidate: " << result.match << endl;
           break;
           
         case NO_TEMPORAL_CONSISTENCY:
-          cout << "No temporal consistency (k: " << params.k << "). "
-            << "Best candidate: " << result.match << endl;
+          // cout << "No temporal consistency (k: " << params.k << "). " << "Best candidate: " << result.match << endl;
           break;
           
         case NO_GEOMETRICAL_CONSISTENCY:
-          cout << "No geometrical consistency. Best candidate: " 
-            << result.match << endl;
+          // cout << "No geometrical consistency. Best candidate: " << result.match << endl;
           break;
           
         default:
           break;
       }
-      cout << endl;
+      // cout << endl;
       return false;
   }
 }

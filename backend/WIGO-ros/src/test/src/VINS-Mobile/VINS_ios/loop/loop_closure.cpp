@@ -12,8 +12,8 @@
 LoopClosure::LoopClosure(const char *_voc_file, int _image_w, int _image_h)
 :demo(_voc_file,_image_w, _image_h), IMAGE_W(_image_w), IMAGE_H(_image_h) 
 {
-    printf("loop vocfile %s\n",_voc_file);
-    printf(" loop closure init finish\n");
+    // printf("loop vocfile %s\n",_voc_file);
+    // printf(" loop closure init finish\n");
 }
 
 
@@ -30,7 +30,7 @@ bool LoopClosure::startLoopClosure(std::vector<cv::KeyPoint> &keys, std::vector<
   }
   catch(const std::string &ex)
   {
-    cout << "Error loop: " << ex << endl;
+    // cout << "Error loop: " << ex << endl;
     return false;
   }
 }

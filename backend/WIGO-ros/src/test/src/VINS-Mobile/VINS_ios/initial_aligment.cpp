@@ -31,7 +31,7 @@ void solveGyroscopeBias(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs)
         
     }
     delta_bg = A.ldlt().solve(b);
-    cout << " delta_bg ! " << delta_bg.transpose() << endl;
+    // cout << " delta_bg ! " << delta_bg.transpose() << endl;
     
     for (int i = 0; i <= WINDOW_SIZE; i++)
         Bgs[i] += delta_bg;
@@ -134,7 +134,7 @@ void RefineGravity(map<double, ImageFrame> &all_image_frame, Vector3d &g, Vector
 
 bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd &x)
 {
-    printf("SolveScale\n");
+    // printf("SolveScale\n");
     int all_frame_count = all_image_frame.size();
     int n_state = all_frame_count * 3 + 3 + 1;
     
@@ -166,11 +166,11 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
         
         // 🛠 IMU 데이터 NaN 검사 추가
         if (!frame_j->second.pre_integration->delta_p.allFinite()) {
-            printf("Error: delta_p contains NaN/Inf values!\n");
+            // printf("Error: delta_p contains NaN/Inf values!\n");
             return false;
         }
         if (!frame_j->second.pre_integration->delta_v.allFinite()) {
-            printf("Error: delta_v contains NaN/Inf values!\n");
+            // printf("Error: delta_v contains NaN/Inf values!\n");
             return false;
         }
 
@@ -199,7 +199,7 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
 
     // 🛠 행렬 A NaN/특이 행렬 검사 추가
     if (A.determinant() == 0 || !A.allFinite()) {
-        printf("Error: Matrix A is singular or contains NaN/Inf values!\n");
+        // printf("Error: Matrix A is singular or contains NaN/Inf values!\n");
         return false;
     }
 
@@ -208,13 +208,13 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
     x = A.ldlt().solve(b);
 
     double s = x(n_state - 1) / 100.0;
-    printf("Estimated scale: %f\n", s);
+    // printf("Estimated scale: %f\n", s);
 
     g = x.segment<3>(n_state - 4);
 
     // 🛠 중력 벡터 NaN 검사 추가
     if (!g.allFinite()) {
-        printf("Error: Gravity vector g contains NaN/Inf values!\n");
+        // printf("Error: Gravity vector g contains NaN/Inf values!\n");
         return false;
     }
 
@@ -227,13 +227,13 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
     RefineGravity(all_image_frame, g, x);
     s = (x.tail<1>())(0) / 100.0;
 
-    printf("Refine estimated scale: %f", s);
-    cout << "Refine g     " << g.norm() << " " << g.transpose() << endl;
+    // printf("Refine estimated scale: %f", s);
+    // cout << "Refine g     " << g.norm() << " " << g.transpose() << endl;
 
     if (s > 0.0) {
-        printf("Initial success!\n");
+        // printf("Initial success!\n");
     } else {
-        printf("Initial fail\n");
+        // printf("Initial fail\n");
         return false;
     }
 

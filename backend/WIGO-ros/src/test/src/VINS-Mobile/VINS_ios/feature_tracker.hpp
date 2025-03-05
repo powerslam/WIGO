@@ -23,8 +23,8 @@
 
 #define MAX_CNT 70
 #define MIN_DIST 30
-#define COL 640
-#define ROW 480
+#define COL 480
+#define ROW 640
 #define F_THRESHOLD 1.0
 #define EQUALIZE 1
 using namespace cv;

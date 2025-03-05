@@ -139,10 +139,10 @@ KeyFrame* KeyFrameDatabase::getLastUncheckKeyframe()
 
 void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d &loop_correct_t, Eigen::Matrix3d &loop_correct_r)
 {
-    printf("loop global pose graph\n");
+    // printf("loop global pose graph\n");
     KeyFrame* cur_kf = getKeyframe(cur_index);
     int loop_index = cur_kf->loop_index;
-    printf("loop bug current %d %d\n", cur_kf->global_index, cur_kf->loop_index);
+    // printf("loop bug current %d %d\n", cur_kf->global_index, cur_kf->loop_index);
     if (earliest_loop_index > loop_index || earliest_loop_index == -1)
         earliest_loop_index = loop_index;
     assert(cur_kf->has_loop == 1);
@@ -173,7 +173,7 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
     double dis = 0;
     
     //resample pose graph, keep the relative pose sparse
-    printf("debug resample");
+    // printf("debug resample");
     for (; it != keyFrameList.end(); it++)
     {
         if ((*it)->global_index < earliest_loop_index)
@@ -187,13 +187,13 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
             dis = 0;
             last_P = tmp_t;
             need_resample.push_back(0);
-            printf("debug %d\n",0);
+            // printf("debug %d\n",0);
         }
         else
         {
             last_P = tmp_t;
             need_resample.push_back(1);
-            printf("debug %d\n",1);
+            // printf("debug %d\n",1);
         }
     }
     
@@ -233,7 +233,7 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
             continue;
         }
         
-        printf("debug add %dth pose\n", i);
+        // printf("debug add %dth pose\n", i);
         //add edge
         int j = 1, sequence_link_cnt = 0;
         while(sequence_link_cnt < 5)
@@ -268,14 +268,14 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
             }
             j++;
         }
-        printf("debug sequence_link_cnt %d\n", sequence_link_cnt);
+        // printf("debug sequence_link_cnt %d\n", sequence_link_cnt);
         //add loop edge
         if((*it)->has_loop)
         {
             int connected_index = getKeyframe((*it)->loop_index)->resample_index;
             if((*it)->loop_index < earliest_loop_index)
             {
-                printf("loop bug %d %d\n", (*it)->global_index, (*it)->loop_index);
+                // printf("loop bug %d %d\n", (*it)->global_index, (*it)->loop_index);
                 assert(false);
             }
             Vector3d euler_conncected = Utility::R2ypr(q_array[connected_index].toRotationMatrix());
@@ -296,7 +296,7 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
     TS(t_global_loop);
     ceres::Solve(options, &problem, &summary);
     TE(t_global_loop);
-    std::cout << summary.BriefReport() << "\n";
+    // std::cout << summary.BriefReport() << "\n";
     
     i = 0;
     int seg_index_cur, seg_index_old;
@@ -386,7 +386,7 @@ void KeyFrameDatabase::updateVisualization()
         keyframe_data.rotation = Q;
         all_keyframes.push_back(keyframe_data);
     }
-    printf("loop update visualization\n");
+    // printf("loop update visualization\n");
 }
 
 void KeyFrameDatabase::addLoop(int loop_index)

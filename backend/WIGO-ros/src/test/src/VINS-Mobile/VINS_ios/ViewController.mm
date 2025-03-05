@@ -352,7 +352,7 @@ Matrix3d pnp_R;
         //image.at<float>(0,0) = image.at<float>(1,0);
         //image.at<float>(0,1) = image.at<float>(1,1);
         shared_ptr<IMG_MSG> img_msg(new IMG_MSG());
-        //cout << (videoCamera->grayscaleMode) << endl;
+        //// cout << (videoCamera->grayscaleMode) << endl;
         //img_msg->header = [[NSDate date] timeIntervalSince1970];
         img_msg->header = [[NSProcessInfo processInfo] systemUptime];
         float Group[2];
@@ -390,7 +390,7 @@ Matrix3d pnp_R;
             img_msg->header = imgData.header;
             //TE(readImg);
 #ifdef DATA_EXPORT
-            printf("record play image: %lf\n",imgData.header,imageDataReadIndex);
+            // printf("record play image: %lf\n",imgData.header,imageDataReadIndex);
 #endif
         }
         else
@@ -816,7 +816,7 @@ bool start_global_optimization = false;
                         KeyFrame* cur_kf = keyframe_database.getKeyframe(vins.front_pose.cur_index);
                         if (abs(vins.front_pose.relative_yaw) > 30.0 || vins.front_pose.relative_t.norm() > 10.0)
                         {
-                            printf("Wrong loop\n");
+                            // printf("Wrong loop\n");
                             cur_kf->removeLoop();
                             break;
                         }
@@ -908,17 +908,17 @@ bool start_global_optimization = false;
             vector<cv::Point2f> cur_pts;
             vector<cv::Point2f> old_pts;
             cur_kf->extractBrief(current_image);
-            printf("loop extract %d feature\n", cur_kf->keypoints.size());
+            // printf("loop extract %d feature\n", cur_kf->keypoints.size());
             loop_succ = loop_closure->startLoopClosure(cur_kf->keypoints, cur_kf->descriptors, cur_pts, old_pts, old_index);
             if(loop_succ)
             {
                 KeyFrame* old_kf = keyframe_database.getKeyframe(old_index);
                 if (old_kf == NULL)
                 {
-                    printf("NO such %dth frame in keyframe_database\n", old_index);
+                    // printf("NO such %dth frame in keyframe_database\n", old_index);
                     assert(false);
                 }
-                printf("loop succ with %drd image\n", old_index);
+                // printf("loop succ with %drd image\n", old_index);
                 assert(old_index!=-1);
                 
                 Vector3d T_w_i_old;
@@ -944,8 +944,8 @@ bool start_global_optimization = false;
                     retrive_data.features_ids = features_id;
                     vins.retrive_pose_data = (retrive_data);
                     
-                    //cout << "old pose " << T_w_i_old.transpose() << endl;
-                    //cout << "refinded pose " << T_w_i_refine.transpose() << endl;
+                    //// cout << "old pose " << T_w_i_old.transpose() << endl;
+                    //// cout << "refinded pose " << T_w_i_refine.transpose() << endl;
                     // add loop edge in current frame
                     cur_kf->detectLoop(old_index);
                     keyframe_database.addLoop(old_index);
@@ -1030,7 +1030,7 @@ vector<IMU_MSG> gyro_buf;  // for Interpolation
          -latestAcc.acceleration.y * GRAVITY,
          -latestAcc.acceleration.z * GRAVITY;
          cur_acc = acc_msg;
-         //printf("imu acc update %lf %lf %lf %lf\n", acc_msg->header, acc_msg->acc.x(), acc_msg->acc.y(), acc_msg->acc.z());
+         //// printf("imu acc update %lf %lf %lf %lf\n", acc_msg->header, acc_msg->acc.x(), acc_msg->acc.y(), acc_msg->acc.z());
          
      }];
     [motionManager startGyroUpdatesToQueue:[NSOperationQueue currentQueue] withHandler:^(CMGyroData *latestGyro, NSError *error)
@@ -1066,12 +1066,12 @@ vector<IMU_MSG> gyro_buf;  // for Interpolation
              imu_msg->header = cur_acc->header;
              imu_msg->acc = cur_acc->acc;
              imu_msg->gyr = gyro_buf[0].gyr + (cur_acc->header - gyro_buf[0].header)*(gyro_buf[1].gyr - gyro_buf[0].gyr)/(gyro_buf[1].header - gyro_buf[0].header);
-             //printf("imu gyro update %lf %lf %lf\n", gyro_buf[0].header, imu_msg->header, gyro_buf[1].header);
-             //printf("imu inte update %lf %lf %lf %lf\n", imu_msg->header, gyro_buf[0].gyr.x(), imu_msg->gyr.x(), gyro_buf[1].gyr.x());
+             //// printf("imu gyro update %lf %lf %lf\n", gyro_buf[0].header, imu_msg->header, gyro_buf[1].header);
+             //// printf("imu inte update %lf %lf %lf %lf\n", imu_msg->header, gyro_buf[0].gyr.x(), imu_msg->gyr.x(), gyro_buf[1].gyr.x());
          }
          else
          {
-             printf("imu error %lf %lf %lf\n", gyro_buf[0].header, cur_acc->header, gyro_buf[1].header);
+             // printf("imu error %lf %lf %lf\n", gyro_buf[0].header, cur_acc->header, gyro_buf[1].header);
              return;
          }
          
@@ -1215,7 +1215,7 @@ vector<IMU_MSG> gyro_buf;  // for Interpolation
         case 0:
             self.switchUIAREnabled = YES;
             
-            printf("show AR\n");
+            // printf("show AR\n");
             ui_main = true;
             box_in_AR= true;
             USE_PNP = true;
@@ -1229,7 +1229,7 @@ vector<IMU_MSG> gyro_buf;  // for Interpolation
                 box_in_trajectory = true;
             USE_PNP = false;
             imageCacheEnabled = cameraMode && !USE_PNP;
-            printf("show VINS\n");
+            // printf("show VINS\n");
             break;
         default:
             break;
@@ -1686,40 +1686,40 @@ DeviceType deviceName()
     if(([device compare:@"iPhone9,1"] == NSOrderedSame) ||
        ([device compare:@"iPhone9,3"] == NSOrderedSame))
     {
-        printf("Device iPhone7\n");
+        // printf("Device iPhone7\n");
         device_type = iPhone7;
     }
     else if(([device compare:@"iPhone9,2"] == NSOrderedSame) ||
             ([device compare:@"iPhone9,4"] == NSOrderedSame))
     {
-        printf("Device iPhone7 plus\n");
+        // printf("Device iPhone7 plus\n");
         device_type = iPhone7P;
     }
     else if(([device compare:@"iPhone8,2"] == NSOrderedSame))
     {
-        printf("Device iPhone6s plus\n");
+        // printf("Device iPhone6s plus\n");
         device_type = iPhone6sP;
     }
     else if(([device compare:@"iPhone8,1"] == NSOrderedSame))
     {
-        printf("Device iPhone6s\n");
+        // printf("Device iPhone6s\n");
         device_type = iPhone6s;
     }
     else if(([device compare:@"iPad6,3"] == NSOrderedSame)||
             ([device compare:@"iPad6,4"] == NSOrderedSame))
     {
-        printf("Device iPad pro 9.7\n");
+        // printf("Device iPad pro 9.7\n");
         device_type = iPadPro97;
     }
     else if(([device compare:@"iPad6,7"] == NSOrderedSame)||
             ([device compare:@"iPad6,8"] == NSOrderedSame))
     {
-        printf("Device iPad pro 12.9\n");
+        // printf("Device iPad pro 12.9\n");
         device_type = iPadPro129;
     }
     else
     {
-        printf("Device undefine\n");
+        // printf("Device undefine\n");
         device_type = unDefine;
     }
     return device_type;
@@ -1729,10 +1729,10 @@ bool iosVersion()
 {
     NSComparisonResult order = [[UIDevice currentDevice].systemVersion compare: @"10.2.1" options: NSNumericSearch];
     if (order == NSOrderedSame || order == NSOrderedDescending) {
-        printf("system version >= 10.2.1\n");
+        // printf("system version >= 10.2.1\n");
         return true;
     } else {
-        printf("system version < 10.2.1\n");
+        // printf("system version < 10.2.1\n");
         return false;
     }
 }

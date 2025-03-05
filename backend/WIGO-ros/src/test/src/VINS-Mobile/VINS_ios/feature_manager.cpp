@@ -141,7 +141,7 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, Vec
         }
     }
     
-    printf("parallax sum = %lf parallax_num = %d\n",parallax_sum, parallax_num);
+    // printf("parallax sum = %lf parallax_num = %d\n",parallax_sum, parallax_num);
     if (parallax_num == 0)
     {
         return true;
@@ -195,7 +195,7 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic, Matrix3d ric, bool
         if(it_per_id.feature_per_frame.size()>= WINDOW_SIZE)
         {
             it_per_id.fixed = true;
-            //cout << "track num" << it_per_id->feature_per_frame.size() << endl;
+            //// cout << "track num" << it_per_id->feature_per_frame.size() << endl;
         }
         
         it_per_id.used_num = it_per_id.feature_per_frame.size();
@@ -370,7 +370,7 @@ void FeatureManager::removeBack()
             if (it->feature_per_frame.size() == 0)
             {
                 feature.erase(it);
-                //printf("remove back\n");
+                //// printf("remove back\n");
             }
         }
     }
@@ -396,7 +396,7 @@ void FeatureManager::removeFront(int frame_count)
             if (it->feature_per_frame.size() == 0)
             {
                 feature.erase(it);
-                //printf("remove front\n");
+                //// printf("remove front\n");
             }
             
         }

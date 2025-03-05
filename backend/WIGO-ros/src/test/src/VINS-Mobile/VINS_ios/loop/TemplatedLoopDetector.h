@@ -559,7 +559,7 @@ TemplatedLoopDetector<TDescriptor,F>::TemplatedLoopDetector
   m_database = new TemplatedDatabase<TDescriptor, F>(voc, 
     params.geom_check == GEOM_DI, params.di_levels);
   //TODO change param trans method
- //printf("loop set camera model finish\n");
+ //// printf("loop set camera model finish\n");
 }
 
 // --------------------------------------------------------------------------
@@ -689,11 +689,11 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
     // only add the entry to the database and finish
     m_database->add(bowvec, featvec);
     match.status = CLOSE_MATCHES_ONLY;
-    //printf("entry_id %d <= m_params.dislocal %d\n",entry_id,m_params.dislocal);
+    //// printf("entry_id %d <= m_params.dislocal %d\n",entry_id,m_params.dislocal);
   }
   else
   {
-    //printf("entry_id %d > m_params.dislocal %d\n",entry_id,m_params.dislocal);
+    //// printf("entry_id %d > m_params.dislocal %d\n",entry_id,m_params.dislocal);
     int max_id = (int)entry_id - m_params.dislocal;
     
     QueryResults qret;
@@ -704,14 +704,14 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
     
     if(!qret.empty())
     {
-      //printf("qret not empty\n");
+      //// printf("qret not empty\n");
       // factor to compute normalized similarity score, if necessary
       double ns_factor = 1.0;
       
       if(m_params.use_nss)
       {
         ns_factor = m_database->getVocabulary()->score(bowvec, m_last_bowvec);
-        //printf("loop use_nss, ns_factor : %lf\n", ns_factor);
+        //// printf("loop use_nss, ns_factor : %lf\n", ns_factor);
       }
       
       if(!m_params.use_nss || ns_factor >= m_params.min_nss_factor)
@@ -722,12 +722,12 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
         
         // remove those scores whose nss is lower than alpha
         // (ret is sorted in descending score order now)
-        //printf("ns_factor %lf >= m_params.min_nss_factor %lf\n",ns_factor,m_params.min_nss_factor);
+        //// printf("ns_factor %lf >= m_params.min_nss_factor %lf\n",ns_factor,m_params.min_nss_factor);
         removeLowScores(qret, m_params.alpha * ns_factor);
         
         if(!qret.empty())
         {
-          //printf("qret not empty\n");
+          //// printf("qret not empty\n");
           // the best candidate is the one with highest score by now
           match.match = qret[0].Id;
           
@@ -739,7 +739,7 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
           // get best island
           if(!islands.empty())
           {
-            //printf("island is not empty\n");
+            //// printf("island is not empty\n");
             //const tIsland& island = 
             //  *std::max_element(islands.begin(), islands.end());
            
@@ -748,7 +748,7 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
             double score_average = 0;
             for(int i=0; i<islands.size();i++)
             {
-                //printf("loop id:%d socre:%f\n",islands[i].best_entry, islands[i].best_score);
+                //// printf("loop id:%d socre:%f\n",islands[i].best_entry, islands[i].best_score);
                 score_average += islands[i].best_score;
             }
             score_average = score_average/(double)islands.size();
@@ -757,10 +757,10 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
                 if(islands[i].best_score >= score_average)
                 {
                     islandsReconstruct.push_back(islands[i]);
-                    //printf("loop id:%d socre:%f\n",islands[i].best_entry, islands[i].best_score);
+                    //// printf("loop id:%d socre:%f\n",islands[i].best_entry, islands[i].best_score);
                 }
             }
-            //printf("loop reconstruct size %d %lf\n", islandsReconstruct.size(), score_average);
+            //// printf("loop reconstruct size %d %lf\n", islandsReconstruct.size(), score_average);
 
             vector<tIsland> islandsReconstruct2;
             double score_average2 = 0;
@@ -781,7 +781,7 @@ bool TemplatedLoopDetector<TDescriptor, F>::detectLoop(
 const tIsland& island = islandsReconstruct2[0];
               */
             const tIsland& island = *std::max_element(islands.begin(), islands.end());
-            //printf("loop chose id:%d socre:%f------------\n",island.best_entry, island.best_score);
+            //// printf("loop chose id:%d socre:%f------------\n",island.best_entry, island.best_score);
             // check temporal consistency of this island
             updateTemporalWindow(island, entry_id);
             
@@ -790,14 +790,14 @@ const tIsland& island = islandsReconstruct2[0];
             
             if(getConsistentEntries() > m_params.k)
             {
-              //printf("temporal consistent entries:%d > n_params.k:%d\n", getConsistentEntries(),m_params.k);
+              //// printf("temporal consistent entries:%d > n_params.k:%d\n", getConsistentEntries(),m_params.k);
               // candidate loop detected
               // check geometry
               bool detection;
 
               if(m_params.geom_check == GEOM_DI)
               {
-                //printf("loop use direct index for geometrical checking\n");
+                //// printf("loop use direct index for geometrical checking\n");
                 // all the DI stuff is implicit in the database
                 detection = isGeometricallyConsistent_DI(island.best_entry, 
                   keys, descriptors, featvec, cur_pts, old_pts);
@@ -805,50 +805,50 @@ const tIsland& island = islandsReconstruct2[0];
               else // GEOM_NONE, accept the match
               {
                 detection = true;
-                //printf("don't check detec true\n");
+                //// printf("don't check detec true\n");
               }
               
               if(detection)
               {
                 match.status = LOOP_DETECTED;
-                printf("LOOP_DETECTED\n");
+                // printf("LOOP_DETECTED\n");
               }
               else
               {
                 match.status = NO_GEOMETRICAL_CONSISTENCY;
-                //printf("no geometry consistentcy\n");
+                //// printf("no geometry consistentcy\n");
               }
               
             } // if enough temporal matches
             else
             {
               match.status = NO_TEMPORAL_CONSISTENCY;
-              //printf("no temporal consistentcy\n");
+              //// printf("no temporal consistentcy\n");
             }
             
           } // if there is some island
           else
           {
             match.status = NO_GROUPS;
-            //printf("in island\n");
+            //// printf("in island\n");
           }
         } // if !qret empty after removing low scores
         else
         {
           match.status = LOW_SCORES;
-          //printf("query empty after remove low score\n");
+          //// printf("query empty after remove low score\n");
         }
       } // if (ns_factor > min normal score)
       else
       {
-        //printf("low nss factor may be rotation\n");
+        //// printf("low nss factor may be rotation\n");
         match.status = LOW_NSS_FACTOR;
       }
     } // if(!qret.empty())
     else
     {
       match.status = NO_DB_RESULTS;
-      //printf("data base no result\n");
+      //// printf("data base no result\n");
     }
   }
 
@@ -856,13 +856,13 @@ const tIsland& island = islandsReconstruct2[0];
   // m_image_keys and m_image_descriptors have the same length
   if(m_image_keys.size() == entry_id)
   {
-    //printf("image size = entry_id %d\n", entry_id);
+    //// printf("image size = entry_id %d\n", entry_id);
     m_image_keys.push_back(keys);
     m_image_descriptors.push_back(descriptors);
   }
   else
   {
-    //printf("image size != entry_id %d\n", entry_id);
+    //// printf("image size != entry_id %d\n", entry_id);
     m_image_keys[entry_id] = keys;
     m_image_descriptors[entry_id] = descriptors;
   }
@@ -1129,7 +1129,7 @@ bool TemplatedLoopDetector<TDescriptor, F>::isGeometricallyConsistent_DI(
   
     cv::Mat oldMat(old_points.size(), 2, CV_32F, &old_points[0]);
     cv::Mat curMat(cur_points.size(), 2, CV_32F, &cur_points[0]);
-    //printf("-old size %d current size %d\n",old_points.size(),cur_points.size());
+    //// printf("-old size %d current size %d\n",old_points.size(),cur_points.size());
     bool find_fundamental_suss = false;
     find_fundamental_suss =  checkFoundamental(cur_points, old_points, cur_pts, old_pts);
     if(find_fundamental_suss)

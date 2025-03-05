@@ -12,7 +12,7 @@ int FeatureTracker::n_id = 0;
 FeatureTracker::FeatureTracker()
 :update_finished{false},img_cnt{0},current_time{-1.0},use_pnp{false}
 {
-    printf("init ok\n");
+    // printf("init ok\n");
 }
 /*********************************************************tools function for feature tracker start*****************************************************/
 bool inBorder(const cv::Point2f &pt)
@@ -111,7 +111,7 @@ bool FeatureTracker::solveVinsPnP(double header, Vector3d &P, Matrix3d &R, bool 
     /*
      if(solved_features.size() < 2)
      {
-     printf("pnp not enough features\n");
+     // printf("pnp not enough features\n");
      return false;
      }
      */
@@ -134,12 +134,12 @@ bool FeatureTracker::solveVinsPnP(double header, Vector3d &P, Matrix3d &R, bool 
     /*
      if(feature_msg.size() < 2 )
      {
-     printf("pnp Not enough solved feature!\n");
+     // printf("pnp Not enough solved feature!\n");
      return false;
      }
      */
     vins_pnp.setInit(solved_vins);
-    printf("pnp imu header: ");
+    // printf("pnp imu header: ");
     for(auto &it : imu_msgs)
     {
         double t = it.header;
@@ -147,10 +147,10 @@ bool FeatureTracker::solveVinsPnP(double header, Vector3d &P, Matrix3d &R, bool 
             current_time = t;
         double dt = (t - current_time);
         current_time = t;
-        printf("%lf ",t);
+        // printf("%lf ",t);
         vins_pnp.processIMU(dt, it.acc, it.gyr);
     }
-    printf("image %lf\n", header);
+    // printf("image %lf\n", header);
     vins_pnp.processImage(feature_msg, header, use_pnp);
     
     P = vins_pnp.Ps[PNP_SIZE - 1];
@@ -269,7 +269,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, cv::Mat &result, int _frame_
             }
             
             addPoints();
-            //printf("features num after detect: %d\n",static_cast<int>(forw_pts.size()));
+            //// printf("features num after detect: %d\n",static_cast<int>(forw_pts.size()));
             pre_img = forw_img;
             pre_pts = forw_pts;
             //draw

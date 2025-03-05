@@ -29,7 +29,6 @@
 // Author: keir@google.com (Keir Mierle)
 
 #include "ceres/block_evaluate_preparer.h"
-
 #include <vector>
 #include "ceres/block_sparse_matrix.h"
 #include "ceres/casts.h"

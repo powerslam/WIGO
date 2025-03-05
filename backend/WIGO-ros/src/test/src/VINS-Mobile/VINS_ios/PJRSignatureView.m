@@ -120,7 +120,7 @@
         pre_point = cur_point;
         init_ok = true;
     }
-    printf("view: %.2lf, %.2lf\n",cur_point.x,cur_point.y);
+    // printf("view: %.2lf, %.2lf\n",cur_point.x,cur_point.y);
     if ([lblSignature superview]){
         [lblSignature removeFromSuperview];
     }

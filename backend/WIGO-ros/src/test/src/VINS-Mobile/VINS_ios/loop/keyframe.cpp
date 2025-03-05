@@ -163,7 +163,7 @@ void KeyFrame::searchByDes(std::vector<cv::Point2f> &measurements_old,
                            const std::vector<BRIEF::bitset> &descriptors_old,
                            const std::vector<cv::KeyPoint> &keypoints_old)
 {
-    printf("loop_match before cur %d %d, old %d\n", window_descriptors.size(), measurements.size(), descriptors_old.size());
+    // printf("loop_match before cur %d %d, old %d\n", window_descriptors.size(), measurements.size(), descriptors_old.size());
     std::vector<int> dis_cur_old;
     std::vector<uchar> status;
     for(int i = 0; i < window_descriptors.size(); i++)
@@ -186,7 +186,7 @@ void KeyFrame::searchByDes(std::vector<cv::Point2f> &measurements_old,
         }
     }
     rejectWithF(measurements_old, measurements_old_norm);
-    printf("loop_match after cur %d %d, old %d\n", window_descriptors.size(), measurements.size(), descriptors_old.size());
+    // printf("loop_match after cur %d %d, old %d\n", window_descriptors.size(), measurements.size(), descriptors_old.size());
 }
 
 /**
@@ -233,12 +233,12 @@ bool KeyFrame::solveOldPoseByPnP(std::vector<cv::Point2f> &measurements_old_norm
     
     if(!pnp_succ)
     {
-        cout << "loop pnp failed !" << endl;
+        // cout << "loop pnp failed !" << endl;
         return false;
     }
     else
     {
-        cout << "loop pnp succ !" << endl;
+        // cout << "loop pnp succ !" << endl;
     }
     cv::Rodrigues(rvec, r);
     Matrix3d R_loop;
@@ -253,9 +253,9 @@ bool KeyFrame::solveOldPoseByPnP(std::vector<cv::Point2f> &measurements_old_norm
     T_w_i_refine = T_w_i_old + R_w_i_old * old_R_drift.transpose() * (T_w_i - old_T_drift);
     R_w_i_refine = R_w_i_old * old_R_drift.transpose() * R_w_i;
     
-    //printf("loop current T: %2lf %2lf %2lf\n", T_w_i(0),T_w_i(1),T_w_i(2));
+    //// printf("loop current T: %2lf %2lf %2lf\n", T_w_i(0),T_w_i(1),T_w_i(2));
     
-    //printf("loop refined T: %2lf %2lf %2lf\n", T_w_i_refine(0),T_w_i_refine(1),T_w_i_refine(2));
+    //// printf("loop refined T: %2lf %2lf %2lf\n", T_w_i_refine(0),T_w_i_refine(1),T_w_i_refine(2));
     return true;
 }
 

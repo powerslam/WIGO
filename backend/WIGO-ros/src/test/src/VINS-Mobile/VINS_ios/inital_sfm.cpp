@@ -44,7 +44,7 @@ bool GlobalSFM::solveFrameByPnP(Matrix3d &R_initial, Vector3d &P_initial, int i,
     }
     if (int(pts_2_vector.size()) < 15)
     {
-        cout << "feature tracking not enough, please slowly move you device!" << endl;
+        // cout << "feature tracking not enough, please slowly move you device!" << endl;
         return false;
     }
     cv::Mat r, rvec, t, D, tmp_r;
@@ -56,11 +56,11 @@ bool GlobalSFM::solveFrameByPnP(Matrix3d &R_initial, Vector3d &P_initial, int i,
     pnp_succ = cv::solvePnP(pts_3_vector, pts_2_vector, K, D, rvec, t, 1);
     if(!pnp_succ)
     {
-        cout << "pnp failed !" << endl;
+        // cout << "pnp failed !" << endl;
         return false;
     }
     cv::Rodrigues(rvec, r);
-    //cout << "r " << endl << r << endl;
+    //// cout << "r " << endl << r << endl;
     MatrixXd R_pnp;
     cv::cv2eigen(r, R_pnp);
     MatrixXd T_pnp;
@@ -104,7 +104,7 @@ void GlobalSFM::triangulateTwoFrames(int frame0, Eigen::Matrix<double, 3, 4> &Po
             sfm_f[j].position[0] = point_3d(0);
             sfm_f[j].position[1] = point_3d(1);
             sfm_f[j].position[2] = point_3d(2);
-            //cout << "trangulated : " << frame1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
+            //// cout << "trangulated : " << frame1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
         }
     }
 }
@@ -119,7 +119,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
                           vector<SFMFeature> &sfm_f, map<int, Vector3d> &sfm_tracked_points)
 {
     feature_num = sfm_f.size();
-    //cout << "set 0 and " << l << " as known " << endl;
+    //// cout << "set 0 and " << l << " as known " << endl;
     // have relative_r relative_t
     // intial two view
     q[l].w() = 1;
@@ -129,8 +129,8 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
     T[l].setZero();
     q[frame_num - 1] = q[l] * Quaterniond(relative_R);
     T[frame_num - 1] = relative_T;
-    //cout << "init q_l " << q[l].w() << " " << q[l].vec().transpose() << endl;
-    //cout << "init t_l " << T[l].transpose() << endl;
+    //// cout << "init q_l " << q[l].w() << " " << q[l].vec().transpose() << endl;
+    //// cout << "init t_l " << T[l].transpose() << endl;
     
     //rotate to cam frame
     Matrix3d *c_Rotation = new Matrix3d[frame_num];
@@ -183,7 +183,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
     for (int i = l - 1; i >= 0; i--)
     {
         //solve pnp
-        cout << "solve pnp frame " << i << endl;
+        // cout << "solve pnp frame " << i << endl;
         Matrix3d R_initial = c_Rotation[i + 1];
         Vector3d P_initial = c_Translation[i + 1];
         solveFrameByPnP(R_initial, P_initial, i, sfm_f);
@@ -213,7 +213,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
             sfm_f[j].position[0] = point_3d(0);
             sfm_f[j].position[1] = point_3d(1);
             sfm_f[j].position[2] = point_3d(2);
-            //cout << "trangulated : " << frame_0 << " " << frame_1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
+            //// cout << "trangulated : " << frame_0 << " " << frame_1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
         }
     }
     
@@ -221,19 +221,19 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
      for (int i = 0; i < frame_num; i++)
      {
      q[i] = c_Rotation[i].transpose();
-     cout << "solvePnP  q" << " i " << i <<"  " <<q[i].w() << "  " << q[i].vec().transpose() << endl;
+     // cout << "solvePnP  q" << " i " << i <<"  " <<q[i].w() << "  " << q[i].vec().transpose() << endl;
      }
      for (int i = 0; i < frame_num; i++)
      {
      Vector3d t_tmp;
      t_tmp = -1 * (q[i] * c_Translation[i]);
-     cout << "solvePnP  t" << " i " << i <<"  " << t_tmp.x() <<"  "<< t_tmp.y() <<"  "<< t_tmp.z() << endl;
+     // cout << "solvePnP  t" << " i " << i <<"  " << t_tmp.x() <<"  "<< t_tmp.y() <<"  "<< t_tmp.z() << endl;
      }
      */
     //full BA
     ceres::Problem problem;
     ceres::LocalParameterization* local_parameterization = new ceres::QuaternionParameterization();
-    //cout << " begin full BA " << endl;
+    //// cout << " begin full BA " << endl;
     for (int i = 0; i < frame_num; i++)
     {
         //double array for ceres
@@ -283,7 +283,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
     options.max_solver_time_in_seconds = 0.3;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    std::cout << summary.BriefReport() << "\n";
+    // std::cout << summary.BriefReport() << "\n";
     if (summary.termination_type == ceres::CONVERGENCE || summary.final_cost < 3e-03)
         cout << "vision only BA converge" << endl;
     else
@@ -298,13 +298,13 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
         q[i].y() = c_rotation[i][2]; 
         q[i].z() = c_rotation[i][3]; 
         q[i] = q[i].inverse();
-        //cout << "final  q" << " i " << i <<"  " <<q[i].w() << "  " << q[i].vec().transpose() << endl;
+        //// cout << "final  q" << " i " << i <<"  " <<q[i].w() << "  " << q[i].vec().transpose() << endl;
     }
     for (int i = 0; i < frame_num; i++)
     {
         
         T[i] = -1 * (q[i] * Vector3d(c_translation[i][0], c_translation[i][1], c_translation[i][2]));
-        //cout << "final  t" << " i " << i <<"  " << T[i](0) <<"  "<< T[i](1) <<"  "<< T[i](2) << endl;
+        //// cout << "final  t" << " i " << i <<"  " << T[i](0) <<"  "<< T[i](1) <<"  "<< T[i](2) << endl;
     }
     for (int i = 0; i < (int)sfm_f.size(); i++)
     {
