@@ -2,3 +2,6 @@
     <include file="$(find test)/launch/camera.launch"/>
     <node pkg="test" type="vins_mobile_node" name="vins_mobile_node" output="screen"/>
 </launch>
+
+<!-- gdb 함께 실행하기 -->
+<!-- </launch-prefix="gdb -ex run args"/> -->
