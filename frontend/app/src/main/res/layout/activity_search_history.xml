@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fitsSystemWindows="true">
+
+    <!-- 검색창 컨테이너 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/search_bar_container"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 뒤로가기 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/back_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+
+            app:iconTint="@color/black"
+            app:backgroundTint="@color/white"
+            app:rippleColor="@color/white"
+            android:contentDescription="뒤로가기"
+            style="@style/Widget.Material3.Button.Icon"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- 검색창 (Material3 SearchBar 사용) -->
+        <com.google.android.material.search.SearchBar
+            android:id="@+id/search"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="검색..."
+            app:strokeWidth="0dp"
+            app:hintTextColor="@color/white"
+            app:layout_constraintStart_toEndOf="@id/back_button"
+            app:layout_constraintEnd_toStartOf="@id/voice_input"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- 음성 검색 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/voice_input"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:icon="@android:drawable/ic_btn_speak_now"
+            app:iconTint="@color/black"
+            app:iconSize="30dp"
+            app:backgroundTint="@color/white"
+            app:rippleColor="@color/white"
+            android:contentDescription="음성 검색"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

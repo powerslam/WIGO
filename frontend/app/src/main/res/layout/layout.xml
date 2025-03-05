@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    android:padding="10dp"
+    android:background="#F4FFC3"
+    >
+
+    <!-- 왼쪽 이미지 -->
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/preview_image"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_launcher_background"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 건물 이름 (왼쪽 정렬 + 적당한 간격 유지) -->
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/position_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="건물 이름이 나타날 곳 입니다"
+        android:textAlignment="viewStart"
+        android:gravity="start"
+        android:textSize="20sp"
+        android:layout_marginStart="10dp"
+        app:layout_constraintStart_toEndOf="@+id/preview_image"
+        app:layout_constraintEnd_toStartOf="@+id/status_image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/position_description" />
+
+    <!-- 세부 설명 (왼쪽 정렬 + 적당한 간격 유지) -->
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/position_description"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="세부 설명이 작성 될 위치 입니다."
+        android:textAlignment="viewStart"
+        android:gravity="start"
+        android:textSize="15sp"
+        android:layout_marginStart="10dp"
+        app:layout_constraintStart_toEndOf="@+id/preview_image"
+        app:layout_constraintEnd_toStartOf="@+id/status_image"
+        app:layout_constraintTop_toBottomOf="@id/position_name"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 오른쪽 이미지 -->
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/status_image"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

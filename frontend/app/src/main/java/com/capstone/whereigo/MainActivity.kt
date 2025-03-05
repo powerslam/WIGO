@@ -1,20 +1,37 @@
 package com.capstone.whereigo
 
+import android.R
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import com.capstone.whereigo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        val binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        val searchBar = binding.searchBar
+        val menuButton = binding.menuButton
+
+        // 예제 데이터 (최근 검색어 + 연관 검색어)
+        val searchHistory = listOf(
+            "미래관", "북악관", "과학관", "예술관", "공학관",
+            "성곡 도서관", "아무거나", "편의점 택배",
+            "스타벅스 메뉴", "스타벅스 아메리카노"
+        )
+
+        var searchAdapter =
+            ArrayAdapter(this, R.layout.simple_list_item_activated_1, searchHistory)
+        searchBar.setAdapter(searchAdapter)
+
+        // 리스트 중 하나 선택 시
+        searchBar.setOnItemClickListener { _, _, position, _ ->
+            val selectedText = searchAdapter.getItem(position)
+            searchBar.setText(selectedText)
         }
+
     }
 }
