@@ -47,6 +47,8 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
     cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     cv::Mat image = cv_ptr->image;
 
+    cv::resize(image, image, cv::Size(480, 640));
+
     if(isCapturing){
         //NSLog(@"image processing");
         float lowPart = image.at<float>(0,0);  //modify opencv library, timestamp was stored at index 0,0
@@ -54,7 +56,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
         //image.at<float>(0,0) = image.at<float>(1,0);
         //image.at<float>(0,1) = image.at<float>(1,1);
         shared_ptr<IMG_MSG> img_msg(new IMG_MSG());
-        //cout << (videoCamera->grayscaleMode) << endl;
+        //// cout << (videoCamera->grayscaleMode) << endl;
         //img_msg->header = [[NSDate date] timeIntervalSince1970];
         // img_msg->header = ros::Time::now().toSec();
         float Group[2];
@@ -222,6 +224,9 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
             cv::cvtColor(down_origin_image, down_origin_image, CV_BGRA2RGB);
             cv::flip(down_origin_image,down_origin_image,0);
             cv::Mat imageROI;
+
+            ROS_INFO("%d %d %d %d", 10,COL - down_origin_image.rows- 10, down_origin_image.cols,down_origin_image.rows);
+
             imageROI = tmp2(cv::Rect(10,COL - down_origin_image.rows- 10, down_origin_image.cols,down_origin_image.rows));
             cv::Mat mask;
             cv::cvtColor(down_origin_image, mask, CV_RGB2GRAY);
@@ -250,9 +255,13 @@ void VINSMobileNode::imuStartUpdate(const sensor_msgs::ImuConstPtr& msg){
     shared_ptr<IMU_MSG> imu_msg(new IMU_MSG());
     imu_msg->header = msg->header.stamp.toSec();
 
-    imu_msg->acc << -msg->linear_acceleration.x * GRAVITY,
-    -msg->linear_acceleration.y * GRAVITY,
-    -msg->linear_acceleration.z * GRAVITY;
+    // imu_msg->acc << -msg->linear_acceleration.x * GRAVITY,
+    // -msg->linear_acceleration.y * GRAVITY,
+    // -msg->linear_acceleration.z * GRAVITY;
+
+    imu_msg->acc << msg->linear_acceleration.x,
+    msg->linear_acceleration.y,
+    msg->linear_acceleration.z;
 
     imu_msg->gyr << msg->angular_velocity.x,
     msg->angular_velocity.y,
@@ -304,7 +313,7 @@ vector<IMU_MSG_LOCAL> VINSMobileNode::getImuMeasurements(double header){
 std::vector<std::pair<std::vector<ImuConstPtr>, ImgConstPtr>>
 VINSMobileNode::getMeasurements()
 {
-    // printf("enter\n");
+    // // printf("enter\n");
     std::vector<std::pair<std::vector<ImuConstPtr>, ImgConstPtr>> measurements;
     while (true)
     {
@@ -313,13 +322,13 @@ VINSMobileNode::getMeasurements()
         
         if (!(imu_msg_buf.back()->header > img_msg_buf.front()->header))
         {
-            ROS_INFO("wait for imu, only should happen at the beginning");
+            // ROS_INFO("wait for imu, only should happen at the beginning");
             return measurements;
         }
         
         if (!(imu_msg_buf.front()->header < img_msg_buf.front()->header))
         {
-            ROS_INFO("throw img, only should happen at the beginning");
+            // ROS_INFO("throw img, only should happen at the beginning");
             img_msg_buf.pop();
             continue;
         }
@@ -368,7 +377,7 @@ void VINSMobileNode::process(){
     // con.wait(lk, [&]
     //     {
     //         measurements = getMeasurements();
-    //         printf("measurements size : %d", measurements.size());
+    //         // printf("measurements size : %d", measurements.size());
     //         return measurements.size() != 0;
     //     });
     // lk.unlock();
@@ -396,9 +405,12 @@ void VINSMobileNode::process(){
         
         double time_now = ros::Time::now().toSec();
         double time_vins = vins.Headers[WINDOW_SIZE];
-        ROS_INFO("vins delay %lf", time_now - time_vins);
+        // ROS_INFO("vins delay %lf", time_now - time_vins);
         
         //update feature position for front-end
+        // 최적화는 이미 process에서 수행함
+        // 이 과정은 단순히 다른 쓰레드에서 사용할 수 있도록 하기 위함 
+        // 특징점 위치와 상태 정보 업데이트 (초기화 단계를 지난 경우에만)
         if(vins.solver_flag == vins.NON_LINEAR)
         {
             m_depth_feedback.lock();
@@ -513,7 +525,7 @@ void VINSMobileNode::process(){
                         KeyFrame* cur_kf = keyframe_database.getKeyframe(vins.front_pose.cur_index);
                         if (abs(vins.front_pose.relative_yaw) > 30.0 || vins.front_pose.relative_t.norm() > 10.0)
                         {
-                            printf("Wrong loop\n");
+                            // printf("Wrong loop\n");
                             cur_kf->removeLoop();
                             break;
                         }
@@ -601,17 +613,17 @@ void VINSMobileNode::loop_thread(){
             vector<cv::Point2f> cur_pts;
             vector<cv::Point2f> old_pts;
             cur_kf->extractBrief(current_image);
-            printf("loop extract %d feature\n", cur_kf->keypoints.size());
+            // printf("loop extract %d feature\n", cur_kf->keypoints.size());
             loop_succ = loop_closure->startLoopClosure(cur_kf->keypoints, cur_kf->descriptors, cur_pts, old_pts, old_index);
             if(loop_succ)
             {
                 KeyFrame* old_kf = keyframe_database.getKeyframe(old_index);
                 if (old_kf == NULL)
                 {
-                    printf("NO such %dth frame in keyframe_database\n", old_index);
+                    // printf("NO such %dth frame in keyframe_database\n", old_index);
                     assert(false);
                 }
-                printf("loop succ with %drd image\n", old_index);
+                // printf("loop succ with %drd image\n", old_index);
                 assert(old_index!=-1);
                 
                 Vector3d T_w_i_old;
@@ -637,8 +649,8 @@ void VINSMobileNode::loop_thread(){
                     retrive_data.features_ids = features_id;
                     vins.retrive_pose_data = (retrive_data);
                     
-                    //cout << "old pose " << T_w_i_old.transpose() << endl;
-                    //cout << "refinded pose " << T_w_i_refine.transpose() << endl;
+                    //// cout << "old pose " << T_w_i_old.transpose() << endl;
+                    //// cout << "refinded pose " << T_w_i_refine.transpose() << endl;
                     // add loop edge in current frame
                     cur_kf->detectLoop(old_index);
                     keyframe_database.addLoop(old_index);
