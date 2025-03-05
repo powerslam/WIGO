@@ -7,6 +7,7 @@
 //
 
 #include "marginalization_factor.hpp"
+#include <ros/ros.h>
 
 void ResidualBlockInfo::Evaluate()
 {
@@ -39,18 +40,33 @@ void ResidualBlockInfo::Evaluate()
     //    }
     //}
     //Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes(tmp);
-    //std::cout << saes.eigenvalues() << std::endl;
+    //std::// cout << saes.eigenvalues() << std::endl;
     //ROS_ASSERT(saes.eigenvalues().minCoeff() >= -1e-6);
     
     if (loss_function)
     {
         double residual_scaling_, alpha_sq_norm_;
         
-        double sq_norm, rho[3];
+        double sq_norm, rho[3] = {0, 0, 0};
         
         sq_norm = residuals.squaredNorm();
-        loss_function->Evaluate(sq_norm, rho);
-        //printf("sq_norm: %f, rho[0]: %f, rho[1]: %f, rho[2]: %f\n", sq_norm, rho[0], rho[1], rho[2]);
+        // ROS_INFO_STREAM("sq_norm : " << sq_norm << ", is nullptr? : " << loss_function);
+        // std::string loss_function_type = typeid(*loss_function).name();
+        // assert(false);
+        // ROS_INFO_STREAM("plz : " << loss_function_type.size() << std::flush);
+    
+        try{
+            const double sum = 1.0 + sq_norm * 1.0;
+            const double inv = 1.0 / sum;
+
+            // ROS_INFO_STREAM((1.0 * log(sum)) << ", " << std::max(std::numeric_limits<double>::min(), inv) << ", " << (-1.0 * (inv * inv)));
+
+            loss_function->Evaluate(sq_norm, rho);
+            // assert(false);
+        } catch (const std::exception &e) {
+            ROS_ERROR_STREAM("Exception in typeid: " << e.what());
+        }
+        // printf("sq_norm: %f, rho[0]: %f, rho[1]: %f, rho[2]: %f\n", sq_norm, rho[0], rho[1], rho[2]);
         
         double sqrt_rho1_ = sqrt(rho[1]);
         
@@ -78,7 +94,7 @@ void ResidualBlockInfo::Evaluate()
 
 MarginalizationInfo::~MarginalizationInfo()
 {
-    printf("release marginlizationinfo\n");
+    ROS_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@release marginlizationinfo@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     
     for (auto it = parameter_block_data.begin(); it != parameter_block_data.end(); ++it)
         delete it->second;
@@ -201,7 +217,7 @@ void MarginalizationInfo::marginalize()
     
     n = pos - m;
     
-    printf("marginalization, pos: %d, m: %d, n: %d, size: %d", pos, m, n, (int)parameter_block_idx.size());
+    // printf("marginalization, pos: %d, m: %d, n: %d, size: %d", pos, m, n, (int)parameter_block_idx.size());
     
     Eigen::MatrixXd A(pos, pos);
     Eigen::VectorXd b(pos);
@@ -253,7 +269,7 @@ void MarginalizationInfo::marginalize()
         int ret = pthread_create( &tids[i], NULL, ThreadsConstructA ,(void*)&(threadsstruct[i]));
         if (ret != 0)
         {
-            printf("pthread_create error\n");
+            // printf("pthread_create error\n");
             assert(false);
         }
     }
@@ -273,7 +289,7 @@ void MarginalizationInfo::marginalize()
     //ROS_ASSERT_MSG(saes.eigenvalues().minCoeff() >= -1e-4, "min eigenvalue %f", saes.eigenvalues().minCoeff());
     
     Eigen::MatrixXd Amm_inv = saes.eigenvectors() * Eigen::VectorXd((saes.eigenvalues().array() > eps).select(saes.eigenvalues().array().inverse(), 0)).asDiagonal() * saes.eigenvectors().transpose();
-    //printf("error1: %f\n", (Amm * Amm_inv - Eigen::MatrixXd::Identity(m, m)).sum());
+    //// printf("error1: %f\n", (Amm * Amm_inv - Eigen::MatrixXd::Identity(m, m)).sum());
     
     Eigen::VectorXd bmm = b.segment(0, m);
     Eigen::MatrixXd Amr = A.block(0, m, m, n);
@@ -292,10 +308,10 @@ void MarginalizationInfo::marginalize()
     
     linearized_jacobians = S_sqrt.asDiagonal() * saes2.eigenvectors().transpose();
     linearized_residuals = S_inv_sqrt.asDiagonal() * saes2.eigenvectors().transpose() * b;
-    //std::cout << A << std::endl
+    //std::// cout << A << std::endl
     //          << std::endl;
-    //std::cout << linearized_jacobians << std::endl;
-    //printf("error2: %f %f\n", (linearized_jacobians.transpose() * linearized_jacobians - A).sum(),
+    //std::// cout << linearized_jacobians << std::endl;
+    //// printf("error2: %f %f\n", (linearized_jacobians.transpose() * linearized_jacobians - A).sum(),
     //      (linearized_jacobians.transpose() * linearized_residuals - b).sum());
 }
 
@@ -329,19 +345,19 @@ MarginalizationFactor::MarginalizationFactor(MarginalizationInfo* _marginalizati
         mutable_parameter_block_sizes()->push_back(it);
         cnt += it;
     }
-    //printf("residual size: %d, %d\n", cnt, n);
+    //// printf("residual size: %d, %d\n", cnt, n);
     set_num_residuals(marginalization_info->n);
 };
 
 bool MarginalizationFactor::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const
 {
-    //printf("internal addr,%d, %d\n", (int)parameter_block_sizes().size(), num_residuals());
+    //// printf("internal addr,%d, %d\n", (int)parameter_block_sizes().size(), num_residuals());
     //for (int i = 0; i < static_cast<int>(keep_block_size.size()); i++)
     //{
-    //    //printf("unsigned %x\n", reinterpret_cast<unsigned long>(parameters[i]));
-    //    //printf("signed %x\n", reinterpret_cast<long>(parameters[i]));
-    //printf("jacobian %x\n", reinterpret_cast<long>(jacobians));
-    //printf("residual %x\n", reinterpret_cast<long>(residuals));
+    //    //// printf("unsigned %x\n", reinterpret_cast<unsigned long>(parameters[i]));
+    //    //// printf("signed %x\n", reinterpret_cast<long>(parameters[i]));
+    //// printf("jacobian %x\n", reinterpret_cast<long>(jacobians));
+    //// printf("residual %x\n", reinterpret_cast<long>(residuals));
     //}
     int n = marginalization_info->n;
     int m = marginalization_info->m;
