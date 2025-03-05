@@ -25,7 +25,7 @@ bool setGlobalParam(DeviceType device)
 {
     switch (device) {
         case iPhone7P:
-            printf("Device iPhone7 plus param\n");
+            // printf("Device iPhone7 plus param\n");
             FOCUS_LENGTH_X = 526.600;
             FOCUS_LENGTH_Y = 526.678;
             PX = 243.481;
@@ -41,7 +41,7 @@ bool setGlobalParam(DeviceType device)
             break;
             
         case iPhone7:
-            printf("Device iPhone7 param\n");
+            // printf("Device iPhone7 param\n");
             FOCUS_LENGTH_X = 526.958;
             FOCUS_LENGTH_Y = 527.179;
             PX = 244.473;
@@ -57,7 +57,7 @@ bool setGlobalParam(DeviceType device)
             break;
             
         case iPhone6s:
-            printf("Device iPhone6s param\n");
+            // printf("Device iPhone6s param\n");
             FOCUS_LENGTH_Y = 549.477;
             PY = 320.379;
             FOCUS_LENGTH_X = 548.813;
@@ -73,7 +73,7 @@ bool setGlobalParam(DeviceType device)
             break;
             
         case iPhone6sP:
-            printf("Device iPhone6sP param\n");
+            // printf("Device iPhone6sP param\n");
             FOCUS_LENGTH_X = 547.565;
             FOCUS_LENGTH_Y = 547.998;
             PX = 239.033;
@@ -90,7 +90,7 @@ bool setGlobalParam(DeviceType device)
             break;
             
         case iPadPro97:
-            printf("Device ipad97 param\n");
+            // printf("Device ipad97 param\n");
             FOCUS_LENGTH_X = 547.234;
             FOCUS_LENGTH_Y = 547.464;
             PX = 241.549;
@@ -107,7 +107,7 @@ bool setGlobalParam(DeviceType device)
             break;
             
         case iPadPro129:
-            printf("Device iPad129 param\n");
+            // printf("Device iPad129 param\n");
             FOCUS_LENGTH_X = 547.234;
             FOCUS_LENGTH_Y = 547.464;
             PX = 241.549;
@@ -124,6 +124,23 @@ bool setGlobalParam(DeviceType device)
             break;
 
         case unDefine:
+            // MH01, MH03
+            // FOCUS_LENGTH_X = 458.654;
+            // FOCUS_LENGTH_Y = 457.296;
+            // PX = 367.215;
+            // PY = 248.375;
+            
+            // SOLVER_TIME = 0.06;
+            // FREQ = 30;
+            
+            // //extrinsic param
+            // TIC_X = -0.0216401454975;
+            // TIC_Y = -0.064676986768;
+            // TIC_Z = 0.00981073058949;
+            // return true;
+            // break;
+            
+            // plz
             FOCUS_LENGTH_X = 619.802462;
             FOCUS_LENGTH_Y = 619.556957;
             PX = 320.315301;
