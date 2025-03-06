@@ -10,14 +10,14 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/img"
         android:scaleType="centerCrop"/>
 
     <!-- 검색창 컨테이너 -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginVertical="50dp"
         app:cardCornerRadius="25dp"
         app:cardElevation="8dp"
         app:cardBackgroundColor="@color/surface_bright"
@@ -78,7 +78,7 @@
                 app:iconGravity="top"
                 app:iconSize="30dp"
                 app:iconTint="@color/on_surface"
-                app:rippleColor="@color/outline" />
+                app:rippleColor="@color/outline"/>
 
         </LinearLayout>
 

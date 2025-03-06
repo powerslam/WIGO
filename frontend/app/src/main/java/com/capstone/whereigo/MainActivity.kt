@@ -1,16 +1,20 @@
 package com.capstone.whereigo
 
 import android.R
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.capstone.whereigo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityMainBinding.inflate(layoutInflater)
+        enableEdgeToEdge()
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         val searchBar = binding.searchBar
@@ -31,6 +35,11 @@ class MainActivity : AppCompatActivity() {
         searchBar.setOnItemClickListener { _, _, position, _ ->
             val selectedText = searchAdapter.getItem(position)
             searchBar.setText(selectedText)
+        }
+
+        menuButton.setOnClickListener {
+            val intent = Intent(this, DownloadActivity::class.java)
+            startActivity(intent)
         }
 
     }
