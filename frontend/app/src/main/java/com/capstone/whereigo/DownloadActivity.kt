@@ -1,30 +1,29 @@
-package com.example.test_map
+package com.capstone.whereigo
 
-import ItemSpacingDecoration
-import MapDataAdapter
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.capstone.whereigo.R
+import com.capstone.whereigo.databinding.ActivityDownloadBinding
 import java.io.File
 
 class DownloadActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityDownloadBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_download)
+        binding = ActivityDownloadBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         //default
 
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        val toolbar = binding.toolbar
 
-        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+        val recyclerView = binding.recyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         val sampleData = mutableListOf(

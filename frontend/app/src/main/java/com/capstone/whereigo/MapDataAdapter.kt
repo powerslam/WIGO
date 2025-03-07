@@ -1,32 +1,31 @@
+package com.capstone.whereigo
+
 import android.app.AlertDialog
 import android.content.Context
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
-import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
-import com.example.test_map.MapData
-import com.example.test_map.R
+import com.capstone.whereigo.databinding.ItemMapDataBinding
 
 class MapDataAdapter(
     private val context: Context,
     private val mapList: MutableList<MapData> // 리스트를 MutableList로 변경 (삭제를 위해)
 ) : RecyclerView.Adapter<MapDataAdapter.ViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val fileName: TextView = view.findViewById(R.id.tvFileName)
-        val fileSize: TextView = view.findViewById(R.id.tvFileSize)
-        val saveDate: TextView = view.findViewById(R.id.tvDate)
-        val btnFavorite: ImageButton = view.findViewById(R.id.btnFavorite)
-        val btnDelete: ImageButton = view.findViewById(R.id.btnDelete)
+    // ViewHolder에서 ViewBinding을 사용
+    class ViewHolder(private val binding: ItemMapDataBinding) : RecyclerView.ViewHolder(binding.root) {
+        val fileName = binding.tvFileName
+        val fileSize = binding.tvFileSize
+        val saveDate = binding.tvDate
+        val btnFavorite = binding.btnFavorite
+        val btnDelete = binding.btnDelete
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_map_data, parent, false)
-        return ViewHolder(view)
+        val binding = ItemMapDataBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -51,17 +50,9 @@ class MapDataAdapter(
                     notifyItemRangeChanged(position, mapList.size)  // 삭제된 이후의 아이템 position을 갱신
                     Toast.makeText(context, "${mapData.fileName}이 삭제되었습니다.", Toast.LENGTH_SHORT).show()
                 }
-//                setPositiveButton("삭제") { _, _ ->
-//                    // 리스트에서 삭제 후 RecyclerView 갱신
-//                    mapList.removeAt(position)
-//                    notifyItemRemoved(position)
-//                    Toast.makeText(context, "${mapData.fileName}이 삭제되었습니다.", Toast.LENGTH_SHORT).show()
-//                }
                 setNegativeButton("취소", null)
                 show()
             }
-
-
         }
 
         // 즐겨찾기 버튼 클릭 이벤트
@@ -84,21 +75,3 @@ class MapDataAdapter(
 
     override fun getItemCount() = mapList.size
 }
-
-//data 위치 찾는 코드
-//holder.btnDelete.setOnClickListener {
-//    AlertDialog.Builder(context).apply {
-//        setTitle("삭제 확인")
-//        setMessage("${mapData.fileName}을(를) 삭제하시겠습니까?")
-//        setPositiveButton("삭제") { _, _ ->
-//            val index = mapList.indexOfFirst { it.fileName == mapData.fileName }
-//            if (index != -1) {
-//                mapList.removeAt(index)
-//                notifyItemRemoved(index)
-//                Toast.makeText(context, "${mapData.fileName}이 삭제되었습니다.", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//        setNegativeButton("취소", null)
-//        show()
-//    }
-//}

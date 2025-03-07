@@ -1,13 +1,63 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Test_map" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Whereigo" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-        <item name="android:textViewStyle">@style/customTextViewFontStyle</item>
-        <item name="android:buttonStyle">@style/customButtonFontStyle</item>
-        <item name="android:editTextStyle">@style/customEditTextFontStyle</item>
-        <item name="android:radioButtonStyle">@style/customRadioButtonFontStyle</item>
-        <item name="android:checkboxStyle">@style/customCheckboxFontStyle</item>
+        <!-- 기본 색상 -->
+        <item name="android:colorBackground">@color/major</item>
+        <item name="android:textColorPrimary">@color/black</item>
+
+        <!-- Primary Colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+        <item name="colorPrimaryFixed">@color/primary_fixed</item>
+        <item name="colorPrimaryFixedDim">@color/primary_fixed_dim</item>
+        <item name="colorOnPrimaryFixed">@color/on_primary_fixed</item>
+
+        <!-- Secondary Colors -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <item name="colorSecondaryContainer">@color/secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_secondary_container</item>
+        <item name="colorSecondaryFixed">@color/secondary_fixed</item>
+        <item name="colorSecondaryFixedDim">@color/secondary_fixed_dim</item>
+        <item name="colorOnSecondaryFixed">@color/on_secondary_fixed</item>
+
+        <!-- Tertiary Colors -->
+        <item name="colorTertiary">@color/tertiary</item>
+        <item name="colorOnTertiary">@color/on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/on_tertiary_container</item>
+        <item name="colorTertiaryFixed">@color/tertiary_fixed</item>
+        <item name="colorTertiaryFixedDim">@color/tertiary_fixed_dim</item>
+        <item name="colorOnTertiaryFixed">@color/on_tertiary_fixed</item>
+
+        <!-- Error Colors -->
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+        <item name="colorErrorContainer">@color/error_container</item>
+        <item name="colorOnErrorContainer">@color/on_error_container</item>
+
+        <!-- Neutral Surface Colors -->
+        <item name="colorSurfaceDim">@color/surface_dim</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorSurfaceBright">@color/surface_bright</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+
+        <!-- Surface Containers -->
+        <item name="colorSurfaceContainerLowest">@color/surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/surface_container_highest</item>
+
+        <!-- Outline Colors -->
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline_variant</item>
+
+
     </style>
 
     <style name="Theme.Whereigo" parent="Base.Theme.Whereigo" />
