@@ -326,7 +326,7 @@ void vinsPnP::solve_ceres()
     options.trust_region_strategy_type = ceres::DOGLEG;
     options.use_explicit_schur_complement = true;
     options.minimizer_progress_to_stdout = false;
-    options.max_num_iterations = 5;
+    // options.max_num_iterations = 30; // ori: 5
     //options.use_nonmonotonic_steps = true;
     options.max_solver_time_in_seconds = 0.01;
     

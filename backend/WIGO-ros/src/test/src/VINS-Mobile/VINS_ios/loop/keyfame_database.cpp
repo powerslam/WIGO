@@ -159,7 +159,7 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
     //options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     //options.minimizer_progress_to_stdout = true;
-    options.max_num_iterations = 5;
+    // options.max_num_iterations = 30; // ori: 5
     ceres::Solver::Summary summary;
     ceres::LossFunction *loss_function;
     loss_function = new ceres::HuberLoss(1.0);
@@ -296,7 +296,8 @@ void KeyFrameDatabase::optimize4DoFLoopPoseGraph(int cur_index, Eigen::Vector3d 
     TS(t_global_loop);
     ceres::Solve(options, &problem, &summary);
     TE(t_global_loop);
-    // std::cout << summary.BriefReport() << "\n";
+
+    std::cout << "keyframe_database : " << summary.BriefReport() << "\n";
     
     i = 0;
     int seg_index_cur, seg_index_old;
