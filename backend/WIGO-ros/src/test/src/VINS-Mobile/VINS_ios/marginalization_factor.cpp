@@ -94,7 +94,7 @@ void ResidualBlockInfo::Evaluate()
 
 MarginalizationInfo::~MarginalizationInfo()
 {
-    ROS_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@release marginlizationinfo@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    // ROS_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@release marginlizationinfo@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     
     for (auto it = parameter_block_data.begin(); it != parameter_block_data.end(); ++it)
         delete it->second;

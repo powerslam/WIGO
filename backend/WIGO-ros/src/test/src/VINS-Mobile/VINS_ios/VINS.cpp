@@ -225,7 +225,7 @@ bool VINS::failureDetection()
     
     if (f_manager.last_track_num < 4)
     {
-        // printf("failure little feature %d\n", f_manager.last_track_num);
+        printf("failure little feature %d\n", f_manager.last_track_num);
         is_failure = true;
     }
     /*
@@ -237,18 +237,18 @@ bool VINS::failureDetection()
      */
     if (Bgs[WINDOW_SIZE].norm() > 1)
     {
-        // printf("failure  big IMU gyr bias estimation %f\n", Bgs[WINDOW_SIZE].norm());
+        printf("failure  big IMU gyr bias estimation %f\n", Bgs[WINDOW_SIZE].norm());
         is_failure = true;
     }
     Vector3d tmp_P = Ps[WINDOW_SIZE];
     if ((tmp_P - last_P).norm() > 1)
     {
-        // printf("failure big translation\n");
+        printf("failure big translation\n");
         is_failure = true;
     }
     if (abs(tmp_P.z() - last_P.z()) > 0.5)
     {
-        // printf("failure  big z translation\n");
+        printf("failure  big z translation\n");
         is_failure = true;
     }
     Matrix3d tmp_R = Rs[WINDOW_SIZE];
@@ -258,7 +258,7 @@ bool VINS::failureDetection()
     delta_angle = acos(delta_Q.w()) * 2.0 / 3.14 * 180.0;
     if (delta_angle > 40)
     {
-        // printf("failure  big delta_angle \n");
+        printf("failure  big delta_angle \n");
         is_failure = true;
     }
     
@@ -266,7 +266,7 @@ bool VINS::failureDetection()
     {
         failure_hand = false;
         is_failure = true;
-        // printf("failure by hand!\n");
+        printf("failure by hand!\n");
     }
     
     return is_failure;
@@ -314,7 +314,6 @@ void VINS::reInit()
 
 void VINS::update_loop_correction()
 {
-    ROS_INFO("HELLO?");
     //update loop correct pointcloud
     correct_point_cloud.clear();
     for (auto &it_per_id : f_manager.feature)
@@ -337,7 +336,6 @@ void VINS::update_loop_correction()
         Matrix3d correct_r = r_drift * Rs[i];
         correct_Rs[i] = correct_r.cast<float>();
     }
-    ROS_INFO("Bye~");
 }
 
 void VINS::processIMU(double dt, const Vector3d &linear_acceleration, const Vector3d &angular_velocity)
@@ -404,7 +402,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
     
     Headers[frame_count] = header;
     
-    ROS_INFO("solver_flag: %d", solver_flag);
+    // ROS_INFO("solver_flag: %d", solver_flag);
 
     if(solver_flag == INITIAL)
     {
@@ -417,6 +415,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
         {
             if(track_num < 20)
             {
+                ROS_INFO("track_num < 20");
                 clearState();
                 return;
             }
@@ -485,6 +484,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
         
         if (failureDetection())
         {
+            ROS_INFO("fail detection");
             failure_occur = 1;
             clearState();
             return;
@@ -502,7 +502,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
 
 void VINS::solve_ceres(int buf_num)
 {
-    ROS_INFO("VINS::solve_ceres");
+    // ROS_INFO("VINS::solve_ceres");
     ceres::Problem problem;
     ceres::LossFunction *loss_function;
     
@@ -531,7 +531,7 @@ void VINS::solve_ceres(int buf_num)
     //marginalization factor
     if (last_marginalization_info != nullptr)
     {
-        ROS_INFO("AAAAAAAAAAAA");
+        // ROS_INFO("AAAAAAAAAAAA");
         MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
         problem.AddResidualBlock(marginalization_factor, NULL,
                                  last_marginalization_parameter_blocks);
@@ -540,7 +540,7 @@ void VINS::solve_ceres(int buf_num)
     //IMU factor
     for (int i = 0; i < WINDOW_SIZE; i++)
     {
-        ROS_INFO("BBBBBBBBBBBBBBB");
+        // ROS_INFO("BBBBBBBBBBBBBBB");
         int j = i + 1;
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
@@ -673,7 +673,7 @@ void VINS::solve_ceres(int buf_num)
     options.trust_region_strategy_type = ceres::DOGLEG;
     options.use_explicit_schur_complement = true;
     options.minimizer_progress_to_stdout = false;
-    options.max_num_iterations = 10;
+    // options.max_num_iterations = 30; // ori: 10
     //options.use_nonmonotonic_steps = true;
     if(buf_num<2)
         options.max_solver_time_in_seconds = SOLVER_TIME;
@@ -686,9 +686,12 @@ void VINS::solve_ceres(int buf_num)
     //TE(prepare_solver);
     TS(ceres);
     // printf("solve\n");
+
     ceres::Solve(options, &problem, &summary);
     final_cost = summary.final_cost;
-    //// cout << summary.FullReport() << endl;
+    
+    ROS_INFO_STREAM("VINS : " << summary.FullReport());
+    
     TE(ceres);
     
     if(LOOP_CLOSURE)
@@ -722,7 +725,7 @@ void VINS::solve_ceres(int buf_num)
         MarginalizationInfo *marginalization_info = new MarginalizationInfo();
         old2new();
 
-        printf("!!!!!!!!!!!!last_marginalization_info : %p\n", last_marginalization_info);
+        // printf("!!!!!!!!!!!!last_marginalization_info : %p\n", last_marginalization_info);
         if (last_marginalization_info)
         {
             vector<int> drop_set;
@@ -815,7 +818,7 @@ void VINS::solve_ceres(int buf_num)
     //marginalize front
     else
     {
-        ROS_INFO_STREAM("marginalize front...");
+        // ROS_INFO_STREAM("marginalize front...");
         if (last_marginalization_info&&
             std::count(std::begin(last_marginalization_parameter_blocks), std::end(last_marginalization_parameter_blocks), para_Pose[WINDOW_SIZE - 1]))
         {
@@ -823,7 +826,7 @@ void VINS::solve_ceres(int buf_num)
             old2new();
             if (last_marginalization_info)
             {
-                ROS_INFO("last_marginalization_info");
+                // ROS_INFO("last_marginalization_info");
                 vector<int> drop_set;
                 for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
                 {
@@ -1208,11 +1211,11 @@ bool VINS::relativePose(int camera_id, Matrix3d &relative_R, Vector3d &relative_
  */
 void VINS::slideWindow()
 {
-    ROS_INFO("enter slidewindow(1207)");
+    // ROS_INFO("enter slidewindow(1207)");
     //marginalize old keyframe
     if (marginalization_flag == MARGIN_OLD)
     {
-        ROS_INFO("marginalization_flag(1211) : %d", MARGIN_OLD);
+        // ROS_INFO("marginalization_flag(1211) : %d", MARGIN_OLD);
         back_R0 = Rs[0];
         back_P0 = Ps[0];
         if (frame_count == WINDOW_SIZE)
@@ -1283,7 +1286,7 @@ void VINS::slideWindow()
     }
     else  //non keyframe
     {
-        ROS_INFO("marginalization_flag(1257) : %d", MARGIN_OLD);
+        // ROS_INFO("marginalization_flag(1257) : %d", MARGIN_OLD);
         if (frame_count == WINDOW_SIZE)
         {
             // ROS_INFO("process 1");

@@ -7,6 +7,8 @@
 //
 
 #include "initial_aligment.hpp"
+#include <ros/ros.h>
+
 void solveGyroscopeBias(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs)
 {
     Matrix3d A;
@@ -30,9 +32,10 @@ void solveGyroscopeBias(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs)
         b += tmp_A.transpose() * tmp_b;
         
     }
+
     delta_bg = A.ldlt().solve(b);
     // cout << " delta_bg ! " << delta_bg.transpose() << endl;
-    
+
     for (int i = 0; i <= WINDOW_SIZE; i++)
         Bgs[i] += delta_bg;
     
@@ -124,7 +127,9 @@ void RefineGravity(map<double, ImageFrame> &all_image_frame, Vector3d &g, Vector
         }
         A = A * 1000.0;
         b = b * 1000.0;
+
         x = A.ldlt().solve(b);
+
         VectorXd dg = x.segment<2>(n_state - 3);
         g0 = (g0 + lxly * dg).normalized() * G_NORM;
         //double s = x(n_state - 1);
@@ -205,6 +210,7 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
 
     A = A * 1000.0;
     b = b * 1000.0;
+
     x = A.ldlt().solve(b);
 
     double s = x(n_state - 1) / 100.0;
@@ -218,7 +224,7 @@ bool SolveScale(map<double, ImageFrame> &all_image_frame, Vector3d &g, VectorXd 
         return false;
     }
 
-    cout << "Result g     " << g.norm() << " " << g.transpose() << endl;
+    // cout << "Result g     " << g.norm() << " " << g.transpose() << endl;
 
     if (fabs(g.norm() - G_NORM) > G_THRESHOLD || s < 0) {
         return false;
