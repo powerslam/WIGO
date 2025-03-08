@@ -147,7 +147,7 @@ bool setGlobalParam(DeviceType device)
             PY = 241.293966;
             
             SOLVER_TIME = 0.06;
-            FREQ = 30;
+            FREQ = 3;
             
             //extrinsic param
             TIC_X = -0.325;
