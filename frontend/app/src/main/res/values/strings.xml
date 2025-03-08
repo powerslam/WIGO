@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">whereigo</string>
+    <string name="app_name">위고</string>
     <string name="app_title">다운로드 지도 목록</string>
     <string name="save_date">저장 일자 : %s</string>
     <string name="file_size">저장 용량 : %s</string>

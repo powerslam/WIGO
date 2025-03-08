@@ -1,4 +1,4 @@
-package com.example.test_map
+package com.capstone.whereigo
 
 data class MapData(
     val fileName: String,
