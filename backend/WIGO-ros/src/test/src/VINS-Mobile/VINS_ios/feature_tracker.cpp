@@ -6,6 +6,7 @@
 //  Copyright © 2017 HKUST Aerial Robotics. All rights reserved.
 //
 
+#include <ros/ros.h>
 #include "feature_tracker.hpp"
 
 int FeatureTracker::n_id = 0;
@@ -260,7 +261,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, cv::Mat &result, int _frame_
                 n_pts.clear();
                 TS(time_goodfeature);
                 //goodFeaturesToTrack(forw_img, n_pts, n_max_cnt, 0.10, MIN_DIST, mask, 3, false, 0.04);
-                goodFeaturesToTrack(forw_img, n_pts, n_max_cnt, 0.01, MIN_DIST, mask);
+                goodFeaturesToTrack(forw_img, n_pts, n_max_cnt, 0.10, MIN_DIST, mask);
                 TE(time_goodfeature);
             }
             else
