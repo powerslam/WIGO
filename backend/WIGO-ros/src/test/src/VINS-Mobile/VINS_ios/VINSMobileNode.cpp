@@ -8,6 +8,8 @@ VINSMobileNode::VINSMobileNode():
 
     vins.setIMUModel();
     
+    this->loop_closure = nullptr;
+
     // /****************************************Init all the thread****************************************/
     // _condition=[[NSCondition alloc] init];
     // mainLoop=[[NSThread alloc]initWithTarget:self selector:@selector(run) object:nil];
@@ -41,6 +43,11 @@ VINSMobileNode::VINSMobileNode():
     imu_sub = nh.subscribe("/handsfree/imu", 1, &VINSMobileNode::imuStartUpdate, this);
 
     init_status_pub = nh.advertise<std_msgs::Int16>("/init_status", 1);
+
+    this->loop_closure_thread = nh.createTimer(ros::Duration(2.0), &VINSMobileNode::loop_thread, this);
+    this->global_loop_closure_thread = nh.createTimer(ros::Duration(1.17), &VINSMobileNode::global_loop_thread, this);
+
+    frameSize = cv::Size(480, 640);
 }
 
 void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
@@ -74,6 +81,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
         //img_msg->header = lateast_imu_time;
         img_msg->header = msg->header.stamp.toSec();
         bool isNeedRotation = image.size() != frameSize;
+        // ROS_INFO("isNeedRotation : %d", isNeedRotation);
         
         cv::Mat gray;
         cv::cvtColor(image, gray, CV_RGBA2GRAY);
@@ -99,7 +107,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
         vector<double> track_len;
         bool vins_normal = (vins.solver_flag == VINS::NON_LINEAR);
         featuretracker.use_pnp = USE_PNP;
-        featuretracker.readImage(img_equa, img_with_feature,frame_cnt, good_pts, track_len, img_msg->header, pnp_P, pnp_R, vins_normal);
+        featuretracker.readImage(img_equa, img_with_feature, frame_cnt, good_pts, track_len, img_msg->header, pnp_P, pnp_R, vins_normal);
         TE(time_feature);
         
         //cvtColor(img_equa, img_equa, CV_GRAY2BGR);
@@ -144,103 +152,71 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
         }
 
         cv::imshow("hihi", image);
-        cv::waitKey(1);
 
         TS(visualize);
-        if(imageCacheEnabled)
-        {
+        if(imageCacheEnabled){
             //use aligned vins and image
-            if(!vins_pool.empty() && !image_pool.empty())
-            {
-                while(vins_pool.size() > 1)
-                {
+            if(!vins_pool.empty() && !image_pool.empty()){
+                while(vins_pool.size() > 1){
                     vins_pool.pop();
                 }
-                while(!image_pool.empty() && image_pool.front().header < vins_pool.front().header)
-                {
+                
+                while(!image_pool.empty() && image_pool.front().header < vins_pool.front().header){
                     image_pool.pop();
                 }
-                if(!vins_pool.empty() && !image_pool.empty())
-                {
+                
+                if(!vins_pool.empty() && !image_pool.empty()){
                     image = image_pool.front().image;
                     lateast_P = vins_pool.front().P;
                     lateast_R = vins_pool.front().R;
                 }
             }
-            else if(!image_pool.empty())
-            {
+
+            else if(!image_pool.empty()){
                 if(image_pool.size() > 10)
                     image_pool.pop();
             }
         }
-        if(USE_PNP)
-        {
+
+        if(USE_PNP){
             lateast_P = pnp_P.cast<float>();
             lateast_R = pnp_R.cast<float>();
         }
-        if(vins.solver_flag != VINS::NON_LINEAR)  //show image and AR
-        {
-            cv::Mat tmp2;
-            if(vins.solver_flag == VINS::NON_LINEAR)
-            {
-                cv::Mat tmp;
-                vins.drawresult.startInit = true;
-                vins.drawresult.drawAR(vins.imageAI, vins.correct_point_cloud, lateast_P, lateast_R);
-                
-                cv::cvtColor(image, tmp, CV_RGBA2BGR);
-                cv::Mat mask;
-                cv::Mat imageAI = vins.imageAI;
-                if(!imageAI.empty())
-                    cv::cvtColor(imageAI, mask, CV_RGB2GRAY);
-                imageAI.copyTo(tmp,mask);
-                cv::cvtColor(tmp, image, CV_BGRA2BGR);
-            }
-            if(VINS_DEBUG_MODE)
-            {
-                cv::flip(lateast_equa, image, -1);
-            }
-            else
-            {
-                cv::flip(image,tmp2,-1);
-                image = tmp2;
-                if(vins.solver_flag != VINS::NON_LINEAR)
-                    cv::cvtColor(image, image, CV_RGBA2BGR);
-            }
-        }
-        else //show VINS
-        {
-            if(vins.solver_flag == VINS::NON_LINEAR)
-            {
-                vins.drawresult.pose.clear();
-                vins.drawresult.pose = keyframe_database.refine_path;
-                vins.drawresult.segment_indexs = keyframe_database.segment_indexs;
-                // vins.drawresult.Reprojection(vins.image_show, vins.correct_point_cloud, vins.correct_Rs, vins.correct_Ps, box_in_trajectory);
-                vins.drawresult.Reprojection(vins.image_show, vins.correct_point_cloud, vins.correct_Rs, vins.correct_Ps, true);
-            }
+
+        if(vins.solver_flag == VINS::NON_LINEAR){
+            vins.drawresult.pose.clear();
+            vins.drawresult.pose = keyframe_database.refine_path;
+            vins.drawresult.segment_indexs = keyframe_database.segment_indexs;
+            // vins.drawresult.Reprojection(vins.image_show, vins.correct_point_cloud, vins.correct_Rs, vins.correct_Ps, box_in_trajectory);
+            vins.drawresult.Reprojection(vins.image_show, vins.correct_point_cloud, vins.correct_Rs, vins.correct_Ps, false);
+        
             cv::Mat tmp2 = vins.image_show;
             
             cv::Mat down_origin_image;
-            cv::resize(image.t(), down_origin_image, cv::Size(200, 150));
+            cv::resize(image, down_origin_image, cv::Size(200, 150));
             cv::cvtColor(down_origin_image, down_origin_image, CV_BGRA2RGB);
-            cv::flip(down_origin_image,down_origin_image,0);
+
             cv::Mat imageROI;
-
-            ROS_INFO("%d %d %d %d", 10,COL - down_origin_image.rows- 10, down_origin_image.cols,down_origin_image.rows);
-
-            imageROI = tmp2(cv::Rect(10,COL - down_origin_image.rows- 10, down_origin_image.cols,down_origin_image.rows));
+            imageROI = tmp2(cv::Rect(10, COL - down_origin_image.rows - 10, down_origin_image.cols, down_origin_image.rows));
+       
             cv::Mat mask;
             cv::cvtColor(down_origin_image, mask, CV_RGB2GRAY);
+
             down_origin_image.copyTo(imageROI, mask);
-            
-            
             cv::cvtColor(tmp2, image, CV_BGRA2BGR);
-            cv::flip(image,tmp2,1);
-            if (isNeedRotation)
+
+            if (isNeedRotation){
                 image = tmp2.t();
+            }
+
+            cv::imshow("image", image);
         }
         
+        cv::waitKey(1);
         TE(visualize);
-    } else {
+    } 
+    
+    else {
         // Not capturing, means not started yet
         cv::cvtColor(image, image, CV_BGRA2RGB);
         cv::flip(image,image,-1);
@@ -268,6 +244,19 @@ void VINSMobileNode::imuStartUpdate(const sensor_msgs::ImuConstPtr& msg){
     msg->angular_velocity.z;
 
     lateast_imu_time = imu_msg->header;
+
+    // // 🎯 IMU 데이터 회전 적용 (X축 30도, Y축 45도, Z축 60도 회전)
+    // Vector3d rotation_vector(0, M_PI / 2, 0); // (30°, 45°, 60° in radians)
+    
+    // // 회전 변환 (Yaw-Pitch-Roll)
+    // AngleAxisd rollAngle(rotation_vector(0), Vector3d::UnitX());
+    // AngleAxisd pitchAngle(rotation_vector(1), Vector3d::UnitY());
+    // AngleAxisd yawAngle(rotation_vector(2), Vector3d::UnitZ());
+    // Matrix3d rotation_matrix = (yawAngle * pitchAngle * rollAngle).toRotationMatrix();
+
+    // // 가속도 및 각속도 회전 적용
+    // imu_msg->acc = rotation_matrix * imu_msg->acc;
+    // imu_msg->gyr = rotation_matrix * imu_msg->gyr;
 
     //img_msg callback
     {
@@ -498,7 +487,7 @@ void VINSMobileNode::process(){
                     if(vins.Headers[WINDOW_SIZE - 2] == image_buf_loop.front().second)
                     {
                         // TODO: library로 바꿀 때에는 사용 환경(ROS, android) 에 맞추어 값이 들어가도록 수정해야 함. 
-                        const char *pattern_file = "/home/foscar/capstone-2025-11/backend/test/src/VINS-Mobile/Resources/brief_pattern.yml";
+                        const char *pattern_file = "/home/foscar/capstone-2025-11/backend/WIGO-ros/src/test/src/VINS-Mobile/Resources/brief_pattern.yml";
                         KeyFrame* keyframe = new KeyFrame(vins.Headers[WINDOW_SIZE - 2], global_frame_cnt, T_w_i, R_w_i, image_buf_loop.front().first, pattern_file, keyframe_database.cur_seg_index);
                         keyframe->setExtrinsic(vins.tic, vins.ric);
                         /*
@@ -572,12 +561,14 @@ void VINSMobileNode::process(){
     init_status_pub.publish(pub_msg);
 }
 
-void VINSMobileNode::loop_thread(){
+void VINSMobileNode::loop_thread(const ros::TimerEvent&){
+    // ROS_INFO_STREAM("HI? - loop thread");
+
     if(LOOP_CLOSURE && loop_closure == NULL)
     {
         ROS_INFO("loop start load voc");
         TS(load_voc);
-        const char *voc_file = "/home/foscar/capstone-2025-11/backend/test/src/VINS-Mobile/Resources/brief_k10L6.bin";
+        const char *voc_file = "/home/foscar/capstone-2025-11/backend/WIGO-ros/src/test/src/VINS-Mobile/Resources/brief_k10L6.bin";
         loop_closure = new LoopClosure(voc_file, COL, ROW);
         TE(load_voc);
         
@@ -667,7 +658,9 @@ void VINSMobileNode::loop_thread(){
     // }
 }
 
-void VINSMobileNode::global_loop_thread(){
+void VINSMobileNode::global_loop_thread(const ros::TimerEvent&){
+    // ROS_INFO_STREAM("HI? - global loop thread");
+
     // while (![[NSThread currentThread] isCancelled])
     // {
         if(start_global_optimization)
