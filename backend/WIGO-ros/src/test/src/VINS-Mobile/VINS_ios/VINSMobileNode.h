@@ -162,6 +162,9 @@ public:
     bool vinsDataFinished = false;
     vector<IMU_MSG> gyro_buf;  // for Interpolation
 
+    ros::Timer loop_closure_thread;
+    ros::Timer global_loop_closure_thread;
+
     const bool LOOP_CLOSURE = true;
 
 public:
@@ -178,8 +181,8 @@ public:
     void processImage(const sensor_msgs::ImageConstPtr& msg);
     vector<IMU_MSG_LOCAL> getImuMeasurements(double header);
 
-    void loop_thread();
-    void global_loop_thread();
+    void loop_thread(const ros::TimerEvent&);
+    void global_loop_thread(const ros::TimerEvent&);
 };
 
 #endif
