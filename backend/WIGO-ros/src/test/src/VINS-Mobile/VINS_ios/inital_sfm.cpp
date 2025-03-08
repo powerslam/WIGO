@@ -1,4 +1,5 @@
 #include "inital_sfm.hpp"
+#include <ros/ros.h>
 
 GlobalSFM::GlobalSFM(){}
 
@@ -278,14 +279,18 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
         
     }
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.linear_solver_type = ceres::DENSE_SCHUR; // SPARSE_SCHUR
     //options.minimizer_progress_to_stdout = true;
     options.max_solver_time_in_seconds = 0.3;
     ceres::Solver::Summary summary;
+    ROS_INFO("@@@@ solve 4 start @@@@");
     ceres::Solve(options, &problem, &summary);
-    // std::cout << summary.BriefReport() << "\n";
-    if (summary.termination_type == ceres::CONVERGENCE || summary.final_cost < 3e-03)
+    ROS_INFO("@@@@ solve 4 end @@@@");
+
+    std::cout << summary.BriefReport() << "\n";
+    if (summary.termination_type == ceres::CONVERGENCE || summary.final_cost < 3e-03){
         cout << "vision only BA converge" << endl;
+    }
     else
     {
         cout << "vision only BA not converge " << endl;
