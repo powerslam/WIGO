@@ -1,23 +1,32 @@
 <resources>
     <string name="app_name">위고</string>
+
     <string name="download_title">다운로드 지도 목록</string>
+    <string name="setting_title">설정</string>
+
     <string name="save_date">저장 일자 : %s</string>
     <string name="file_size">저장 용량 : %s</string>
     <string name="searchbar_hint">검색...</string>
     <string name="fab_content_desc">메뉴 버튼</string>
 
     <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
+    <string name="header_sound">소리</string>
 
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
+    <!-- Viberation Preferences -->
+    <string name="title_viberation">진동</string>
+    <string name="summary_on_viberation">진동 꺼짐</string>
+    <string name="summary_off_viberation">진동 켜짐</string>
 
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <!-- Sound Level Preferences -->
+    <string name="title_sound_level">음량 조절</string>
+    <string name="summary_sound_level">음량을 조절합니다.</string>
+
+    <!-- Preference Titles -->
+    <string name="header_map">지도</string>
+
+    <!-- Viberation Preferences -->
+    <string name="title_save_location">SD 카드에 저장하기</string>
+    <string name="summary_on_save_location">내부 저장소</string>
+    <string name="summary_off_save_location">SD 카드 저장소</string>
+
 </resources>
