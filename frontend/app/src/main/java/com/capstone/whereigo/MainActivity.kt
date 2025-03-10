@@ -1,12 +1,12 @@
 package com.capstone.whereigo
 
-import android.R
-import android.content.Intent
 import android.os.Bundle
-import android.widget.ArrayAdapter
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.capstone.whereigo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -14,36 +14,46 @@ class MainActivity : AppCompatActivity() {
     private var backPressedTime: Long = 0
     private val backPressInterval: Long = 2000 // 2초 이내에 두 번 눌러야 종료됨
 
+    private val searchSuggestions = listOf("서울", "부산", "대구", "전주", "경기도")
+    private val searchResults = listOf("서울 랜드마크", "부산 해운대", "대구 수목원", "전주 한옥마을", "경기도 관광지")
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val searchBar = binding.searchBar
-        val menuButton = binding.menuButton
+        var searchBar = binding.searchBar
+        var searchView = binding.searchView
+        searchView.setupWithSearchBar(searchBar)
 
-        // 예제 데이터 (최근 검색어 + 연관 검색어)
-        val searchHistory = listOf(
-            "미래관", "북악관", "과학관", "예술관", "공학관",
-            "성곡 도서관", "아무거나", "편의점 택배",
-            "스타벅스 메뉴", "스타벅스 아메리카노"
-        )
+        searchBar.inflateMenu(R.menu.search_menu)
+        searchView.editText.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = searchView.text.toString()
+                Toast.makeText(this, query, Toast.LENGTH_SHORT).show()
+                true
+            } else {
+                false
+            }
+        }
+        // 예측 결과 RecyclerView 설정
+        val suggestionsAdapter = SearchSuggestionsAdapter(searchSuggestions)
+        binding.searchResult.layoutManager = LinearLayoutManager(this)
+        binding.searchResult.adapter = suggestionsAdapter
 
-        var searchAdapter =
-            ArrayAdapter(this, R.layout.simple_list_item_activated_1, searchHistory)
-        searchBar.setAdapter(searchAdapter)
-
-        // 리스트 중 하나 선택 시
-        searchBar.setOnItemClickListener { _, _, position, _ ->
-            val selectedText = searchAdapter.getItem(position)
-            searchBar.setText(selectedText)
+        // 검색어 예측 기능
+        searchView.editText.addTextChangedListener { text ->
+            if (text != null && text.isNotEmpty()) {
+                val filteredSuggestions = searchSuggestions.filter { it.contains(text, ignoreCase = true) }
+                suggestionsAdapter.updateSuggestions(filteredSuggestions)
+            } else {
+                suggestionsAdapter.updateSuggestions(searchSuggestions) // 초기 상태로 되돌리기
+            }
         }
 
-        menuButton.setOnClickListener {
-            val intent = Intent(this, DownloadActivity::class.java)
-            startActivity(intent)
-        }
+
 
     }
     override fun onBackPressed() {

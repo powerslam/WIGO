@@ -4,73 +4,147 @@
     <color name="black">#FF000000</color> <!-- 순수한 검정색, 주로 텍스트나 배경 등에 사용 -->
     <color name="white">#FFFFFFFF</color> <!-- 순수한 흰색, 배경 또는 대비 요소로 사용 -->
 
-    <!-- Primary Colors (앱의 주요 색상) -->
-    <color name="primary">#096B5A</color> <!-- 앱의 대표 색상 (주 버튼, 액션 요소 등) -->
-    <color name="on_primary">#FFFFFF</color> <!-- Primary 배경 위에서의 텍스트 및 아이콘 색상 -->
-    <color name="primary_container">#A1F2DB</color> <!-- Primary 색상이 포함된 배경 (버튼 컨테이너 등) -->
-    <color name="on_primary_container">#00201A</color> <!-- Primary 컨테이너 위 텍스트 및 아이콘 색상 -->
-    <color name="primary_fixed">#A1F2DD</color> <!-- Primary 컨테이너의 고정된 색상 -->
-    <color name="primary_fixed_dim">#85D6C1</color> <!-- Primary 컨테이너의 약간 어두운 변형 -->
-    <color name="on_primary_fixed">#00201A</color> <!-- Primary Fixed 배경 위 텍스트 색상 -->
-    <color name="primary_fixed_variant">#005143</color> <!-- Primary 색상의 변형 (보조 강조 색) -->
-
-    <!-- Secondary Colors (보조 색상, UI 보조 요소) -->
-    <color name="secondary">#096B5A</color> <!-- 보조 색상 (FAB, 보조 버튼, 스위치 등) -->
-    <color name="on_secondary">#FFFFFF</color> <!-- Secondary 배경 위 텍스트 및 아이콘 색상 -->
-    <color name="secondary_container">#A1F2DB</color> <!-- Secondary 색상이 포함된 컨테이너 -->
-    <color name="on_secondary_container">#00201A</color> <!-- Secondary 컨테이너 위 텍스트 및 아이콘 색상 -->
-    <color name="secondary_fixed">#A1F2DD</color> <!-- Secondary 컨테이너의 고정된 색상 -->
-    <color name="secondary_fixed_dim">#85D6C1</color> <!-- Secondary 컨테이너의 약간 어두운 변형 -->
-    <color name="on_secondary_fixed">#00201A</color> <!-- Secondary Fixed 배경 위 텍스트 색상 -->
-    <color name="secondary_fixed_variant">#005143</color> <!-- Secondary 색상의 변형 (보조 강조 색) -->
-
-    <!-- Tertiary Colors (추가 색상, 특정 UI 요소 강조) -->
-    <color name="tertiary">#6B849F</color> <!-- 서브 보조 색상 (특정 강조 버튼, 링크 등) -->
-    <color name="on_tertiary">#E3E9F3</color> <!-- Tertiary 배경 위 텍스트 및 아이콘 색상 -->
-    <color name="tertiary_container">#C5D3E4</color> <!-- Tertiary 색상이 포함된 컨테이너 -->
-    <color name="on_tertiary_container">#101E29</color> <!-- Tertiary 컨테이너 위 텍스트 및 아이콘 색상 -->
-    <color name="tertiary_fixed">#C5D3E4</color> <!-- Tertiary 컨테이너의 고정된 색상 -->
-    <color name="tertiary_fixed_dim">#A9BCCD</color> <!-- Tertiary 컨테이너의 약간 어두운 변형 -->
-    <color name="on_tertiary_fixed">#101E29</color> <!-- Tertiary Fixed 배경 위 텍스트 색상 -->
-    <color name="tertiary_fixed_variant">#3D5672</color> <!-- Tertiary 색상의 변형 (보조 강조 색) -->
-
-    <!-- Error Colors (에러 및 경고 메시지) -->
-    <color name="error">#BA1A1A</color> <!-- 에러 상태 (입력 오류, 경고 메시지 등) -->
-    <color name="on_error">#F9DEDC</color> <!-- Error 배경 위 텍스트 및 아이콘 색상 -->
-    <color name="error_container">#F2B8B5</color> <!-- 에러 컨테이너 배경색 -->
-    <color name="on_error_container">#410E0B</color> <!-- 에러 컨테이너 위 텍스트 색상 -->
-
-    <!-- Neutral Surface Colors (배경 및 서페이스 관련 색상) -->
-    <color name="surface_dim">#E1E1E1</color> <!-- 일반 배경보다 어두운 서페이스 -->
-    <color name="surface">#FAFAFA</color> <!-- 기본 서페이스 색상 (카드, 모달 등) -->
-    <color name="surface_bright">#FAFAFA</color> <!-- 밝은 서페이스 배경 -->
-    <color name="on_surface">#121212</color> <!-- Surface 위의 텍스트 및 아이콘 색상 -->
-
-    <!-- Surface Containers (서페이스 계층) -->
-    <color name="surface_container_lowest">#FFFFFF</color> <!-- 가장 밝은 서페이스 컨테이너 -->
-    <color name="surface_container_low">#F4F4F4</color> <!-- 밝은 서페이스 컨테이너 -->
-    <color name="surface_container">#EEEEEE</color> <!-- 일반적인 서페이스 컨테이너 -->
-    <color name="surface_container_high">#E8E8E8</color> <!-- 약간 어두운 서페이스 컨테이너 -->
-    <color name="surface_container_highest">#E2E2E2</color> <!-- 가장 어두운 서페이스 컨테이너 -->
-
-    <!-- Outline Colors (테두리 및 구분선) -->
-    <color name="outline">#757575</color> <!-- 기본적인 테두리 색상 -->
-    <color name="outline_variant">#B0B0B0</color> <!-- 약간 더 밝은 테두리 색상 -->
-
-    <!-- Inverse Colors (반전된 색상, 다크 모드 등에서 사용) -->
-    <color name="inverse_surface">#333333</color> <!-- 다크 모드에서의 서페이스 배경 -->
-    <color name="inverse_on_surface">#F2F2F2</color> <!-- Inverse Surface 위의 텍스트 색상 -->
-    <color name="inverse_primary">#7FC08D</color> <!-- Primary 색상의 반전 색상 -->
-
-    <!-- Shadows & Scrims (그림자 및 투명 오버레이) -->
-    <color name="scrim">#00000000</color> <!-- 반투명 오버레이 효과 (바텀시트, 다이얼로그 등) -->
-    <color name="shadow">#00000000</color> <!-- 그림자 효과 -->
-
-    <!-- Custom Colors (커스텀 색상, 특정 UI 요소에 활용) -->
-    <color name="custom">#5A74A8</color> <!-- 앱에서 별도로 정의한 사용자 지정 색상 -->
-    <color name="on_custom">#FFFFFF</color> <!-- Custom 배경 위 텍스트 및 아이콘 색상 -->
-    <color name="custom_container">#C9D6F0</color> <!-- Custom 컨테이너 색상 -->
-    <color name="on_custom_container">#0D1B33</color> <!-- Custom 컨테이너 위 텍스트 색상 -->
+    <color name="md_theme_primary">#096B5A</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#A1F2DD</color>
+    <color name="md_theme_onPrimaryContainer">#005143</color>
+    <color name="md_theme_secondary">#4B635C</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#CDE8DF</color>
+    <color name="md_theme_onSecondaryContainer">#334B45</color>
+    <color name="md_theme_tertiary">#426278</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer">#C7E7FF</color>
+    <color name="md_theme_onTertiaryContainer">#2A4A5F</color>
+    <color name="md_theme_error">#BA1A1A</color>
+    <color name="md_theme_onError">#FFFFFF</color>
+    <color name="md_theme_errorContainer">#FFDAD6</color>
+    <color name="md_theme_onErrorContainer">#93000A</color>
+    <color name="md_theme_background">#F5FBF7</color>
+    <color name="md_theme_onBackground">#171D1B</color>
+    <color name="md_theme_surface">#F5FBF7</color>
+    <color name="md_theme_onSurface">#171D1B</color>
+    <color name="md_theme_surfaceVariant">#DBE5E0</color>
+    <color name="md_theme_onSurfaceVariant">#3F4945</color>
+    <color name="md_theme_outline">#6F7975</color>
+    <color name="md_theme_outlineVariant">#BFC9C4</color>
+    <color name="md_theme_scrim">#000000</color>
+    <color name="md_theme_inverseSurface">#2B322F</color>
+    <color name="md_theme_inverseOnSurface">#ECF2EE</color>
+    <color name="md_theme_inversePrimary">#85D6C1</color>
+    <color name="md_theme_primaryFixed">#A1F2DD</color>
+    <color name="md_theme_onPrimaryFixed">#00201A</color>
+    <color name="md_theme_primaryFixedDim">#85D6C1</color>
+    <color name="md_theme_onPrimaryFixedVariant">#005143</color>
+    <color name="md_theme_secondaryFixed">#CDE8DF</color>
+    <color name="md_theme_onSecondaryFixed">#06201A</color>
+    <color name="md_theme_secondaryFixedDim">#B1CCC3</color>
+    <color name="md_theme_onSecondaryFixedVariant">#334B45</color>
+    <color name="md_theme_tertiaryFixed">#C7E7FF</color>
+    <color name="md_theme_onTertiaryFixed">#001E2E</color>
+    <color name="md_theme_tertiaryFixedDim">#AACBE4</color>
+    <color name="md_theme_onTertiaryFixedVariant">#2A4A5F</color>
+    <color name="md_theme_surfaceDim">#D5DBD8</color>
+    <color name="md_theme_surfaceBright">#F5FBF7</color>
+    <color name="md_theme_surfaceContainerLowest">#FFFFFF</color>
+    <color name="md_theme_surfaceContainerLow">#EFF5F1</color>
+    <color name="md_theme_surfaceContainer">#E9EFEC</color>
+    <color name="md_theme_surfaceContainerHigh">#E3EAE6</color>
+    <color name="md_theme_surfaceContainerHighest">#DEE4E0</color>
+    <color name="md_theme_primary_mediumContrast">#003E33</color>
+    <color name="md_theme_onPrimary_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_primaryContainer_mediumContrast">#247A68</color>
+    <color name="md_theme_onPrimaryContainer_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_secondary_mediumContrast">#233B34</color>
+    <color name="md_theme_onSecondary_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer_mediumContrast">#59726B</color>
+    <color name="md_theme_onSecondaryContainer_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_tertiary_mediumContrast">#17394D</color>
+    <color name="md_theme_onTertiary_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer_mediumContrast">#517187</color>
+    <color name="md_theme_onTertiaryContainer_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_error_mediumContrast">#740006</color>
+    <color name="md_theme_onError_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_errorContainer_mediumContrast">#CF2C27</color>
+    <color name="md_theme_onErrorContainer_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_background_mediumContrast">#F5FBF7</color>
+    <color name="md_theme_onBackground_mediumContrast">#171D1B</color>
+    <color name="md_theme_surface_mediumContrast">#F5FBF7</color>
+    <color name="md_theme_onSurface_mediumContrast">#0C1211</color>
+    <color name="md_theme_surfaceVariant_mediumContrast">#DBE5E0</color>
+    <color name="md_theme_onSurfaceVariant_mediumContrast">#2F3835</color>
+    <color name="md_theme_outline_mediumContrast">#4B5551</color>
+    <color name="md_theme_outlineVariant_mediumContrast">#656F6B</color>
+    <color name="md_theme_scrim_mediumContrast">#000000</color>
+    <color name="md_theme_inverseSurface_mediumContrast">#2B322F</color>
+    <color name="md_theme_inverseOnSurface_mediumContrast">#ECF2EE</color>
+    <color name="md_theme_inversePrimary_mediumContrast">#85D6C1</color>
+    <color name="md_theme_primaryFixed_mediumContrast">#247A68</color>
+    <color name="md_theme_onPrimaryFixed_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_primaryFixedDim_mediumContrast">#006051</color>
+    <color name="md_theme_onPrimaryFixedVariant_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_secondaryFixed_mediumContrast">#59726B</color>
+    <color name="md_theme_onSecondaryFixed_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_secondaryFixedDim_mediumContrast">#415A53</color>
+    <color name="md_theme_onSecondaryFixedVariant_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_tertiaryFixed_mediumContrast">#517187</color>
+    <color name="md_theme_onTertiaryFixed_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_tertiaryFixedDim_mediumContrast">#39586D</color>
+    <color name="md_theme_onTertiaryFixedVariant_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_surfaceDim_mediumContrast">#C2C8C4</color>
+    <color name="md_theme_surfaceBright_mediumContrast">#F5FBF7</color>
+    <color name="md_theme_surfaceContainerLowest_mediumContrast">#FFFFFF</color>
+    <color name="md_theme_surfaceContainerLow_mediumContrast">#EFF5F1</color>
+    <color name="md_theme_surfaceContainer_mediumContrast">#E3EAE6</color>
+    <color name="md_theme_surfaceContainerHigh_mediumContrast">#D8DEDB</color>
+    <color name="md_theme_surfaceContainerHighest_mediumContrast">#CDD3CF</color>
+    <color name="md_theme_primary_highContrast">#00332A</color>
+    <color name="md_theme_onPrimary_highContrast">#FFFFFF</color>
+    <color name="md_theme_primaryContainer_highContrast">#005346</color>
+    <color name="md_theme_onPrimaryContainer_highContrast">#FFFFFF</color>
+    <color name="md_theme_secondary_highContrast">#18302A</color>
+    <color name="md_theme_onSecondary_highContrast">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer_highContrast">#364E47</color>
+    <color name="md_theme_onSecondaryContainer_highContrast">#FFFFFF</color>
+    <color name="md_theme_tertiary_highContrast">#0A2F43</color>
+    <color name="md_theme_onTertiary_highContrast">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer_highContrast">#2C4D61</color>
+    <color name="md_theme_onTertiaryContainer_highContrast">#FFFFFF</color>
+    <color name="md_theme_error_highContrast">#600004</color>
+    <color name="md_theme_onError_highContrast">#FFFFFF</color>
+    <color name="md_theme_errorContainer_highContrast">#98000A</color>
+    <color name="md_theme_onErrorContainer_highContrast">#FFFFFF</color>
+    <color name="md_theme_background_highContrast">#F5FBF7</color>
+    <color name="md_theme_onBackground_highContrast">#171D1B</color>
+    <color name="md_theme_surface_highContrast">#F5FBF7</color>
+    <color name="md_theme_onSurface_highContrast">#000000</color>
+    <color name="md_theme_surfaceVariant_highContrast">#DBE5E0</color>
+    <color name="md_theme_onSurfaceVariant_highContrast">#000000</color>
+    <color name="md_theme_outline_highContrast">#252E2B</color>
+    <color name="md_theme_outlineVariant_highContrast">#424B48</color>
+    <color name="md_theme_scrim_highContrast">#000000</color>
+    <color name="md_theme_inverseSurface_highContrast">#2B322F</color>
+    <color name="md_theme_inverseOnSurface_highContrast">#FFFFFF</color>
+    <color name="md_theme_inversePrimary_highContrast">#85D6C1</color>
+    <color name="md_theme_primaryFixed_highContrast">#005346</color>
+    <color name="md_theme_onPrimaryFixed_highContrast">#FFFFFF</color>
+    <color name="md_theme_primaryFixedDim_highContrast">#003A30</color>
+    <color name="md_theme_onPrimaryFixedVariant_highContrast">#FFFFFF</color>
+    <color name="md_theme_secondaryFixed_highContrast">#364E47</color>
+    <color name="md_theme_onSecondaryFixed_highContrast">#FFFFFF</color>
+    <color name="md_theme_secondaryFixedDim_highContrast">#1F3731</color>
+    <color name="md_theme_onSecondaryFixedVariant_highContrast">#FFFFFF</color>
+    <color name="md_theme_tertiaryFixed_highContrast">#2C4D61</color>
+    <color name="md_theme_onTertiaryFixed_highContrast">#FFFFFF</color>
+    <color name="md_theme_tertiaryFixedDim_highContrast">#13364A</color>
+    <color name="md_theme_onTertiaryFixedVariant_highContrast">#FFFFFF</color>
+    <color name="md_theme_surfaceDim_highContrast">#B4BAB7</color>
+    <color name="md_theme_surfaceBright_highContrast">#F5FBF7</color>
+    <color name="md_theme_surfaceContainerLowest_highContrast">#FFFFFF</color>
+    <color name="md_theme_surfaceContainerLow_highContrast">#ECF2EE</color>
+    <color name="md_theme_surfaceContainer_highContrast">#DEE4E0</color>
+    <color name="md_theme_surfaceContainerHigh_highContrast">#CFD6D2</color>
+    <color name="md_theme_surfaceContainerHighest_highContrast">#C2C8C4</color>
 
     <!-- 모든 색깔의 기본 -->
     <color name="major">#153E35</color>

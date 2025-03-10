@@ -3,4 +3,6 @@
     <string name="app_title">다운로드 지도 목록</string>
     <string name="save_date">저장 일자 : %s</string>
     <string name="file_size">저장 용량 : %s</string>
+    <string name="searchbar_hint">검색...</string>
+    <string name="fab_content_desc">메뉴 버튼</string>
 </resources>
