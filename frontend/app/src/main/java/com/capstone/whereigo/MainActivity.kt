@@ -38,20 +38,7 @@ class MainActivity : AppCompatActivity() {
                 false
             }
         }
-        // 예측 결과 RecyclerView 설정
-        val suggestionsAdapter = SearchSuggestionsAdapter(searchSuggestions)
-        binding.searchResult.layoutManager = LinearLayoutManager(this)
-        binding.searchResult.adapter = suggestionsAdapter
 
-        // 검색어 예측 기능
-        searchView.editText.addTextChangedListener { text ->
-            if (text != null && text.isNotEmpty()) {
-                val filteredSuggestions = searchSuggestions.filter { it.contains(text, ignoreCase = true) }
-                suggestionsAdapter.updateSuggestions(filteredSuggestions)
-            } else {
-                suggestionsAdapter.updateSuggestions(searchSuggestions) // 초기 상태로 되돌리기
-            }
-        }
 
 
 
