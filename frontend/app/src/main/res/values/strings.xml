@@ -5,7 +5,6 @@
     <string name="file_size">저장 용량 : %s</string>
     <string name="searchbar_hint">검색...</string>
     <string name="fab_content_desc">메뉴 버튼</string>
-    <string name="title_activity_settings">SettingsActivity</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
