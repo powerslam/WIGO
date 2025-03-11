@@ -1,4 +1,6 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="@string/header_sound">
 
@@ -24,6 +26,14 @@
             app:title="@string/title_save_location"
             app:summaryOff="@string/summary_on_save_location"
             app:summaryOn="@string/summary_off_save_location" />
+
+        <Preference
+            android:key="map_download"
+            android:title="지도 확인"
+            android:summary="내부 저장된 지도 파일들을 확인 합니다."
+            android:icon="@drawable/ic_file_size"
+            android:onClick="onMapItemClick"
+            android:defaultValue="false"/>
 
     </PreferenceCategory>
 
