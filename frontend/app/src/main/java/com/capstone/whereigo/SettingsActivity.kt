@@ -1,4 +1,4 @@
-package com.example.test_map
+package com.capstone.whereigo
 
 import android.content.Intent
 import android.os.Bundle
