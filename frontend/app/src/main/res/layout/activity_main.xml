@@ -55,17 +55,6 @@
             </androidx.core.widget.NestedScrollView>
         </com.google.android.material.search.SearchView>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/floating_action_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginRight="16dp"
-            android:contentDescription="@string/fab_content_desc"
-            app:srcCompat="@drawable/baseline_menu_48"
-            style="?attr/floatingActionButtonLargeStyle"
-            android:layout_marginBottom="60dp"/>
-
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </FrameLayout>
 
