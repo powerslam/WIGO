@@ -11,7 +11,7 @@ import com.capstone.whereigo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var searchApapter: SearchAdapter
+
     private var backPressedTime: Long = 0
     private val backPressInterval: Long = 1000 // 1초 이내에 두 번 눌러야 종료됨
     private val currentTime = System.currentTimeMillis()
