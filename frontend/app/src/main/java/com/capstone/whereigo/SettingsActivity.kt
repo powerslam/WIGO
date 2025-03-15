@@ -2,10 +2,9 @@ package com.capstone.whereigo
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.preference.Preference
@@ -20,12 +19,17 @@ class SettingsActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
-                .replace(R.id.settings, SettingsFragment())
+                .replace(R.id.settings1, setSoundPrefrence())
+                .replace(R.id.settings2, setDownloadPreference())
                 .commit()
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // ViewCompat.setOnApplyWindowInsetsListener 를 onCreate 안으로 이동
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed() // 뒤로 가기 기능 수행
+        }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -38,9 +42,14 @@ class SettingsActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    class SettingsFragment : PreferenceFragmentCompat() {
+    class setSoundPrefrence : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-            setPreferencesFromResource(R.xml.root_preferences, rootKey)
+            setPreferencesFromResource(R.xml.sound_preference, rootKey)
+        }
+    }
+    class setDownloadPreference : PreferenceFragmentCompat() {
+        override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+            setPreferencesFromResource(R.xml.download_preference, rootKey)
 
             val mapItemPreference: Preference? = findPreference("map_download")
 
@@ -49,7 +58,5 @@ class SettingsActivity : AppCompatActivity() {
                 true
             }
         }
-
-
     }
 }
