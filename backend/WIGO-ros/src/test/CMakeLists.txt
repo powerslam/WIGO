@@ -7,16 +7,23 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
+set(EIGEN3_INCLUDE_DIR "/home/foscar/capstone-2025-11/backend/WIGO-ros/VINS_android/app/libs/VINS-Mobile-master/VINS_ThirdPartyLib/eigen3")
 find_package(Eigen3 REQUIRED)
+message("@@@@@@@@@@@@@@@@")
+message(${EIGEN3_INCLUDE_DIR})
+message("@@@@@@@@@@@@@@@@")
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(Glog REQUIRED libglog)
-include_directories(${Glog_INCLUDE_DIRS})
-link_directories(${Glog_LIBRARY_DIRS})
-add_definitions(${Glog_CFLAGS_OTHER})
+# pkg_check_modules(Glog REQUIRED libglog)
+# include_directories(${Glog_INCLUDE_DIRS})
+# link_directories(${Glog_LIBRARY_DIRS})
+# add_definitions(${Glog_CFLAGS_OTHER})
 
-find_package(Ceres REQUIRED)
+#set(Ceres_DIR "/home/foscar/capstone-2025-11/backend/WIGO-ros/src/test/src/VINS-Mobile/ceres-solver/install/lib/cmake/Ceres")
+set(Ceres_DIR "/home/foscar/capstone-2025-11/backend/WIGO-ros/VINS_android/app/libs/VINS-Mobile-master/VINS_ThirdPartyLib/ceres-solver/install/lib/cmake/Ceres")
+#find_package(Ceres REQUIRED)
+
 include_directories(${CERES_INCLUDE_DIRS})
 
 ## iOS에서만 포함되던 파일이 ROS에서도 필요하다면, ROS에 맞게 수정해야 합니다.

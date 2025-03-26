@@ -68,6 +68,7 @@ void KeyFrameDatabase::resample(vector<int> &erase_index)
             last_P = tmp_t;
             erase_index.push_back((*it)->global_index);
             delete (*it);
+            // ROS_INFO("keyframe_database(71) : *it");
             it = keyFrameList.erase(it);
         }
     }

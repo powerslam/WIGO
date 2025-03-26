@@ -258,9 +258,13 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
     }
     
     delete [] c_Rotation;
+    // ROS_INFO("c_Rotation done");
     delete [] c_Translation;
+    // ROS_INFO("c_Translation done");
     delete [] c_Quat;
+    // ROS_INFO("c_Quat done");
     delete [] Pose;
+    // ROS_INFO("Pose done");
     
     for (int i = 0; i < feature_num; i++)
     {
@@ -283,9 +287,9 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
     //options.minimizer_progress_to_stdout = true;
     options.max_solver_time_in_seconds = 0.3;
     ceres::Solver::Summary summary;
-    ROS_INFO("@@@@ solve 4 start @@@@");
+    // ROS_INFO("@@@@ solve 4 start @@@@");
     ceres::Solve(options, &problem, &summary);
-    ROS_INFO("@@@@ solve 4 end @@@@");
+    // ROS_INFO("@@@@ solve 4 end @@@@");
 
     std::cout << summary.BriefReport() << "\n";
     if (summary.termination_type == ceres::CONVERGENCE || summary.final_cost < 3e-03){

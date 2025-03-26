@@ -7,6 +7,7 @@
 //
 
 #include "draw_result.hpp"
+#include <ros/ros.h>
 
 DrawResult::DrawResult(float _pitch, float _roll, float _yaw, float _Tx, float _Ty, float _Tz)
 :pitch{_pitch},roll{_roll},yaw{_yaw},Tx{_Tx},Ty{_Ty},Tz{_Tz},change_view_manualy{false}
@@ -968,8 +969,10 @@ void DrawResult::Reprojection(cv::Mat &result, vector<Vector3f> &point_cloud, co
             continue;
         }
         
-        while(trajectory_color.size() <= segment_indexs[i])
+        while(trajectory_color.size() <= segment_indexs[i]){
             trajectory_color.push_back(newColor());
+            // // ROS_INFO_STREAM("color : " << trajectory_color.back());
+        }
         cv::line(result, pts_pre, pts, trajectory_color[segment_indexs[i]], 2, 8, 0);
         
         pts_pre = pts;

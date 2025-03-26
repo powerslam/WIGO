@@ -27,6 +27,16 @@ drawresult{0.0, 0.0, 0.0, 0.0, 0.0, 7.0}
     last_R_old.setIdentity();
 }
 
+
+void configureCeresOptions(ceres::Solver::Options &options)
+{
+    options.function_tolerance = 1e-6;  // 작은 변화에도 민감하게 설정
+    options.parameter_tolerance = 1e-8;
+    options.max_num_iterations = 100;  // 반복 횟수 증가
+    options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.minimizer_progress_to_stdout = true; 
+}
+
 void VINS::setIMUModel()
 {
     ProjectionFactor::sqrt_info = FOCUS_LENGTH_X / 1.5 * Matrix2d::Identity();
@@ -52,6 +62,7 @@ void VINS::clearState()
         if (pre_integrations[i] != nullptr)
         {
             delete pre_integrations[i];
+            // // ROS_INFO("clearState : pre_integrations[i]");
         }
         pre_integrations[i] = nullptr;
     }
@@ -67,16 +78,20 @@ void VINS::clearState()
     all_image_frame.clear();
     initProgress = 0;
     
-    if (tmp_pre_integration != nullptr)
+    if (tmp_pre_integration != nullptr){
         delete tmp_pre_integration;
+        // // ROS_INFO("clearState : tmp_pre_integration");
+    }
+
     if (last_marginalization_info != nullptr){
-        // ROS_INFO_STREAM("delete last_marginalization_info (Line 73)");
+        // // ROS_INFO_STREAM("delete last_marginalization_info (Line 73)");
         // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
         //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
-        //         ROS_INFO_STREAM("address.. (Line 76) : " << last_marginalization_info->factors[i]->loss_function);        
+        //         // ROS_INFO_STREAM("address.. (Line 76) : " << last_marginalization_info->factors[i]->loss_function);        
         //     }
         // }
         delete last_marginalization_info;
+        // // ROS_INFO("clearState(94) : last_marginalization_info");
     }
 
     tmp_pre_integration = nullptr;
@@ -402,7 +417,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
     
     Headers[frame_count] = header;
     
-    // ROS_INFO("solver_flag: %d", solver_flag);
+    // // ROS_INFO("solver_flag: %d", solver_flag);
 
     if(solver_flag == INITIAL)
     {
@@ -415,7 +430,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
         {
             if(track_num < 20)
             {
-                ROS_INFO("track_num < 20");
+                // // ROS_INFO("track_num < 20");
                 clearState();
                 return;
             }
@@ -428,17 +443,18 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
             if(result)
             {
                 solve_ceres(buf_num);
-                ROS_INFO("final_cost: %lf", final_cost);
+                // // ROS_INFO("final_cost: %lf", final_cost);
                 if(final_cost > 200)  //initialization failed, need reinitialize
                 {
                     // printf("final cost %lf faild!\n",final_cost);
-                    // ROS_INFO_STREAM("delete last_marginalization_info (Line 422)");
+                    // // ROS_INFO_STREAM("delete last_marginalization_info (Line 422)");
                     // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
                     //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
-                    //         ROS_INFO_STREAM("address.. (Line 430) : " << last_marginalization_info->factors[i]->loss_function);        
+                    //         // ROS_INFO_STREAM("address.. (Line 430) : " << last_marginalization_info->factors[i]->loss_function);        
                     //     }
                     // }
                     delete last_marginalization_info;
+                    // // ROS_INFO("processImage(457) : last_marginalization_info");
                     last_marginalization_info = nullptr;
                     solver_flag = INITIAL;
                     init_status = FAIL_CHECK;
@@ -484,7 +500,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
         
         if (failureDetection())
         {
-            ROS_INFO("fail detection");
+            // // ROS_INFO("fail detection");
             failure_occur = 1;
             clearState();
             return;
@@ -502,7 +518,7 @@ void VINS::processImage(map<int, Vector3d> &image_msg, double header, int buf_nu
 
 void VINS::solve_ceres(int buf_num)
 {
-    // ROS_INFO("VINS::solve_ceres");
+    // // ROS_INFO("VINS::solve_ceres");
     ceres::Problem problem;
     ceres::LossFunction *loss_function;
     
@@ -531,7 +547,7 @@ void VINS::solve_ceres(int buf_num)
     //marginalization factor
     if (last_marginalization_info != nullptr)
     {
-        // ROS_INFO("AAAAAAAAAAAA");
+        // // ROS_INFO("AAAAAAAAAAAA");
         MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
         problem.AddResidualBlock(marginalization_factor, NULL,
                                  last_marginalization_parameter_blocks);
@@ -540,7 +556,7 @@ void VINS::solve_ceres(int buf_num)
     //IMU factor
     for (int i = 0; i < WINDOW_SIZE; i++)
     {
-        // ROS_INFO("BBBBBBBBBBBBBBB");
+        // // ROS_INFO("BBBBBBBBBBBBBBB");
         int j = i + 1;
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
@@ -574,8 +590,8 @@ void VINS::solve_ceres(int buf_num)
             
             ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
             problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]);
-            // ROS_INFO_STREAM("address of loss_function(Line 553): " << loss_function);
-            // ROS_INFO_STREAM("address of loss_function(Line 553): " << loss_function);
+            // // ROS_INFO_STREAM("address of loss_function(Line 553): " << loss_function);
+            // // ROS_INFO_STREAM("address of loss_function(Line 553): " << loss_function);
             
 
             f_m_cnt++;
@@ -648,7 +664,7 @@ void VINS::solve_ceres(int buf_num)
                                     //double ratio = 1.0;
                                     ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
                                     problem.AddResidualBlock(f, loss_function, para_Pose[start], front_pose.loop_pose, para_Ex_Pose[0], para_Feature[feature_index]);
-                                    // ROS_INFO_STREAM("address of loss_function(Line 625): " << loss_function);
+                                    // // ROS_INFO_STREAM("address of loss_function(Line 625): " << loss_function);
 
                                     //// printf("loop add factor %d %d %lf %lf %d\n",retrive_feature_index,feature_index,
                                     //                                         pts_j.x(), pts_i.x(),front_pose.features_ids.size());
@@ -675,6 +691,10 @@ void VINS::solve_ceres(int buf_num)
     options.minimizer_progress_to_stdout = false;
     // options.max_num_iterations = 30; // ori: 10
     //options.use_nonmonotonic_steps = true;
+
+    // 기존 최적화 코드에서 Solver 옵션을 적용하는 부분에 추가
+    // configureCeresOptions(options);
+
     if(buf_num<2)
         options.max_solver_time_in_seconds = SOLVER_TIME;
     else if(buf_num<4)
@@ -690,7 +710,7 @@ void VINS::solve_ceres(int buf_num)
     ceres::Solve(options, &problem, &summary);
     final_cost = summary.final_cost;
     
-    ROS_INFO_STREAM("VINS : " << summary.FullReport());
+    // // ROS_INFO_STREAM("VINS : " << summary.FullReport());
     
     TE(ceres);
     
@@ -779,8 +799,8 @@ void VINS::solve_ceres(int buf_num)
                     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(f, loss_function,
                                                                                    vector<double *>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]},
                                                                                    vector<int>{0, 3});
-                    // ROS_INFO_STREAM("address of loss_function(Line 751): " << loss_function);
-                    // ROS_INFO_STREAM("address of marginalization_info(Line 751): " << marginalization_info);
+                    // // ROS_INFO_STREAM("address of loss_function(Line 751): " << loss_function);
+                    // // ROS_INFO_STREAM("address of marginalization_info(Line 751): " << marginalization_info);
                     marginalization_info->addResidualBlockInfo(residual_block_info);
                 }
             }
@@ -804,13 +824,14 @@ void VINS::solve_ceres(int buf_num)
         
         vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
         if (last_marginalization_info){
-            // ROS_INFO_STREAM("delete last_marginalization_info (Line 778)");
+            // // ROS_INFO_STREAM("delete last_marginalization_info (Line 778)");
             // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
             //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
-            //         ROS_INFO_STREAM("address.. (Line 791) : " << last_marginalization_info->factors[i]->loss_function);        
+            //         // ROS_INFO_STREAM("address.. (Line 791) : " << last_marginalization_info->factors[i]->loss_function);        
             //     }
             // }
             delete last_marginalization_info;
+            // // ROS_INFO("solve_ceres(834) : last_marginalization_info");       
         }
         last_marginalization_info = marginalization_info;
         last_marginalization_parameter_blocks = parameter_blocks;
@@ -818,7 +839,7 @@ void VINS::solve_ceres(int buf_num)
     //marginalize front
     else
     {
-        // ROS_INFO_STREAM("marginalize front...");
+        // // ROS_INFO_STREAM("marginalize front...");
         if (last_marginalization_info&&
             std::count(std::begin(last_marginalization_parameter_blocks), std::end(last_marginalization_parameter_blocks), para_Pose[WINDOW_SIZE - 1]))
         {
@@ -826,7 +847,7 @@ void VINS::solve_ceres(int buf_num)
             old2new();
             if (last_marginalization_info)
             {
-                // ROS_INFO("last_marginalization_info");
+                // // ROS_INFO("last_marginalization_info");
                 vector<int> drop_set;
                 for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
                 {
@@ -867,15 +888,16 @@ void VINS::solve_ceres(int buf_num)
             
             vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
             if (last_marginalization_info){
-                // ROS_INFO_STREAM("delete last_marginalization_info (Line 835)");
+                // // ROS_INFO_STREAM("delete last_marginalization_info (Line 835)");
                 
                 // for(int i = 0; i < last_marginalization_info->factors.size(); i++){
                 //     if(last_marginalization_info->factors[i]->loss_function != nullptr){
-                //         ROS_INFO_STREAM("address.. (Line 854) : " << last_marginalization_info->factors[i]->loss_function);        
+                //         // ROS_INFO_STREAM("address.. (Line 854) : " << last_marginalization_info->factors[i]->loss_function);        
                 //     }
                 // }
 
                 delete last_marginalization_info;
+                // // ROS_INFO("solve_ceres(900) : last_marginalization_info");   
             }
 
             last_marginalization_info = marginalization_info;
@@ -1058,7 +1080,9 @@ bool VINS::solveInitial()
         frame_it->second.T = T_pnp;
     }
     delete[] Q;
+    // // ROS_INFO("solveInitial(1083) : Q");
     delete[] T;
+    // // ROS_INFO("solveInitial(1085) : T");
     
     //update init progress
     initProgress = 75;
@@ -1211,62 +1235,63 @@ bool VINS::relativePose(int camera_id, Matrix3d &relative_R, Vector3d &relative_
  */
 void VINS::slideWindow()
 {
-    // ROS_INFO("enter slidewindow(1207)");
+    // // ROS_INFO("enter slidewindow(1207)");
     //marginalize old keyframe
     if (marginalization_flag == MARGIN_OLD)
     {
-        // ROS_INFO("marginalization_flag(1211) : %d", MARGIN_OLD);
+        // // ROS_INFO("marginalization_flag(1211) : %d", MARGIN_OLD);
         back_R0 = Rs[0];
         back_P0 = Ps[0];
         if (frame_count == WINDOW_SIZE)
         {
-            // ROS_INFO("process 10");
+            // // ROS_INFO("process 10");
             for (int i = 0; i < WINDOW_SIZE; i++)
             {
-                // ROS_INFO("process 11 (1)");
+                // // ROS_INFO("process 11 (1)");
                 Rs[i].swap(Rs[i + 1]);
-                // ROS_INFO("process 11 (2)");
+                // // ROS_INFO("process 11 (2)");
                 std::swap(pre_integrations[i], pre_integrations[i + 1]);
-                // ROS_INFO("process 11 (3)");
+                // // ROS_INFO("process 11 (3)");
                 dt_buf[i].swap(dt_buf[i + 1]);
-                // ROS_INFO("process 11 (4)");
+                // // ROS_INFO("process 11 (4)");
                 linear_acceleration_buf[i].swap(linear_acceleration_buf[i + 1]);
-                // ROS_INFO("process 11 (5)");
+                // // ROS_INFO("process 11 (5)");
                 angular_velocity_buf[i].swap(angular_velocity_buf[i + 1]);
-                // ROS_INFO("process 11 (6)");
+                // // ROS_INFO("process 11 (6)");
                 Headers[i] = Headers[i + 1];
-                // ROS_INFO("process 11 (7)");
+                // // ROS_INFO("process 11 (7)");
                 Ps[i].swap(Ps[i + 1]);
-                // ROS_INFO("process 11 (8)");
+                // // ROS_INFO("process 11 (8)");
                 Vs[i].swap(Vs[i + 1]);
-                // ROS_INFO("process 11 (9)");
+                // // ROS_INFO("process 11 (9)");
             }
 
-            // ROS_INFO("process 12");
+            // // ROS_INFO("process 12");
             Headers[WINDOW_SIZE] = Headers[WINDOW_SIZE - 1];
             Ps[WINDOW_SIZE] = Ps[WINDOW_SIZE - 1];
             Vs[WINDOW_SIZE] = Vs[WINDOW_SIZE - 1];
             Rs[WINDOW_SIZE] = Rs[WINDOW_SIZE - 1];
             Bas[WINDOW_SIZE] = Bas[WINDOW_SIZE - 1];
             Bgs[WINDOW_SIZE] = Bgs[WINDOW_SIZE - 1];
-            // ROS_INFO("process 13");
+            // // ROS_INFO("process 13");
             
 
             if(pre_integrations[WINDOW_SIZE] != NULL)
             {
-                // ROS_INFO("process 14");
+                // // ROS_INFO("process 14");
                 delete pre_integrations[WINDOW_SIZE];
-                // ROS_INFO("process 15");
+                // // ROS_INFO("slideWindow(1283) : pre_integrations[WINDOW_SIZE]");
+                // // ROS_INFO("process 15");
             }
 
             pre_integrations[WINDOW_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[WINDOW_SIZE], Bgs[WINDOW_SIZE]};
-            // ROS_INFO("process 16");
+            // // ROS_INFO("process 16");
 
             dt_buf[WINDOW_SIZE].clear();
             linear_acceleration_buf[WINDOW_SIZE].clear();
             angular_velocity_buf[WINDOW_SIZE].clear();
             
-            // ROS_INFO("process 17");
+            // // ROS_INFO("process 17");
 
             if (solver_flag == INITIAL)
             {
@@ -1274,41 +1299,42 @@ void VINS::slideWindow()
                 map<double, ImageFrame>::iterator it_0;
                 it_0 = all_image_frame.find(t_0);
                 delete it_0->second.pre_integration;
+                // // ROS_INFO("slideWindow(1302) : it_0->second.pre_integration");
                 all_image_frame.erase(all_image_frame.begin(), it_0);
             }
 
 
-            // ROS_INFO("process 18");
+            // // ROS_INFO("process 18");
             slideWindowOld();
 
-            // ROS_INFO("process 19");
+            // // ROS_INFO("process 19");
         }
     }
     else  //non keyframe
     {
-        // ROS_INFO("marginalization_flag(1257) : %d", MARGIN_OLD);
+        // // ROS_INFO("marginalization_flag(1257) : %d", MARGIN_OLD);
         if (frame_count == WINDOW_SIZE)
         {
-            // ROS_INFO("process 1");
+            // // ROS_INFO("process 1");
             for (unsigned int i = 0; i < dt_buf[frame_count].size(); i++)
             {
-                // ROS_INFO("process 2 (1)");
+                // // ROS_INFO("process 2 (1)");
                 double tmp_dt = dt_buf[frame_count][i];
                 Vector3d tmp_linear_acceleration = linear_acceleration_buf[frame_count][i];
                 Vector3d tmp_angular_velocity = angular_velocity_buf[frame_count][i];
                 
-                // ROS_INFO("process 2 (2)");
+                // // ROS_INFO("process 2 (2)");
                 pre_integrations[frame_count - 1]->push_back(tmp_dt, tmp_linear_acceleration, tmp_angular_velocity);
                 
                 dt_buf[frame_count - 1].push_back(tmp_dt);
                 linear_acceleration_buf[frame_count - 1].push_back(tmp_linear_acceleration);
                 angular_velocity_buf[frame_count - 1].push_back(tmp_angular_velocity);
                 
-                // ROS_INFO("process 2 (3)");
+                // // ROS_INFO("process 2 (3)");
             }
             
 
-            // ROS_INFO("process 3");
+            // // ROS_INFO("process 3");
             Headers[frame_count - 1] = Headers[frame_count];
             Ps[frame_count - 1] = Ps[frame_count];
             Vs[frame_count - 1] = Vs[frame_count];
@@ -1317,25 +1343,26 @@ void VINS::slideWindow()
             Bgs[frame_count - 1] = Bgs[frame_count];
             
             
-            // ROS_INFO("process 4");
+            // // ROS_INFO("process 4");
             if(pre_integrations[WINDOW_SIZE]!=NULL)
             {
-                // ROS_INFO("process 5");
+                // // ROS_INFO("process 5");
                 delete pre_integrations[WINDOW_SIZE];
-                // ROS_INFO("process 6");
+                // // ROS_INFO("slideWindow(1350) : pre_integrations[WINDOW_SIZE]");
+                // // ROS_INFO("process 6");
             }
 
-            // ROS_INFO("process 7");
+            // // ROS_INFO("process 7");
             pre_integrations[WINDOW_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[WINDOW_SIZE], Bgs[WINDOW_SIZE]};
             
             dt_buf[WINDOW_SIZE].clear();
             linear_acceleration_buf[WINDOW_SIZE].clear();
             angular_velocity_buf[WINDOW_SIZE].clear();
-            // ROS_INFO("process 8");
+            // // ROS_INFO("process 8");
             
             slideWindowNew();
 
-            // ROS_INFO("process 9");
+            // // ROS_INFO("process 9");
         }
     }
 }

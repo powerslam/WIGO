@@ -22,6 +22,8 @@
 #include "QueryResults.h"
 #include "BowVector.h"
 
+#include <ros/ros.h>
+
 
 using namespace std;
 using namespace DBoW2;
@@ -569,6 +571,7 @@ void TemplatedLoopDetector<TDescriptor,F>::setVocabulary
   (const TemplatedVocabulary<TDescriptor, F>& voc)
 {
   delete m_database;
+  // ROS_INFO("setVocabulary(572) : m_database");
   m_database = new TemplatedDatabase<TDescriptor, F>(voc, 
     m_params.geom_check == GEOM_DI, m_params.di_levels);
 }
@@ -605,6 +608,7 @@ template<class T>
 void TemplatedLoopDetector<TDescriptor, F>::setDatabase(const T &db)
 {
   delete m_database;
+  // ROS_INFO("setDatabase(609) : m_database");
   m_database = new T(db);
   clear();
 }
@@ -615,6 +619,7 @@ template<class TDescriptor, class F>
 TemplatedLoopDetector<TDescriptor, F>::~TemplatedLoopDetector(void)
 {
   delete m_database;
+  // ROS_INFO("~TemplatedLoopDetector(620) : m_database");
   m_database = NULL;
 }
 
@@ -1255,6 +1260,8 @@ void TemplatedLoopDetector<TDescriptor, F>::eraseIndex
             DBoW2::EntryId entry;
             entry = (unsigned int)erase_index[i];
             m_database->delete_entry(entry);
+            // ROS_INFO("eraseIndex(1261) : m_database->delete_entry(entry)");
+            
         }
 }
 }

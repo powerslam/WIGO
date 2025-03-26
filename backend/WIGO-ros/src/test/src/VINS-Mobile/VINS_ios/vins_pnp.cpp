@@ -7,6 +7,7 @@
 //
 
 #include "vins_pnp.hpp"
+#include <ros/ros.h>
 
 vinsPnP::vinsPnP()
 {
@@ -37,6 +38,7 @@ void vinsPnP::clearState()
         if (pre_integrations[i] != nullptr)
         {
             delete pre_integrations[i];
+            // // ROS_INFO("pre_integrations[i]");
         }
         pre_integrations[i] = nullptr;
         features[i].clear();
@@ -370,6 +372,7 @@ void vinsPnP::slideWindow()
         if(pre_integrations[PNP_SIZE] != NULL)
         {
             delete pre_integrations[PNP_SIZE];
+            // // ROS_INFO("pre_integrations[PNP_SIZE]");
         }
         pre_integrations[PNP_SIZE] = new IntegrationBase{acc_0, gyr_0, Bas[PNP_SIZE], Bgs[PNP_SIZE]};
         
