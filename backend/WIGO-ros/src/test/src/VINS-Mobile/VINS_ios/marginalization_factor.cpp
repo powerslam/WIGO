@@ -50,16 +50,16 @@ void ResidualBlockInfo::Evaluate()
         double sq_norm, rho[3] = {0, 0, 0};
         
         sq_norm = residuals.squaredNorm();
-        // ROS_INFO_STREAM("sq_norm : " << sq_norm << ", is nullptr? : " << loss_function);
+        // // ROS_INFO_STREAM("sq_norm : " << sq_norm << ", is nullptr? : " << loss_function);
         // std::string loss_function_type = typeid(*loss_function).name();
         // assert(false);
-        // ROS_INFO_STREAM("plz : " << loss_function_type.size() << std::flush);
+        // // ROS_INFO_STREAM("plz : " << loss_function_type.size() << std::flush);
     
         try{
             const double sum = 1.0 + sq_norm * 1.0;
             const double inv = 1.0 / sum;
 
-            // ROS_INFO_STREAM((1.0 * log(sum)) << ", " << std::max(std::numeric_limits<double>::min(), inv) << ", " << (-1.0 * (inv * inv)));
+            // // ROS_INFO_STREAM((1.0 * log(sum)) << ", " << std::max(std::numeric_limits<double>::min(), inv) << ", " << (-1.0 * (inv * inv)));
 
             loss_function->Evaluate(sq_norm, rho);
             // assert(false);
@@ -94,19 +94,24 @@ void ResidualBlockInfo::Evaluate()
 
 MarginalizationInfo::~MarginalizationInfo()
 {
-    // ROS_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@release marginlizationinfo@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    // // ROS_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@release marginlizationinfo@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     
-    for (auto it = parameter_block_data.begin(); it != parameter_block_data.end(); ++it)
+    for (auto it = parameter_block_data.begin(); it != parameter_block_data.end(); ++it){
         delete it->second;
+        // // ROS_INFO("it->second");
+    }
     
     for (int i = 0; i < (int)factors.size(); i++)
     {
         
         delete[] factors[i]->raw_jacobians;
+        // // ROS_INFO("factors[i]->raw_jacobians");
         
         delete factors[i]->cost_function;
+        // // ROS_INFO("factors[i]->cost_function");
         
         delete factors[i];
+        // // ROS_INFO("factors[i]");
     }
 }
 
@@ -247,7 +252,7 @@ void MarginalizationInfo::marginalize()
      b.segment(idx_i, size_i) += jacobian_i.transpose() * it->residuals;
      }
      }
-     ROS_INFO("summing up costs %f ms", t_summing.toc());
+     // ROS_INFO("summing up costs %f ms", t_summing.toc());
      */
     //multi thread
     
@@ -279,7 +284,7 @@ void MarginalizationInfo::marginalize()
         A += threadsstruct[i].A;
         b += threadsstruct[i].b;
     }
-    //ROS_INFO("A diff %f , b diff %f ", (A - tmp_A).sum(), (b - tmp_b).sum());
+    //// ROS_INFO("A diff %f , b diff %f ", (A - tmp_A).sum(), (b - tmp_b).sum());
     
     
     //TODO

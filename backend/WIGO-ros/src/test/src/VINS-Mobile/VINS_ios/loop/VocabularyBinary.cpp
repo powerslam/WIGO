@@ -8,6 +8,9 @@
 
 #include "VocabularyBinary.hpp"
 #include <opencv2/core/core.hpp>
+
+#include <ros/ros.h>
+
 using namespace std;
 
 VINSLoop::Vocabulary::Vocabulary()
@@ -17,11 +20,13 @@ VINSLoop::Vocabulary::Vocabulary()
 VINSLoop::Vocabulary::~Vocabulary() {
     if (nodes != nullptr) {
         delete [] nodes;
+        // ROS_INFO("~Vocabulary(20) : nodes");
         nodes = nullptr;
     }
     
     if (words != nullptr) {
         delete [] words;
+        // ROS_INFO("~Vocabulary(20) : words");
         words = nullptr;
     }
 }

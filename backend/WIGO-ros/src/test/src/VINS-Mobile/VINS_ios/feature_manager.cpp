@@ -148,8 +148,8 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, Vec
     }
     else
     {
-        //ROS_INFO("parallax_sum: %lf, parallax_num: %d", parallax_sum, parallax_num);
-        //ROS_INFO("current parallax: %lf", parallax_sum / parallax_num * FOCAL_LENGTH);
+        //// ROS_INFO("parallax_sum: %lf, parallax_num: %d", parallax_sum, parallax_num);
+        //// ROS_INFO("current parallax: %lf", parallax_sum / parallax_num * FOCAL_LENGTH);
         return parallax_sum / parallax_num >= MIN_PARALLAX;
     }
 }
@@ -338,7 +338,7 @@ void FeatureManager::setDepth(const VectorXd &x)
             continue;
         
         it_per_id.estimated_depth = 1.0 / x(++feature_index);
-        //ROS_INFO("feature id %d , start_frame %d, depth %f ", it_per_id->feature_id, it_per_id-> start_frame, it_per_id->estimated_depth);
+        //// ROS_INFO("feature id %d , start_frame %d, depth %f ", it_per_id->feature_id, it_per_id-> start_frame, it_per_id->estimated_depth);
         if (it_per_id.estimated_depth < 0)
         {
             it_per_id.solve_flag = 2;

@@ -150,8 +150,11 @@ bool setGlobalParam(DeviceType device)
             FREQ = 3;
             
             //extrinsic param
-            TIC_X = -0.325;
-            TIC_Y = 0;
+            // TIC_X = -0.325;
+            // TIC_Y = 0;
+            // TIC_Z = 0.405;
+            TIC_X = 0;
+            TIC_Y = -0.325;
             TIC_Z = 0.405;
             return true;
             break;

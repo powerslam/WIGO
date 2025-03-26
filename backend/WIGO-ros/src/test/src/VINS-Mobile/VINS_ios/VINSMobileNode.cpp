@@ -81,7 +81,7 @@ void VINSMobileNode::processImage(const sensor_msgs::ImageConstPtr& msg){
         //img_msg->header = lateast_imu_time;
         img_msg->header = msg->header.stamp.toSec();
         bool isNeedRotation = image.size() != frameSize;
-        // ROS_INFO("isNeedRotation : %d", isNeedRotation);
+        // // ROS_INFO("isNeedRotation : %d", isNeedRotation);
         
         cv::Mat gray;
         cv::cvtColor(image, gray, CV_RGBA2GRAY);
@@ -235,26 +235,23 @@ void VINSMobileNode::imuStartUpdate(const sensor_msgs::ImuConstPtr& msg){
     // -msg->linear_acceleration.y * GRAVITY,
     // -msg->linear_acceleration.z * GRAVITY;
 
-    imu_msg->acc << msg->linear_acceleration.x,
-    msg->linear_acceleration.y,
+    imu_msg->acc << -msg->linear_acceleration.y,
+    msg->linear_acceleration.x,
     msg->linear_acceleration.z;
 
-    imu_msg->gyr << msg->angular_velocity.x,
-    msg->angular_velocity.y,
+    imu_msg->gyr << -msg->angular_velocity.y,
+    msg->angular_velocity.x,
     msg->angular_velocity.z;
 
     lateast_imu_time = imu_msg->header;
 
-    // // 🎯 IMU 데이터 회전 적용 (X축 30도, Y축 45도, Z축 60도 회전)
-    // Vector3d rotation_vector(0, M_PI / 2, 0); // (30°, 45°, 60° in radians)
+    // Vector3d rotation_vector(0, -M_PI / 2, 0); // (30°, 45°, 60° in radians)
     
-    // // 회전 변환 (Yaw-Pitch-Roll)
     // AngleAxisd rollAngle(rotation_vector(0), Vector3d::UnitX());
     // AngleAxisd pitchAngle(rotation_vector(1), Vector3d::UnitY());
     // AngleAxisd yawAngle(rotation_vector(2), Vector3d::UnitZ());
     // Matrix3d rotation_matrix = (yawAngle * pitchAngle * rollAngle).toRotationMatrix();
 
-    // // 가속도 및 각속도 회전 적용
     // imu_msg->acc = rotation_matrix * imu_msg->acc;
     // imu_msg->gyr = rotation_matrix * imu_msg->gyr;
 
@@ -311,13 +308,13 @@ VINSMobileNode::getMeasurements()
         
         if (!(imu_msg_buf.back()->header > img_msg_buf.front()->header))
         {
-            // ROS_INFO("wait for imu, only should happen at the beginning");
+            // // ROS_INFO("wait for imu, only should happen at the beginning");
             return measurements;
         }
         
         if (!(imu_msg_buf.front()->header < img_msg_buf.front()->header))
         {
-            // ROS_INFO("throw img, only should happen at the beginning");
+            // // ROS_INFO("throw img, only should happen at the beginning");
             img_msg_buf.pop();
             continue;
         }
@@ -394,7 +391,7 @@ void VINSMobileNode::process(){
         
         double time_now = ros::Time::now().toSec();
         double time_vins = vins.Headers[WINDOW_SIZE];
-        // ROS_INFO("vins delay %lf", time_now - time_vins);
+        // // ROS_INFO("vins delay %lf", time_now - time_vins);
         
         //update feature position for front-end
         // 최적화는 이미 process에서 수행함
@@ -562,17 +559,17 @@ void VINSMobileNode::process(){
 }
 
 void VINSMobileNode::loop_thread(const ros::TimerEvent&){
-    // ROS_INFO_STREAM("HI? - loop thread");
+    // // ROS_INFO_STREAM("HI? - loop thread");
 
     if(LOOP_CLOSURE && loop_closure == NULL)
     {
-        ROS_INFO("loop start load voc");
+        // ROS_INFO("loop start load voc");
         TS(load_voc);
         const char *voc_file = "/home/foscar/capstone-2025-11/backend/WIGO-ros/src/test/src/VINS-Mobile/Resources/brief_k10L6.bin";
         loop_closure = new LoopClosure(voc_file, COL, ROW);
         TE(load_voc);
         
-        ROS_INFO("loop load voc finish");
+        // ROS_INFO("loop load voc finish");
         voc_init_ok = true;
     }
 
@@ -659,7 +656,7 @@ void VINSMobileNode::loop_thread(const ros::TimerEvent&){
 }
 
 void VINSMobileNode::global_loop_thread(const ros::TimerEvent&){
-    // ROS_INFO_STREAM("HI? - global loop thread");
+    // // ROS_INFO_STREAM("HI? - global loop thread");
 
     // while (![[NSThread currentThread] isCancelled])
     // {
