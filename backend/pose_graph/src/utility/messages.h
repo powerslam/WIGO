@@ -1,4 +1,5 @@
 #include <vector>
+#include <memory>
 
 #include <eigen3/Eigen/Core>
 #include <opencv2/opencv.hpp>
@@ -22,7 +23,10 @@ struct PointMSG {
     std::vector<cv::Point3f> point2d_normal;
     std::vector<double> point_id;
 };
+
+typedef std::shared_ptr<ImgMSG const> ImgMSGConstPtr;
+typedef std::shared_ptr<PoseMSG const> PoseMSGConstPtr;
+typedef std::shared_ptr<PointMSG const> PointMSGConstPtr;
+
 }
 
-// 예시
-// typedef boost::shared_ptr< ::morai_msgs::Obstacle const> ObstacleConstPtr;

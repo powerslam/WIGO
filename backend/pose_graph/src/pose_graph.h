@@ -57,13 +57,13 @@ public:
 	const std::string POSE_GRAPH_SAVE_PATH;
 	const int ROW, COL, SKIP_CNT, SKIP_DIS;
 
-	Vector3d t_drift;
+	Eigen::Vector3d t_drift;
 	double yaw_drift;
-	Matrix3d r_drift;
+	Eigen::Matrix3d r_drift;
 	// world frame( base sequence or first sequence)<----> cur sequence frame  
-	Vector3d w_t_vio;
-	Matrix3d w_r_vio;
-
+	Eigen::Vector3d w_t_vio;
+	Eigen::Matrix3d w_r_vio;
+	Eigen::Vector3d last_t(-100, -100, -100);
 
 private:
 	int detectLoop(KeyFrame* keyframe, int frame_index);
@@ -84,9 +84,9 @@ private:
 	std::mutex m_process;
 	
 	std::thread t_loopClosure;
-	queue<message::ImgMSG> image_buf;
-	queue<message::PointMSG> point_buf;
-	queue<message::PoseMSG> pose_buf;
+	queue<message::PoseMSGConstPtr> pose_buf;
+	queue<message::ImgMSGConstPtr> image_buf;
+	queue<message::PointMSGConstPtr> point_buf;
 	
 	std::thread t_optimization;
 	std::queue<int> optimize_buf;
@@ -98,6 +98,7 @@ private:
 	map<int, cv::Mat> image_pool;
 	int earliest_loop_index;
 	int base_sequence;
+	int frame_index;
 
 	BriefDatabase db;
 	BriefVocabulary* voc;
