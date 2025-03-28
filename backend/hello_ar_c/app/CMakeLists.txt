@@ -20,6 +20,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+message(${ARCORE_INCLUDE})
+
 # Import the ARCore (Google Play Services for AR) library.
 add_library(arcore SHARED IMPORTED)
 set_target_properties(arcore PROPERTIES IMPORTED_LOCATION
