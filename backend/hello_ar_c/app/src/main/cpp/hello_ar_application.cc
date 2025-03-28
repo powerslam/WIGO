@@ -202,36 +202,37 @@ namespace hello_ar {
 //             pose_raw[4], pose_raw[5], pose_raw[6],  // translation
 //             pose_raw[0], pose_raw[1], pose_raw[2], pose_raw[3]);  // rotation
 
-        Point start = {pose_raw[0], pose_raw[2]};
-        Point goal = {-10.0f, -18.0f};  // 원하는 도착 위치
-
-        std::vector<Point> outer_rect = {
-                {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
-        };
-        std::vector<Point> inner_rect = {
-                {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
-        };
-
-        std::set<Point> obstacles;
-        for (int i = 0; i < outer_rect.size(); ++i) {
-            auto wall = generateWall(outer_rect[i], outer_rect[(i + 1) % outer_rect.size()]);
-            obstacles.insert(wall.begin(), wall.end());
-        }
-        for (int i = 0; i < inner_rect.size(); ++i) {
-            auto wall = generateWall(inner_rect[i], inner_rect[(i + 1) % inner_rect.size()]);
-            obstacles.insert(wall.begin(), wall.end());
-        }
-
-        auto path = astar(start, goal, obstacles);
-
-        if (!path.empty()) {
-            float cam_x = pose_raw[4]; // translation x
-            float cam_z = pose_raw[6]; // translation z
-            CheckCameraFollowingPath(path, cam_x, cam_z);
-        }
-
-        // A* 경로 탐색 수행
         if (!path_generated_) {
+
+            Point start = {pose_raw[0], pose_raw[2]};
+            Point goal = {-10.0f, -18.0f};  // 원하는 도착 위치
+
+            std::vector<Point> outer_rect = {
+                    {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
+            };
+            std::vector<Point> inner_rect = {
+                    {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
+            };
+
+            std::set<Point> obstacles;
+            for (int i = 0; i < outer_rect.size(); ++i) {
+                auto wall = generateWall(outer_rect[i], outer_rect[(i + 1) % outer_rect.size()]);
+                obstacles.insert(wall.begin(), wall.end());
+            }
+            for (int i = 0; i < inner_rect.size(); ++i) {
+                auto wall = generateWall(inner_rect[i], inner_rect[(i + 1) % inner_rect.size()]);
+                obstacles.insert(wall.begin(), wall.end());
+            }
+
+            auto path = astar(start, goal, obstacles);
+
+            if (!path.empty()) {
+                float cam_x = pose_raw[4]; // translation x
+                float cam_z = pose_raw[6]; // translation z
+                CheckCameraFollowingPath(path, cam_x, cam_z);
+            }
+
+            // A* 경로 탐색 수행
             if (!path.empty()) {
                 LOGI("🚀 경로 탐색 성공! A* 결과 경로:");
                 for (const auto& p : path) {
