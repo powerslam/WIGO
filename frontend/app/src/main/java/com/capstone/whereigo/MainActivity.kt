@@ -1,18 +1,20 @@
 package com.capstone.whereigo
 
-import android.R
 import android.content.Intent
 import android.os.Bundle
-import android.widget.ArrayAdapter
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.capstone.whereigo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+
     private var backPressedTime: Long = 0
-    private val backPressInterval: Long = 2000 // 2초 이내에 두 번 눌러야 종료됨
+    private val backPressInterval: Long = 1000 // 1초 이내에 두 번 눌러야 종료됨
+    private val currentTime = System.currentTimeMillis()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,43 +23,43 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val searchBar = binding.searchBar
-        val menuButton = binding.menuButton
+        val searchView = binding.searchView
+        searchView.setupWithSearchBar(searchBar)
 
-        // 예제 데이터 (최근 검색어 + 연관 검색어)
-        val searchHistory = listOf(
-            "미래관", "북악관", "과학관", "예술관", "공학관",
-            "성곡 도서관", "아무거나", "편의점 택배",
-            "스타벅스 메뉴", "스타벅스 아메리카노"
-        )
-
-        var searchAdapter =
-            ArrayAdapter(this, R.layout.simple_list_item_activated_1, searchHistory)
-        searchBar.setAdapter(searchAdapter)
-
-        // 리스트 중 하나 선택 시
-        searchBar.setOnItemClickListener { _, _, position, _ ->
-            val selectedText = searchAdapter.getItem(position)
-            searchBar.setText(selectedText)
+        val searchMenu = R.menu.search_menu
+        searchBar.inflateMenu(searchMenu)
+        searchBar.menu.findItem(R.id.action_menu).setOnMenuItemClickListener {
+            val menuOn = Intent(this, SettingsActivity::class.java)
+            startActivity(menuOn)
+            true
         }
 
-        menuButton.setOnClickListener {
-            val intent = Intent(this, DownloadActivity::class.java)
-            startActivity(intent)
+        searchView.editText.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = searchView.text.toString()
+                Toast.makeText(this, query, Toast.LENGTH_SHORT).show()
+                true
+            } else {
+                false
+            }
         }
 
-    }
-    override fun onBackPressed() {
-        // 현재 시간
-        val currentTime = System.currentTimeMillis()
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (searchView.isShowing) {  // SearchView가 열려 있으면 닫기
+                    searchView.hide()
+                } else {
+                    if (currentTime - backPressedTime < backPressInterval) {
+                        isEnabled = false  // 기본 뒤로가기 동작 수행
+                        onBackPressedDispatcher.onBackPressed()
+                    } else {
+                        backPressedTime = currentTime
+                        // "한 번 더 누르면 종료됩니다." 메시지 출력
+                        Toast.makeText(this@MainActivity, "한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show()
 
-        // 뒤로가기 버튼이 눌린 시간이 2초 이내이면 종료
-        if (currentTime - backPressedTime < backPressInterval) {
-            super.onBackPressed()  // 종료
-            return
-        } else {
-            backPressedTime = currentTime
-            // "한 번 더 누르면 종료됩니다." 메시지 출력
-            Toast.makeText(this, "한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show()
-        }
+                    }
+                }
+            }
+        })
     }
 }

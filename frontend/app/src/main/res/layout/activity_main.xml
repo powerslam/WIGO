@@ -5,78 +5,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:background="?attr/colorSurface">
+    android:background="?attr/colorSurface"
+    android:scaleType="centerCrop">
 
-    <!-- 배경 이미지 -->
+    <!-- 배경 이미지  android:fitsSystemWindows="true"-->
+
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"/>
 
     <!-- 검색창 컨테이너 -->
-    <com.google.android.material.card.MaterialCardView
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="4dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="?attr/colorOutline"
-        app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
-        android:layout_gravity="top|center_horizontal">
+        android:layout_height="match_parent">
 
-        <LinearLayout
+        <!-- NestedScrollingChild goes here (NestedScrollView, RecyclerView, etc.). -->
+
+        <com.google.android.material.search.SearchBar
+            android:id="@+id/search_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="8dp">
+            style="@style/Widget.Material3.SearchBar"
+            android:hint="@string/searchbar_hint"
+            android:layout_marginTop="30dp"/>
 
-            <!-- 메뉴 버튼 -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/menuButton"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                app:backgroundTint="?attr/colorSurfaceContainerHighest"
-                app:icon="@android:drawable/ic_menu_sort_by_size"
-                app:iconTint="?attr/colorOnSurface"
-                app:rippleColor="?attr/colorPrimary"
-                android:contentDescription="메뉴 열기"/>
 
-            <!-- 검색창 -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="장소를 검색하세요"
-                app:boxBackgroundMode="filled"
-                app:boxBackgroundColor="?attr/colorSurfaceContainerLow"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.SmallComponent"
-                app:hintTextColor="?attr/colorPrimary">
+        <com.google.android.material.search.SearchView
+            android:id="@+id/search_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="@string/searchbar_hint"
+            style="@style/Widget.Material3.SearchView"
+            app:layout_anchor="@id/search_bar">
 
-                <AutoCompleteTextView
-                    android:id="@+id/searchBar"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:textSize="16sp"
-                    android:textColorHint="?attr/colorPrimary"
-                    android:textColor="?attr/colorOnSurface"
-                    android:inputType="text"/>
-            </com.google.android.material.textfield.TextInputLayout>
+            <!-- Search suggestions/results go here (ScrollView, RecyclerView, etc.). -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/search_result"
+                android:visibility="gone"/>
 
-            <!-- 음성 검색 버튼 -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/voiceSearchButton"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                app:backgroundTint="?attr/colorSurfaceContainerHighest"
-                app:icon="@android:drawable/ic_btn_speak_now"
-                app:iconTint="?attr/colorOnSurface"
-                app:rippleColor="?attr/colorPrimary"
-                android:contentDescription="음성 검색"/>
-        </LinearLayout>
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_behavior="@string/searchbar_scrolling_view_behavior">
+                <!-- Screen content goes here. -->
+            </androidx.core.widget.NestedScrollView>
+        </com.google.android.material.search.SearchView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </FrameLayout>
+
