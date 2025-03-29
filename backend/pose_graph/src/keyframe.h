@@ -100,3 +100,4 @@ public:
 	Eigen::Matrix<double, 8, 1 > loop_info;
 };
 
+typedef std::shared_ptr<KeyFrame> KeyFramePtr;
