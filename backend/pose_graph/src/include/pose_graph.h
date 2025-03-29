@@ -15,13 +15,13 @@
 #include <eigen3/Eigen/Dense>
 
 #include "keyframe.h"
-#include "utility/tic_toc.h"
-#include "utility/utility.h"
-#include "utility/tic_toc.h"
-#include "ThirdParty/DBoW/DBoW2.h"
-#include "ThirdParty/DVision/DVision.h"
-#include "ThirdParty/DBoW/TemplatedDatabase.h"
-#include "ThirdParty/DBoW/TemplatedVocabulary.h"
+#include "../utility/tic_toc.h"
+#include "../utility/utility.h"
+#include "../utility/tic_toc.h"
+#include "../ThirdParty/DBoW/DBoW2.h"
+#include "../ThirdParty/DVision/DVision.h"
+#include "../ThirdParty/DBoW/TemplatedDatabase.h"
+#include "../ThirdParty/DBoW/TemplatedVocabulary.h"
 
 using namespace DVision;
 using namespace DBoW2;
