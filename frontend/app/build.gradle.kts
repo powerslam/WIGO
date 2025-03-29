@@ -1,6 +1,15 @@
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.bundling.Zip
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+}
+
+val arcoreLibPath = "${buildDir}/arcore-native"
+
+configurations {
+    create("natives")
 }
 
 android {
@@ -9,37 +18,58 @@ android {
 
     defaultConfig {
         applicationId = "com.capstone.whereigo"
-        minSdk = 31
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++11", "-Wall")
+                arguments += listOf(
+                    "-DANDROID_STL=c++_static",
+                    "-DARCORE_LIBPATH=$arcoreLibPath/jni",
+                    "-DARCORE_INCLUDE=${project.rootDir}/app/src/main/cpp/include/arcore",
+                    "-DGLM_INCLUDE=${project.rootDir}/app/src/main/cpp/include/glm"
+                )
+            }
+        }
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
+
+    externalNativeBuild {
+        cmake {
+            path = file("CMakeLists.txt")
+        }
     }
 
     viewBinding{
         enable = true
     }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
+    implementation("com.google.ar:core:1.48.0")
+    add("natives", "com.google.ar:core:1.48.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -53,5 +83,24 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(libs.material.v1110)
+}
 
+val extractNativeLibraries by tasks.registering(Copy::class) {
+    // Always extract to ensure updated libs
+    outputs.upToDateWhen { false }
+
+    from({
+        configurations.getByName("natives").map { zipTree(it) }
+    })
+    into(arcoreLibPath)
+    include("jni/**/*")
+}
+
+// Ensure native libs are extracted before external native build tasks
+tasks.configureEach {
+    if ((name.contains("external", ignoreCase = true) || name.contains("CMake", ignoreCase = true)) &&
+        !name.contains("Clean", ignoreCase = true)
+    ) {
+        dependsOn(extractNativeLibraries)
+    }
 }
