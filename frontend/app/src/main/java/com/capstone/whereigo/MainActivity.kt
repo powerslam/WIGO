@@ -16,10 +16,6 @@ class MainActivity : AppCompatActivity() {
     private val backPressInterval: Long = 1000 // 1초 이내에 두 번 눌러야 종료됨
     private val currentTime = System.currentTimeMillis()
 
-    private val searchSuggestions = listOf("서울", "부산", "대구", "전주", "경기도")
-    private val searchResults = listOf("서울 랜드마크", "부산 해운대", "대구 수목원", "전주 한옥마을", "경기도 관광지")
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
