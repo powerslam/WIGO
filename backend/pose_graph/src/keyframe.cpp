@@ -257,7 +257,7 @@ void KeyFrame::PnPRANSAC(const vector<cv::Point2f> &matched_2d_old_norm,
 }
 
 
-bool KeyFrame::findConnection(KeyFrame* old_kf)
+bool KeyFrame::findConnection(KeyFramePtr old_kf)
 {
 	TicToc tmp_t;
 	//printf("find Connection\n");

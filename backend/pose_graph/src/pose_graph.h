@@ -16,7 +16,6 @@
 
 #include "keyframe.h"
 #include "utility/tic_toc.h"
-#include "utility/messages.h"
 #include "utility/utility.h"
 #include "utility/tic_toc.h"
 #include "ThirdParty/DBoW/DBoW2.h"
@@ -41,12 +40,12 @@ public:
 
 	~PoseGraph();
 	
-	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
-	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
+	void addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop);
+	void loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop);
 	void loadVocabulary(std::string voc_path);
 	void updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info);
 	
-	KeyFrame* getKeyFrame(int index);
+	KeyFramePtr getKeyFrame(int index);
 	
 	void savePoseGraph();
 	void loadPoseGraph();
@@ -57,24 +56,27 @@ public:
 	const std::string POSE_GRAPH_SAVE_PATH;
 	const int ROW, COL, SKIP_CNT, SKIP_DIS;
 
+	int skip_first_cnt = 0;
+	int skip_cnt = 0;
+
 	Eigen::Vector3d t_drift;
 	double yaw_drift;
 	Eigen::Matrix3d r_drift;
 	// world frame( base sequence or first sequence)<----> cur sequence frame  
 	Eigen::Vector3d w_t_vio;
 	Eigen::Matrix3d w_r_vio;
-	Eigen::Vector3d last_t(-100, -100, -100);
+	Eigen::Vector3d last_t = Eigen::Vector3d(-100, -100, -100);
 
 private:
-	int detectLoop(KeyFrame* keyframe, int frame_index);
-	void addKeyFrameIntoVoc(KeyFrame* keyframe);
+	int detectLoop(KeyFramePtr keyframe, int frame_index);
+	void addKeyFrameIntoVoc(KeyFramePtr keyframe);
+	void addKeyFrameBuf(KeyFramePtr data);
 	void optimize4DoF();
 	void loopClosure();
-
 	void new_sequence();
 	void command();
 
-	list<KeyFrame*> keyframelist;
+	list<KeyFramePtr> keyframelist;
 	
 	std::mutex m_keyframelist;
 	std::mutex m_optimize_buf;
@@ -84,9 +86,7 @@ private:
 	std::mutex m_process;
 	
 	std::thread t_loopClosure;
-	queue<message::PoseMSGConstPtr> pose_buf;
-	queue<message::ImgMSGConstPtr> image_buf;
-	queue<message::PointMSGConstPtr> point_buf;
+	queue<KeyFramePtr> keyframe_buf;
 	
 	std::thread t_optimization;
 	std::queue<int> optimize_buf;

@@ -38,7 +38,13 @@ void PoseGraph::loadVocabulary(std::string voc_path)
     db.setVocabulary(*voc, false, 0);
 }
 
-void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
+void PoseGraph::addKeyFrameBuf(KeyFramePtr keyframe){
+    m_buf.lock();
+    keyframe_buf.push(keyframe);
+    m_buf.unlock();
+}
+
+void PoseGraph::addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
 {
     //shift to base frame
     Vector3d vio_P_cur;
@@ -75,7 +81,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     if (loop_index != -1)
 	{
         //printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
-        KeyFrame* old_kf = getKeyFrame(loop_index);
+        KeyFramePtr old_kf = getKeyFrame(loop_index);
 
         if (cur_kf->findConnection(old_kf))
         {
@@ -107,7 +113,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
                 vio_P_cur = w_r_vio * vio_P_cur + w_t_vio;
                 vio_R_cur = w_r_vio *  vio_R_cur;
                 cur_kf->updateVioPose(vio_P_cur, vio_R_cur);
-                list<KeyFrame*>::iterator it = keyframelist.begin();
+                list<KeyFramePtr>::iterator it = keyframelist.begin();
                 for (; it != keyframelist.end(); it++)
                 {
                     if((*it)->sequence == cur_kf->sequence)
@@ -140,7 +146,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
 	m_keyframelist.unlock();
 }
 
-void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
+void PoseGraph::loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
 {
     cur_kf->index = global_index;
     global_index++;
@@ -155,7 +161,7 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     if (loop_index != -1)
     {
         printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
-        KeyFrame* old_kf = getKeyFrame(loop_index);
+        KeyFramePtr old_kf = getKeyFrame(loop_index);
         if (cur_kf->findConnection(old_kf))
         {
             if (earliest_loop_index > loop_index || earliest_loop_index == -1)
@@ -172,10 +178,10 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     m_keyframelist.unlock();
 }
 
-KeyFrame* PoseGraph::getKeyFrame(int index)
+KeyFramePtr PoseGraph::getKeyFrame(int index)
 {
 //    unique_lock<mutex> lock(m_keyframelist);
-    list<KeyFrame*>::iterator it = keyframelist.begin();
+    list<KeyFramePtr>::iterator it = keyframelist.begin();
     for (; it != keyframelist.end(); it++)
     {
         if((*it)->index == index)
@@ -187,7 +193,7 @@ KeyFrame* PoseGraph::getKeyFrame(int index)
         return NULL;
 }
 
-int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
+int PoseGraph::detectLoop(KeyFramePtr keyframe, int frame_index)
 {
     TicToc tmp_t;
     //first query; then add this frame into database!
@@ -230,7 +236,7 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
 
 }
 
-void PoseGraph::addKeyFrameIntoVoc(KeyFrame* keyframe)
+void PoseGraph::addKeyFrameIntoVoc(KeyFramePtr keyframe)
 {
     db.add(keyframe->brief_descriptors);
 }
@@ -254,7 +260,7 @@ void PoseGraph::optimize4DoF()
             printf("optimize pose graph \n");
             TicToc tmp_t;
             m_keyframelist.lock();
-            KeyFrame* cur_kf = getKeyFrame(cur_index);
+            KeyFramePtr cur_kf = getKeyFrame(cur_index);
 
             int max_length = cur_index + 1;
 
@@ -277,7 +283,7 @@ void PoseGraph::optimize4DoF()
             ceres::LocalParameterization* angle_local_parameterization =
                 AngleLocalParameterization::Create();
 
-            list<KeyFrame*>::iterator it;
+            list<KeyFramePtr>::iterator it;
 
             int i = 0;
             for (it = keyframelist.begin(); it != keyframelist.end(); it++)
@@ -418,14 +424,8 @@ void PoseGraph::new_sequence()
     
     m_buf.lock();
 
-    while(!image_buf.empty())
-        image_buf.pop();
-
-    while(!point_buf.empty())
-        point_buf.pop();
-    
-    while(!pose_buf.empty())
-        pose_buf.pop();
+    while(!keyframe_buf.empty())
+        keyframe_buf.pop();
     
     m_buf.unlock();
 }
@@ -455,47 +455,21 @@ void PoseGraph::command()
 
 void PoseGraph::loopClosure()
 {
-    while (true)
+    while (true) 
     {
-        message::ImgMSGConstPtr image_msg = NULL;
-        message::PoseMSGConstPtr pose_msg = NULL;
-        message::PointMSGConstPtr point_msg = NULL;
-
+        KeyFramePtr keyframe = NULL;
+        
         // find out the messages with same time stamp
         m_buf.lock();
-        if(!image_buf.empty() && !point_buf.empty() && !pose_buf.empty())
-        {
-            if (image_buf.front()->header.stamp > pose_buf.front()->header.stamp)
-            {
-                pose_buf.pop();
-                printf("throw pose at beginning\n");
-            }
-            else if (image_buf.front()->header.stamp > point_buf.front()->header.stamp)
-            {
-                point_buf.pop();
-                printf("throw point at beginning\n");
-            }
-            else if (image_buf.back()->header.stamp >= pose_buf.front()->header.stamp 
-                && point_buf.back()->header.stamp >= pose_buf.front()->header.stamp)
-            {
-                pose_msg = pose_buf.front();
-                pose_buf.pop();
-                while (!pose_buf.empty())
-                    pose_buf.pop();
-                while (image_buf.front()->header.stamp < pose_msg->header.stamp)
-                    image_buf.pop();
-                image_msg = image_buf.front();
-                image_buf.pop();
-
-                while (point_buf.front()->header.stamp < pose_msg->header.stamp)
-                    point_buf.pop();
-                point_msg = point_buf.front();
-                point_buf.pop();
-            }
+        
+        if(!keyframe_buf.empty()){
+            keyframe = keyframe_buf.front();
+            keyframe_buf.pop();
         }
+        
         m_buf.unlock();
 
-        if (pose_msg != NULL)
+        if (keyframe != NULL)
         {
             // skip fisrt few
             if (skip_first_cnt < SKIP_FIRST_CNT)
@@ -509,18 +483,20 @@ void PoseGraph::loopClosure()
                 skip_cnt++;
                 continue;
             }
+            
             else
             {
                 skip_cnt = 0;
             }
             
-            if((pose_msg->position - last_t).norm() > SKIP_DIS)
+            Eigen::Vector3d T;
+            Eigen::Matrix3d R;
+            keyframe->getPose(T, R);
+            
+            if((T - last_t).norm() > SKIP_DIS)
             {
-                KeyFrame* keyframe = new KeyFrame(pose_msg->stamp, frame_index, pose_msg->position, pose_msg->orientation, image_msg->image,
-                                   point_msg->point3d, point_msg->point_2d_uv, point_msg->point_2d_normal, point_msg->point_id, sequence);   
-                
                 m_process.lock();
-                posegraph.addKeyFrame(keyframe, 1);
+                addKeyFrame(keyframe, 1);
                 m_process.unlock();
                 frame_index++;
                 last_t = T;
@@ -542,7 +518,7 @@ void PoseGraph::savePoseGraph()
     string file_path = POSE_GRAPH_SAVE_PATH + "pose_graph.txt";
     pFile = fopen (file_path.c_str(),"w");
     
-    list<KeyFrame*>::iterator it;
+    list<KeyFramePtr>::iterator it;
     for (it = keyframelist.begin(); it != keyframelist.end(); it++)
     {
         std::string descriptor_path, brief_path, keypoints_path;
@@ -685,7 +661,7 @@ void PoseGraph::loadPoseGraph()
         brief_file.close();
         fclose(keypoints_file);
 
-        KeyFrame* keyframe = new KeyFrame(time_stamp, index, VIO_T, VIO_R, PG_T, PG_R, image, loop_index, loop_info, keypoints, keypoints_norm, brief_descriptors);
+        KeyFramePtr keyframe = std::make_shared<KeyFrame>(time_stamp, index, VIO_T, VIO_R, PG_T, PG_R, image, loop_index, loop_info, keypoints, keypoints_norm, brief_descriptors);
         loadKeyFrame(keyframe, 0);
         cnt++;
     }
@@ -696,13 +672,13 @@ void PoseGraph::loadPoseGraph()
 
 void PoseGraph::updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info)
 {
-    KeyFrame* kf = getKeyFrame(index);
+    KeyFramePtr kf = getKeyFrame(index);
     kf->updateLoop(_loop_info);
     if (abs(_loop_info(7)) < 30.0 && Vector3d(_loop_info(0), _loop_info(1), _loop_info(2)).norm() < 20.0)
     {
         // if (FAST_RELOCALIZATION)
         // {
-        //     KeyFrame* old_kf = getKeyFrame(kf->loop_index);
+        //     KeyFramePtr old_kf = getKeyFrame(kf->loop_index);
         //     Vector3d w_P_old, w_P_cur, vio_P_cur;
         //     Matrix3d w_R_old, w_R_cur, vio_R_cur;
         //     old_kf->getPose(w_P_old, w_R_old);
