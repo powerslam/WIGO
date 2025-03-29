@@ -37,8 +37,8 @@
 #include "util.h"
 #include "astar_pathfinding.h"
 
-#include <queue>            // ✅ A*에 필요
-#include <cmath>            // ✅ 유클리드 거리 계산
+#include <queue>            // A*에 필요
+#include <cmath>            // 유클리드 거리 계산
 
 namespace hello_ar {
 
@@ -105,7 +105,10 @@ class HelloArApplication {
 
   AAssetManager* const asset_manager_;
 
-  float threshold = 0.5f; // 거리 허용 오차 (0.5m)
+  std::vector<Point> path;
+  float threshold = 0.8f; // 거리 허용 오차
+
+  JNIEnv* GetJniEnv();
 
   // class 멤버로 현재 도달해야 하는 경로 인덱스
   int current_path_index = 0;
