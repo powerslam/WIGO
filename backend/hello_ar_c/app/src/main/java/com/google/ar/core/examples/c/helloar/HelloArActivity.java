@@ -60,6 +60,8 @@ public class HelloArActivity extends AppCompatActivity
 
   private static TextView cameraPoseTextView;
 
+  private static TextView pathStatusTextView;
+
   private final DepthSettings depthSettings = new DepthSettings();
   private boolean[] depthSettingsMenuDialogCheckboxes = new boolean[NUM_DEPTH_SETTINGS_CHECKBOXES];
 
@@ -141,6 +143,8 @@ public class HelloArActivity extends AppCompatActivity
     addContentView(cameraPoseTextView, new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT));
+
+    pathStatusTextView = findViewById(R.id.pathStatusTextView);
 
 
     JniInterface.assetManager = getAssets();
@@ -428,4 +432,11 @@ public class HelloArActivity extends AppCompatActivity
       cameraPoseTextView.post(() -> cameraPoseTextView.setText(poseText));
     }
   }
+
+  public static void updatePathStatusFromNative(String status) {
+    if (pathStatusTextView != null) {
+      pathStatusTextView.post(() -> pathStatusTextView.setText(status));
+    }
+  }
+
 }
