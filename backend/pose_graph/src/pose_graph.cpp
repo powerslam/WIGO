@@ -1,4 +1,4 @@
-#include "pose_graph.h"
+#include "include/pose_graph.h"
 
 PoseGraph::PoseGraph(
     const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
