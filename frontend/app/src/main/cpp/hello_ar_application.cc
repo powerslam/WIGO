@@ -60,6 +60,53 @@ namespace hello_ar {
         }
     }
 
+    JNIEnv* HelloArApplication::GetJniEnv() {
+        JNIEnv* env = nullptr;
+        if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+            return env;
+        }
+        return nullptr;
+    }
+
+    void HelloArApplication::CheckCameraFollowingPath(const std::vector<Point>& path, float cam_x, float cam_z) {
+        if (current_path_index >= path.size()) {
+            LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
+
+            JNIEnv* env = GetJniEnv();
+            jclass clazz = env->FindClass("com/google/ar/core/examples/c/helloar/HelloArActivity");
+            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+
+            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
+            env->CallStaticVoidMethod(clazz, method, message);
+            env->DeleteLocalRef(message);
+            return;
+        }
+
+        Point target = path[current_path_index];
+        float dx = cam_x - target.x;
+        float dz = cam_z - target.z;
+        float distance = std::sqrt(dx * dx + dz * dz);
+
+        std::string status;
+        char buffer[128];
+
+        if (distance < threshold) {
+            snprintf(buffer, sizeof(buffer), "✅ 경로 지점 %d 도달 (x=%.2f, z=%.2f)", current_path_index, target.x, target.z);
+            current_path_index++;
+        } else {
+            snprintf(buffer, sizeof(buffer), "📍 경로 %d 접근 중... x 방향: %.2f m, z 방향: %.2f m",
+                     current_path_index, dx, dz);
+        }
+
+        JNIEnv* env = GetJniEnv();
+        jclass clazz = env->FindClass("com/google/ar/core/examples/c/helloar/HelloArActivity");
+        jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+
+        jstring message = env->NewStringUTF(buffer);
+        env->CallStaticVoidMethod(clazz, method, message);
+        env->DeleteLocalRef(message);
+    }
+    
     void HelloArApplication::OnPause() {
         LOGI("OnPause()");
         if (ar_session_ != nullptr) {
@@ -167,6 +214,81 @@ namespace hello_ar {
 
         ArCamera* ar_camera = nullptr;
         ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
+
+        // 2. Pose 객체 생성
+        ArPose* camera_pose;
+        //ArPose* camera_pose = nullptr;
+        ArPose_create(ar_session_, nullptr, &camera_pose);
+        // 3. 카메라의 Pose 얻기
+        ArCamera_getPose(ar_session_, ar_camera, camera_pose);
+
+        // 4. Pose를 float 배열로 변환
+        float pose_raw[7];  // [0~2]: translation, [3~6]: quaternion rotation
+        ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
+
+//        LOGI("Camera Pose - Position: [%.3f, %.3f, %.3f], Rotation (Quaternion): [%.3f, %.3f, %.3f, %.3f]",
+//             pose_raw[4], pose_raw[5], pose_raw[6],  // translation
+//             pose_raw[0], pose_raw[1], pose_raw[2], pose_raw[3]);  // rotation
+
+        if (!path_generated_) {
+
+            Point start = {pose_raw[4], pose_raw[6]};
+            Point goal = {-10.0f, -18.0f};  // 원하는 도착 위치
+
+            std::vector<Point> outer_rect = {
+                    {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
+            };
+            std::vector<Point> inner_rect = {
+                    {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
+            };
+
+            std::set<Point> obstacles;
+            for (int i = 0; i < outer_rect.size(); ++i) {
+                auto wall = generateWall(outer_rect[i], outer_rect[(i + 1) % outer_rect.size()]);
+                obstacles.insert(wall.begin(), wall.end());
+            }
+            for (int i = 0; i < inner_rect.size(); ++i) {
+                auto wall = generateWall(inner_rect[i], inner_rect[(i + 1) % inner_rect.size()]);
+                obstacles.insert(wall.begin(), wall.end());
+            }
+
+            path = astar(start, goal, obstacles);
+
+            // A* 경로 탐색 수행
+            if (!path.empty()) {
+                LOGI("🚀 경로 탐색 성공! A* 결과 경로:");
+                for (const auto& p : path) {
+                    LOGI(" -> x=%.2f, z=%.2f", p.x, p.z);
+                }
+                path_generated_ = true;  // 한 번만 실행되도록 설정
+            } else {
+                LOGI("❌ 경로 탐색 실패: 도달 불가능");
+            }
+        }
+
+        if (!path.empty()) {
+            float cam_x = pose_raw[4]; // translation x
+            float cam_z = pose_raw[6]; // translation z
+            CheckCameraFollowingPath(path, cam_x, cam_z);
+        }
+
+        // [추가] Java로 pose 값을 전달
+        JavaVM* java_vm;
+        JNIEnv* env = nullptr;
+
+        if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+            jfloatArray pose_array = env->NewFloatArray(7);
+            env->SetFloatArrayRegion(pose_array, 0, 7, pose_raw);
+
+            jclass clazz = env->FindClass("com/google/ar/core/examples/c/helloar/HelloArActivity");
+            jmethodID method = env->GetStaticMethodID(clazz, "updatePoseFromNative", "([F)V");
+
+            if (clazz != nullptr && method != nullptr) {
+                env->CallStaticVoidMethod(clazz, method, pose_array);
+            }
+        }
+    // 6. Pose 객체 해제
+        ArPose_destroy(camera_pose);
 
         int32_t geometry_changed = 0;
         ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);

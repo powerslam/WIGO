@@ -40,7 +40,8 @@ add_library(hello_ar_native SHARED
            src/main/cpp/plane_renderer.cc
            src/main/cpp/point_cloud_renderer.cc
            src/main/cpp/texture.cc
-           src/main/cpp/util.cc)
+           src/main/cpp/util.cc
+           src/main/cpp/astar_pathfinding.cc)
 
 target_include_directories(hello_ar_native PRIVATE
            src/main/cpp)
