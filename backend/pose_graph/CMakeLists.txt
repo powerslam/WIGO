@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(pose_graph)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++14")
 #-DEIGEN_USE_MKL_ALL")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
@@ -18,7 +18,6 @@ include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS} ${EIGEN3_INCLUD
 add_library(pose_graph STATIC
     src/pose_graph.cpp
     src/keyframe.cpp
-    src/utility/CameraPoseVisualization.cpp
     src/ThirdParty/DBoW/BowVector.cpp
     src/ThirdParty/DBoW/FBrief.cpp
     src/ThirdParty/DBoW/FeatureVector.cpp
