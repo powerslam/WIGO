@@ -20,13 +20,17 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+add_subdirectory(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../backend/pose_graph
+        ${CMAKE_BINARY_DIR}/../../../backend/pose_graph/build
+)
+
 # Import the ARCore (Google Play Services for AR) library.
 add_library(arcore SHARED IMPORTED)
 set_target_properties(arcore PROPERTIES IMPORTED_LOCATION
                       ${ARCORE_LIBPATH}/${ANDROID_ABI}/libarcore_sdk_c.so
                       INTERFACE_INCLUDE_DIRECTORIES ${ARCORE_INCLUDE}
 )
-
 # Import the glm header file from the NDK.
 add_library( glm INTERFACE )
 set_target_properties( glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${GLM_INCLUDE})
@@ -46,6 +50,7 @@ target_include_directories(hello_ar_native PRIVATE
            src/main/cpp)
            
 target_link_libraries(hello_ar_native
+                      pose_graph
                       android
                       log
                       GLESv2
