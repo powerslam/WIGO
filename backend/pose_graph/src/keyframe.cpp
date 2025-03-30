@@ -36,8 +36,6 @@ KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3
 	sequence = _sequence;
 	computeWindowBRIEFPoint();
 	computeBRIEFPoint();
-	if(!DEBUG_IMAGE)
-		image.release();
 }
 
 // load previous keyframe
@@ -53,11 +51,6 @@ KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3
 	vio_R_w_i = _R_w_i;
 	T_w_i = _T_w_i;
 	R_w_i = _R_w_i;
-	if (DEBUG_IMAGE)
-	{
-		image = _image.clone();
-		cv::resize(image, thumbnail, cv::Size(80, 60));
-	}
 	if (_loop_index != -1)
 		has_loop = true;
 	else
