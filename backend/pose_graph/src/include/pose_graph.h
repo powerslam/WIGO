@@ -15,6 +15,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include "keyframe.h"
+#include "parameters.h"
 #include "../utility/tic_toc.h"
 #include "../utility/utility.h"
 #include "../utility/tic_toc.h"
@@ -52,9 +53,8 @@ public:
 
 	const std::string VOCABULARY_FILE;
 	const bool LOAD_PREVIOUS_POSE_GRAPH;
-	const std::string BRIEF_PATTERN_FILE;
 	const std::string POSE_GRAPH_SAVE_PATH;
-	const int ROW, COL, SKIP_CNT, SKIP_DIS;
+	const int SKIP_CNT, SKIP_DIS;
 
 	int skip_first_cnt = 0;
 	int skip_cnt = 0;

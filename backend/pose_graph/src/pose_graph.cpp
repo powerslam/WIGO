@@ -1,14 +1,25 @@
 #include "include/pose_graph.h"
 
+int ROW, COL;
+std::string BRIEF_PATTERN_FILE;
+Eigen::Vector3d tic;
+Eigen::Matrix3d qic;
+
 PoseGraph::PoseGraph(
     const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
     const std::string& vocabulary_file, const bool load_previous_pose_graph,
-    int skip_cnt, int skip_dis, int row, int col): 
-    BRIEF_PATTERN_FILE(brief_pattern_file), POSE_GRAPH_SAVE_PATH(pose_graph_save_path), 
+    int skip_cnt, int skip_dis, int row, int col): POSE_GRAPH_SAVE_PATH(pose_graph_save_path), 
     VOCABULARY_FILE(vocabulary_file), LOAD_PREVIOUS_POSE_GRAPH(load_previous_pose_graph), 
-    SKIP_CNT(skip_cnt), SKIP_DIS(skip_dis), ROW(row), COL(col), frame_index(frame_index)
+    SKIP_CNT(skip_cnt), SKIP_DIS(skip_dis), frame_index(frame_index)
 {
     earliest_loop_index = -1;
+
+    ROW = row;
+    COL = col;
+    BRIEF_PATTERN_FILE = brief_pattern_file;
+
+    tic = Eigen::Vector3d(0, 0, 0);
+    qic = Eigen::Matrix3d::Identity();
     
     t_drift = Eigen::Vector3d(0, 0, 0);
     yaw_drift = 0;
