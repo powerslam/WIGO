@@ -1,5 +1,8 @@
 #!/bin/bash
 
+mkdir -p third_party
+cd third_party
+
 rm -rf ceres-solver-1.14
 rm -rf eigen3
 rm -rf glog
@@ -12,9 +15,9 @@ NDK_PATH=$ANDROID_NDK_HOME      # 또는 직접 NDK 경로 적어도 됨
 ANDROID_ABI=arm64-v8a
 ANDROID_PLATFORM=android-24
 
-# # 1. Clone Eigen
-# git clone --branch 3.3.9 https://gitlab.com/libeigen/eigen.git
-# mv eigen eigen3
+# 1. Clone Eigen
+git clone --branch 3.3.9 https://gitlab.com/libeigen/eigen.git
+mv eigen eigen3
 
 # 2. Clone Glog
 git clone --branch v0.5.0 https://github.com/google/glog.git
