@@ -160,7 +160,7 @@ class FileSystemHelper
             if (errno == ENOENT)  
             {
                 printf("%s not exists, trying to create it \n", path);
-                if (! createDirectoryIfNotExists(dirname(strdupa(path))))
+                if (!createDirectoryIfNotExists(dirname(strdup(path))))
                 {
                     if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0)
                     {
