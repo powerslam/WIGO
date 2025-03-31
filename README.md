@@ -12,7 +12,7 @@
 | 이강욱  | 박주빈 | 박재영 | 안선영 | 조성준 |
 | --- | --- | --- | --- | --- |
 | ![image](https://github.com/user-attachments/assets/a792a80a-c00a-4620-9855-04c30a36f8a4) |  ![image](https://github.com/user-attachments/assets/0825338d-3674-4d68-a075-d780631c0ea6) | ![image](https://github.com/user-attachments/assets/6939ad93-3f6f-43d1-8754-46ae9612e22b) | ![image](https://github.com/user-attachments/assets/773aed81-3c3c-41de-a940-a0d2ffaec6b2) | ![image](https://github.com/user-attachments/assets/f23b5fcd-a55e-453f-a622-8eee4c79f429) |
-| Project Leader, Back-End (SLAM 및 Android-SLAM 간 통신 인터페이스 구축 담당) | Full Stack (Android UI/UX 및 미디어 서버 구축) | Back-End (SLAM 및 미디어 서버 구축) | Back-End (SLAM 및 미디어 서버 구축) | Front End (Android UI/UX) 및 Android-SLAM 간 통신 인터페이스 구축 담당 |
+| Project Leader, Back-End (SLAM 및 Android-SLAM 간 통신 인터페이스 구축 담당) | Back-End (SLAM 및 미디어 서버 구축) | Full Stack (Android UI/UX 및 미디어 서버 구축) | Back-End (SLAM 및 미디어 서버 구축) | Front End (Android UI/UX) 및 Android-SLAM 간 통신 인터페이스 구축 담당 |
 
 ## 1.4. 프로젝트 소개 영상
 (추후 업로드)
