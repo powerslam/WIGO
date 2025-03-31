@@ -73,7 +73,7 @@ namespace hello_ar {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
 
             JNIEnv* env = GetJniEnv();
-            jclass clazz = env->FindClass("com/google/ar/core/examples/c/helloar/HelloArActivity");
+            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArActivity");
             jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
 
             jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
@@ -99,7 +99,7 @@ namespace hello_ar {
         }
 
         JNIEnv* env = GetJniEnv();
-        jclass clazz = env->FindClass("com/google/ar/core/examples/c/helloar/HelloArActivity");
+        jclass clazz = env->FindClass("com/capstone/whereigo/HelloArActivity");
         jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
 
         jstring message = env->NewStringUTF(buffer);
@@ -280,7 +280,7 @@ namespace hello_ar {
             jfloatArray pose_array = env->NewFloatArray(7);
             env->SetFloatArrayRegion(pose_array, 0, 7, pose_raw);
 
-            jclass clazz = env->FindClass("com/google/ar/core/examples/c/helloar/HelloArActivity");
+            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArActivity");
             jmethodID method = env->GetStaticMethodID(clazz, "updatePoseFromNative", "([F)V");
 
             if (clazz != nullptr && method != nullptr) {

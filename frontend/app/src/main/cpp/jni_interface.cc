@@ -22,7 +22,7 @@
 
 #define JNI_METHOD(return_type, method_name) \
   JNIEXPORT return_type JNICALL              \
-      Java_com_google_ar_core_examples_c_helloar_JniInterface_##method_name
+  Java_com_capstone_whereigo_JniInterface_##method_name
 
 extern "C" {
 
@@ -48,6 +48,11 @@ jint JNI_OnLoad(JavaVM *vm, void *) {
 JNI_METHOD(jlong, createNativeApplication)
 (JNIEnv *env, jclass, jobject j_asset_manager) {
   AAssetManager *asset_manager = AAssetManager_fromJava(env, j_asset_manager);
+  if (asset_manager == nullptr) {
+    LOGE("❌ AssetManager_fromJava failed! AssetManager is null.");
+  } else {
+    LOGI("✅ AssetManager_fromJava success.");
+  }
   return jptr(new hello_ar::HelloArApplication(asset_manager));
 }
 
