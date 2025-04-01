@@ -106,7 +106,7 @@ namespace hello_ar {
         env->CallStaticVoidMethod(clazz, method, message);
         env->DeleteLocalRef(message);
     }
-    
+
     void HelloArApplication::OnPause() {
         LOGI("OnPause()");
         if (ar_session_ != nullptr) {
@@ -215,25 +215,27 @@ namespace hello_ar {
         ArCamera* ar_camera = nullptr;
         ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
 
-        // 2. Pose 객체 생성
-        ArPose* camera_pose;
-        //ArPose* camera_pose = nullptr;
-        ArPose_create(ar_session_, nullptr, &camera_pose);
-        // 3. 카메라의 Pose 얻기
-        ArCamera_getPose(ar_session_, ar_camera, camera_pose);
+        // 🔧 [1] 카메라 트래킹 상태 확인
+        ArTrackingState camera_tracking_state;
+        ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
 
-        // 4. Pose를 float 배열로 변환
-        float pose_raw[7];  // [0~2]: translation, [3~6]: quaternion rotation
+        if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
+            LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 및 경로 생성 생략");
+            ArCamera_release(ar_camera);
+            return;
+        }
+
+        // 🔧 [2] 카메라 Pose 추출
+        ArPose* camera_pose;
+        ArPose_create(ar_session_, nullptr, &camera_pose);
+        float pose_raw[7];
+        ArCamera_getPose(ar_session_, ar_camera, camera_pose);
         ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
 
-//        LOGI("Camera Pose - Position: [%.3f, %.3f, %.3f], Rotation (Quaternion): [%.3f, %.3f, %.3f, %.3f]",
-//             pose_raw[4], pose_raw[5], pose_raw[6],  // translation
-//             pose_raw[0], pose_raw[1], pose_raw[2], pose_raw[3]);  // rotation
-
+        // 🔧 [3] 카메라 트래킹이 정상일 때만 경로 생성
         if (!path_generated_) {
-
             Point start = {pose_raw[4], pose_raw[6]};
-            Point goal = {-10.0f, -18.0f};  // 원하는 도착 위치
+            Point goal = {-10.0f, -18.0f};
 
             std::vector<Point> outer_rect = {
                     {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
@@ -254,21 +256,43 @@ namespace hello_ar {
 
             path = astar(start, goal, obstacles);
 
-            // A* 경로 탐색 수행
             if (!path.empty()) {
-                LOGI("🚀 경로 탐색 성공! A* 결과 경로:");
+                LOGI("🚀 경로 탐색 성공! A* 결과:");
                 for (const auto& p : path) {
-                    LOGI(" -> x=%.2f, z=%.2f", p.x, p.z);
+                    float anchor_pose[7] = {0};
+                    anchor_pose[3] = 1;
+                    anchor_pose[4] = p.x;
+                    anchor_pose[5] = pose_raw[5];  // 높이 유지
+                    anchor_pose[6] = p.z;
+
+                    ArPose* pose = nullptr;
+                    ArPose_create(ar_session_, anchor_pose, &pose);
+
+                    ArAnchor* anchor = nullptr;
+                    if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                        ColoredAnchor colored_anchor;
+                        colored_anchor.anchor = anchor;
+
+                        colored_anchor.trackable = nullptr;
+                        SetColor(255, 255, 255, 255, colored_anchor.color);
+                        anchors_.push_back(colored_anchor);
+                        LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
+                    } else {
+                        LOGE("❌ 앵커 생성 실패: x=%.2f, z=%.2f", p.x, p.z);
+                    }
+
+                    ArPose_destroy(pose);
                 }
-                path_generated_ = true;  // 한 번만 실행되도록 설정
+
+                path_generated_ = true;
             } else {
                 LOGI("❌ 경로 탐색 실패: 도달 불가능");
             }
         }
 
         if (!path.empty()) {
-            float cam_x = pose_raw[4]; // translation x
-            float cam_z = pose_raw[6]; // translation z
+            float cam_x = pose_raw[4];
+            float cam_z = pose_raw[6];
             CheckCameraFollowingPath(path, cam_x, cam_z);
         }
 
@@ -287,8 +311,9 @@ namespace hello_ar {
                 env->CallStaticVoidMethod(clazz, method, pose_array);
             }
         }
-    // 6. Pose 객체 해제
+        // 6. Pose 객체 해제
         ArPose_destroy(camera_pose);
+        ArCamera_release(ar_camera);
 
         int32_t geometry_changed = 0;
         ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);
@@ -312,12 +337,12 @@ namespace hello_ar {
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
 
-        ArTrackingState camera_tracking_state;
+        //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
-        ArCamera_release(ar_camera);
 
         // If the camera isn't tracking don't bother rendering other objects.
         if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
+            LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 생성 불가");
             return;
         }
 
@@ -394,18 +419,18 @@ namespace hello_ar {
         // Render Andy objects.
         glm::mat4 model_mat(1.0f);
         for (auto& colored_anchor : anchors_) {
-            ArTrackingState tracking_state = AR_TRACKING_STATE_STOPPED;
-            ArAnchor_getTrackingState(ar_session_, colored_anchor.anchor,
-                                      &tracking_state);
-            if (tracking_state == AR_TRACKING_STATE_TRACKING) {
+            // 🔧 수정: trackable이 nullptr일 경우 UpdateAnchorColor 생략
+            if (colored_anchor.trackable != nullptr) {
                 UpdateAnchorColor(&colored_anchor);
-                // Render object only if the tracking state is AR_TRACKING_STATE_TRACKING.
-                util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
-                                                   &model_mat);
-                andy_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
-                                    colored_anchor.color);
             }
+
+            // 무조건 렌더
+            util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
+                                               &model_mat);
+            andy_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
+                                colored_anchor.color);
         }
+
 
         // Update and render point cloud.
         ArPointCloud* ar_point_cloud = nullptr;
@@ -584,6 +609,11 @@ namespace hello_ar {
     }
 
     void HelloArApplication::UpdateAnchorColor(ColoredAnchor* colored_anchor) {
+        if (colored_anchor->trackable == nullptr) {
+            // 기본 흰색 설정
+            SetColor(255.0f, 255.0f, 255.0f, 255.0f, colored_anchor->color);
+            return;
+        }
         ArTrackable* ar_trackable = colored_anchor->trackable;
         float* color = colored_anchor->color;
 
@@ -622,6 +652,7 @@ namespace hello_ar {
                 return;
             }
         }
+
 
         // Fallback color
         SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);
