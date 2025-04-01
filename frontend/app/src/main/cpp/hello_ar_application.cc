@@ -233,7 +233,7 @@ namespace hello_ar {
         ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
 
         // 🔧 [3] 카메라 트래킹이 정상일 때만 경로 생성
-        if (!path_generated_) {
+        if (!path_generated_ && plane_count_ > 0) {
             Point start = {pose_raw[4], pose_raw[6]};
             Point goal = {-10.0f, -18.0f};
 
@@ -257,35 +257,11 @@ namespace hello_ar {
             path = astar(start, goal, obstacles);
 
             if (!path.empty()) {
-                LOGI("🚀 경로 탐색 성공! A* 결과:");
-                for (const auto& p : path) {
-                    float anchor_pose[7] = {0};
-                    anchor_pose[3] = 1;
-                    anchor_pose[4] = p.x;
-                    anchor_pose[5] = pose_raw[5];  // 높이 유지
-                    anchor_pose[6] = p.z;
-
-                    ArPose* pose = nullptr;
-                    ArPose_create(ar_session_, anchor_pose, &pose);
-
-                    ArAnchor* anchor = nullptr;
-                    if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
-                        ColoredAnchor colored_anchor;
-                        colored_anchor.anchor = anchor;
-
-                        colored_anchor.trackable = nullptr;
-                        SetColor(255, 255, 255, 255, colored_anchor.color);
-                        anchors_.push_back(colored_anchor);
-                        LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
-                    } else {
-                        LOGE("❌ 앵커 생성 실패: x=%.2f, z=%.2f", p.x, p.z);
-                    }
-
-                    ArPose_destroy(pose);
-                }
-
                 path_generated_ = true;
-            } else {
+                path_ready_to_render_ = true;
+                LOGI("🚀 경로 탐색 성공! A* 결과:");
+            }
+            else {
                 LOGI("❌ 경로 탐색 실패: 도달 불가능");
             }
         }
@@ -385,6 +361,50 @@ namespace hello_ar {
         int32_t plane_list_size = 0;
         ArTrackableList_getSize(ar_session_, plane_list, &plane_list_size);
         plane_count_ = plane_list_size;
+
+        if (path_ready_to_render_ && plane_count_ > 0) {
+            // 감지된 첫 번째 평면의 높이 추출
+            ArTrackable* first_trackable = nullptr;
+            ArTrackableList_acquireItem(ar_session_, plane_list, 0, &first_trackable);
+            ArPlane* first_plane = ArAsPlane(first_trackable);
+            ArPose* plane_pose = nullptr;
+            ArPose_create(ar_session_, nullptr, &plane_pose);
+            ArPlane_getCenterPose(ar_session_, first_plane, plane_pose);
+
+            float center_pose_raw[7];
+            ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
+            stored_plane_y_ = center_pose_raw[5];  // 평면의 y값 저장
+
+            ArTrackable_release(first_trackable);
+            ArPose_destroy(plane_pose);
+
+            LOGI("📐 평면 감지됨, 높이: %.2f", stored_plane_y_);
+
+            for (const auto& p : path) {
+                float anchor_pose[7] = {0};
+                anchor_pose[4] = p.x;
+                anchor_pose[5] = stored_plane_y_;  // 평면 높이 사용
+                anchor_pose[6] = p.z;
+
+                ArPose* pose = nullptr;
+                ArPose_create(ar_session_, anchor_pose, &pose);
+
+                ArAnchor* anchor = nullptr;
+                if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                    ColoredAnchor colored_anchor;
+                    colored_anchor.anchor = anchor;
+                    colored_anchor.trackable = nullptr;
+                    SetColor(255, 255, 255, 255, colored_anchor.color);
+                    anchors_.push_back(colored_anchor);
+                    LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
+                }
+
+                ArPose_destroy(pose);
+            }
+
+            path_ready_to_render_ = false;  // 앵커 생성 완료
+        }
+
 
         for (int i = 0; i < plane_list_size; ++i) {
             ArTrackable* ar_trackable = nullptr;

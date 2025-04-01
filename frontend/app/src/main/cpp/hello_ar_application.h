@@ -102,8 +102,12 @@ class HelloArApplication {
   bool is_instant_placement_enabled_ = true;
 
   bool path_generated_ = false;
+  bool path_ready_to_render_ = false;
 
-  AAssetManager* const asset_manager_;
+  float stored_plane_y_ = 0.0f;
+
+
+    AAssetManager* const asset_manager_;
 
   std::vector<Point> path;
   float threshold = 0.8f; // 거리 허용 오차
