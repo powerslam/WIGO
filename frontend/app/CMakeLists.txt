@@ -41,10 +41,12 @@ add_library(hello_ar_native SHARED
            src/main/cpp/point_cloud_renderer.cc
            src/main/cpp/texture.cc
            src/main/cpp/util.cc
-           src/main/cpp/astar_pathfinding.cc)
+           src/main/cpp/astar_pathfinding.cc
+           src/main/cpp/line_renderer.cc)
 
 target_include_directories(hello_ar_native PRIVATE
-           src/main/cpp)
+           src/main/cpp
+           src/main/cpp/include)
            
 target_link_libraries(hello_ar_native
                       android

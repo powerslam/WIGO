@@ -22,6 +22,7 @@
 
 #include "include/arcore/arcore_c_api.h"
 #include "plane_renderer.h"
+#include "line_renderer.h"
 #include "util.h"
 
 namespace hello_ar {
@@ -175,6 +176,8 @@ namespace hello_ar {
                                        depth_texture_.GetWidth(),
                                        depth_texture_.GetHeight());
         plane_renderer_.InitializeGlContent(asset_manager_);
+
+        line_renderer_.InitializeGlContent(asset_manager_);
     }
 
     void HelloArApplication::OnDisplayGeometryChanged(int display_rotation,
@@ -310,8 +313,21 @@ namespace hello_ar {
                 /*near=*/0.1f, /*far=*/100.f,
                                      glm::value_ptr(projection_mat));
 
+
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
+
+        // line
+        if (!path.empty()) {
+            std::vector<glm::vec3> line_points;
+            for (const auto& p : path) {
+                line_points.emplace_back(p.x, stored_plane_y_, p.z);
+            }
+
+            line_renderer_.Draw(line_points, projection_mat, view_mat);
+        }
+
+
 
         //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);

@@ -35,6 +35,7 @@
 #include "point_cloud_renderer.h"
 #include "texture.h"
 #include "util.h"
+#include "line_renderer.h"
 #include "astar_pathfinding.h"
 
 #include <queue>            // ✅ A*에 필요
@@ -107,7 +108,9 @@ class HelloArApplication {
   float stored_plane_y_ = 0.0f;
 
 
-    AAssetManager* const asset_manager_;
+  LineRenderer line_renderer_;
+
+  AAssetManager* const asset_manager_;
 
   std::vector<Point> path;
   float threshold = 0.8f; // 거리 허용 오차
