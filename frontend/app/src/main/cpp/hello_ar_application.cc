@@ -29,8 +29,6 @@ namespace hello_ar {
     namespace {
         constexpr size_t kMaxNumberOfAndroidsToRender = 20;
 
-        const glm::vec3 kWhite = {255, 255, 255};
-
 // Assumed distance from the device camera to the surface on which user will
 // try to place objects. This value affects the apparent scale of objects
 // while the tracking method of the Instant Placement point is
@@ -175,6 +173,7 @@ namespace hello_ar {
         andy_renderer_.SetDepthTexture(depth_texture_.GetTextureId(),
                                        depth_texture_.GetWidth(),
                                        depth_texture_.GetHeight());
+        location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
 
         line_renderer_.InitializeGlContent(asset_manager_);
@@ -396,27 +395,26 @@ namespace hello_ar {
 
             LOGI("📐 평면 감지됨, 높이: %.2f", stored_plane_y_);
 
-            for (const auto& p : path) {
-                float anchor_pose[7] = {0};
-                anchor_pose[4] = p.x;
-                anchor_pose[5] = stored_plane_y_;  // 평면 높이 사용
-                anchor_pose[6] = p.z;
+            const auto& p = path.back();
+            float anchor_pose[7] = {0};
+            anchor_pose[4] = p.x;
+            anchor_pose[5] = stored_plane_y_;  // 평면 높이 사용
+            anchor_pose[6] = p.z;
 
-                ArPose* pose = nullptr;
-                ArPose_create(ar_session_, anchor_pose, &pose);
+            ArPose* pose = nullptr;
+            ArPose_create(ar_session_, anchor_pose, &pose);
 
-                ArAnchor* anchor = nullptr;
-                if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
-                    ColoredAnchor colored_anchor;
-                    colored_anchor.anchor = anchor;
-                    colored_anchor.trackable = nullptr;
-                    SetColor(255, 255, 255, 255, colored_anchor.color);
-                    anchors_.push_back(colored_anchor);
-                    LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
-                }
-
-                ArPose_destroy(pose);
+            ArAnchor* anchor = nullptr;
+            if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                ColoredAnchor colored_anchor;
+                colored_anchor.anchor = anchor;
+                colored_anchor.trackable = nullptr;
+                SetColor(255, 255, 255, 255, colored_anchor.color);
+                anchors_.push_back(colored_anchor);
+                LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
             }
+
+            ArPose_destroy(pose);
 
             path_ready_to_render_ = false;  // 앵커 생성 완료
         }
@@ -463,7 +461,7 @@ namespace hello_ar {
             // 무조건 렌더
             util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
                                                &model_mat);
-            andy_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
+            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
                                 colored_anchor.color);
         }
 

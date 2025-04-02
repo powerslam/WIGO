@@ -133,6 +133,7 @@ class HelloArApplication {
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
   ObjRenderer andy_renderer_;
+  ObjRenderer location_pin_renderer_;
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;
