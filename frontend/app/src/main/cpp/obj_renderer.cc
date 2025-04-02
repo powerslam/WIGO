@@ -55,6 +55,28 @@ void ObjRenderer::InitializeGlContent(AAssetManager* asset_manager,
   util::CheckGlError("obj_renderer::InitializeGlContent()");
 }
 
+void ObjRenderer::InitializeGlContent(AAssetManager* asset_manager,
+                                      const std::string& obj_file_name) {
+    compileAndLoadShaderProgram(asset_manager);
+
+    position_attrib_ = glGetAttribLocation(shader_program_, "a_Position");
+    tex_coord_attrib_ = glGetAttribLocation(shader_program_, "a_TexCoord");
+    normal_attrib_ = glGetAttribLocation(shader_program_, "a_Normal");
+
+    // 텍스처 없이 obj 파일만 로딩
+    texture_id_ = 0;  // 텍스처 없음 표시
+    vertices_.clear();
+    normals_.clear();
+    uvs_.clear();
+    indices_.clear();
+
+    util::LoadObjFile(obj_file_name, asset_manager, &vertices_, &normals_, &uvs_,
+                      &indices_);
+
+    util::CheckGlError("ObjRenderer::InitializeGlContent(obj only)");
+}
+
+
 void ObjRenderer::setUseDepthForOcclusion(AAssetManager* asset_manager,
                                           bool use_depth_for_occlusion) {
   if (use_depth_for_occlusion_ == use_depth_for_occlusion) {
