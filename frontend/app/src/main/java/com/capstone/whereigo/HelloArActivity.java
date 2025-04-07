@@ -40,6 +40,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.snackbar.Snackbar;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import java.io.IOException;
 
 /**
  * This is a simple example that shows how to create an augmented reality (AR) application using the
@@ -436,6 +439,21 @@ public class HelloArActivity extends AppCompatActivity
   public static void updatePathStatusFromNative(String status) {
     if (pathStatusTextView != null) {
       pathStatusTextView.post(() -> pathStatusTextView.setText(status));
+    }
+  }
+
+  public static void playTTS(String text) {
+    Log.d("TTS", "✅ playTTS 호출됨, text = " + text);
+    String encoded = Uri.encode(text);
+    String url = "http://54.212.124.24:8888/tts?text=" + encoded;
+
+    MediaPlayer mediaPlayer = new MediaPlayer();
+    try {
+      mediaPlayer.setDataSource(url);
+      mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+      mediaPlayer.prepareAsync();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
