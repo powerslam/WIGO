@@ -409,7 +409,7 @@ namespace hello_ar {
                 ColoredAnchor colored_anchor;
                 colored_anchor.anchor = anchor;
                 colored_anchor.trackable = nullptr;
-                SetColor(255, 255, 255, 255, colored_anchor.color);
+                SetColor(255, 0, 0, 255, colored_anchor.color);
                 anchors_.push_back(colored_anchor);
                 LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
             }
