@@ -71,13 +71,26 @@ namespace hello_ar {
         if (current_path_index >= path.size()) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
 
+            if (tts_arrival_played_) return;
+
             JNIEnv* env = GetJniEnv();
             jclass clazz = env->FindClass("com/capstone/whereigo/HelloArActivity");
-            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
 
-            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
-            env->CallStaticVoidMethod(clazz, method, message);
-            env->DeleteLocalRef(message);
+            // 경로 상태 업데이트
+            jmethodID updateStatusMethod = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+            jstring statusMsg = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
+            env->CallStaticVoidMethod(clazz, updateStatusMethod, statusMsg);
+            env->DeleteLocalRef(statusMsg);
+
+            // 📢 도착 알림 TTS 호출 추가
+            jmethodID ttsMethod = env->GetStaticMethodID(clazz, "playTTS", "(Ljava/lang/String;)V");
+            if (ttsMethod != nullptr) {
+                jstring ttsMsg = env->NewStringUTF("목적지에 도착했습니다.");
+                env->CallStaticVoidMethod(clazz, ttsMethod, ttsMsg);
+                env->DeleteLocalRef(ttsMsg);
+            }
+
+            tts_arrival_played_ = true;
             return;
         }
 

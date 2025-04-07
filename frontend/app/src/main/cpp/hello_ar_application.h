@@ -138,6 +138,8 @@ class HelloArApplication {
 
   int32_t plane_count_ = 0;
 
+  bool tts_arrival_played_ = false;
+
   void ConfigureSession();
 
   void UpdateAnchorColor(ColoredAnchor* colored_anchor);
