@@ -398,7 +398,7 @@ namespace hello_ar {
             const auto& p = path.back();
             float anchor_pose[7] = {0};
             anchor_pose[4] = p.x;
-            anchor_pose[5] = stored_plane_y_;  // 평면 높이 사용
+            anchor_pose[5] = stored_plane_y_ + 2.3f;  // 평면 높이 사용
             anchor_pose[6] = p.z;
 
             ArPose* pose = nullptr;
