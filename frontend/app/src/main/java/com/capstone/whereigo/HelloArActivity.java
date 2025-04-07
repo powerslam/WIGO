@@ -38,6 +38,8 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.search.SearchBar;
+import com.google.android.material.search.SearchView;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -74,6 +76,8 @@ public class HelloArActivity extends AppCompatActivity
   private GestureDetector gestureDetector;
 
   private Snackbar snackbar;
+  private SearchBar searchBar;
+  private SearchView searchView;
   private Handler planeStatusCheckingHandler;
   private final Runnable planeStatusCheckingRunnable =
       new Runnable() {
@@ -101,6 +105,19 @@ public class HelloArActivity extends AppCompatActivity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     surfaceView = (GLSurfaceView) findViewById(R.id.surfaceview);
+    cameraPoseTextView = findViewById(R.id.poseTextView);
+    searchBar = findViewById(R.id.search_bar);
+    searchView = findViewById(R.id.search_view);
+    searchView.setupWithSearchBar(searchBar);
+
+    searchView.addTransitionListener((searchView, previousState, newState) -> {
+      if (newState == SearchView.TransitionState.SHOWING) {
+        cameraPoseTextView.setVisibility(View.GONE); // 숨기기
+      } else if (newState == SearchView.TransitionState.HIDING) {
+        cameraPoseTextView.setVisibility(View.VISIBLE); // 다시 보이기
+      }
+    });
+
 
     // Set up touch listener.
     gestureDetector =
