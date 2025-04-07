@@ -262,6 +262,16 @@ namespace hello_ar {
                 path_generated_ = true;
                 path_ready_to_render_ = true;
                 LOGI("🚀 경로 탐색 성공! A* 결과:");
+
+                JNIEnv* env = GetJniEnv();
+                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArActivity");
+                jmethodID ttsMethod = env->GetStaticMethodID(clazz, "playTTS", "(Ljava/lang/String;)V");
+
+                if (clazz != nullptr && ttsMethod != nullptr) {
+                    jstring message = env->NewStringUTF("경로 안내를 시작합니다.");
+                    env->CallStaticVoidMethod(clazz, ttsMethod, message);
+                    env->DeleteLocalRef(message);
+                }
             }
             else {
                 LOGI("❌ 경로 탐색 실패: 도달 불가능");
