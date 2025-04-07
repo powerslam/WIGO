@@ -35,6 +35,8 @@
 #include "point_cloud_renderer.h"
 #include "texture.h"
 #include "util.h"
+#include "line_renderer.h"
+#include "astar_pathfinding.h"
 
 #include <queue>            // ✅ A*에 필요
 #include <cmath>            // ✅ 유클리드 거리 계산
@@ -48,6 +50,7 @@ class HelloArApplication {
   explicit HelloArApplication(AAssetManager* asset_manager);
   ~HelloArApplication();
 
+  void CheckCameraFollowingPath(const std::vector<Point>& path, float cam_x, float cam_z);
   // OnPause is called on the UI thread from the Activity's onPause method.
   void OnPause();
 
@@ -99,7 +102,23 @@ class HelloArApplication {
   int display_rotation_ = 0;
   bool is_instant_placement_enabled_ = true;
 
+  bool path_generated_ = false;
+  bool path_ready_to_render_ = false;
+
+  float stored_plane_y_ = 0.0f;
+
+
+  LineRenderer line_renderer_;
+
   AAssetManager* const asset_manager_;
+
+  std::vector<Point> path;
+  float threshold = 0.8f; // 거리 허용 오차
+
+  JNIEnv* GetJniEnv();
+
+  // class 멤버로 현재 도달해야 하는 경로 인덱스
+  int current_path_index = 0;
 
   // The anchors at which we are drawing android models using given colors.
   struct ColoredAnchor {
@@ -114,6 +133,7 @@ class HelloArApplication {
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
   ObjRenderer andy_renderer_;
+  ObjRenderer location_pin_renderer_;
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;

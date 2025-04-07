@@ -42,6 +42,9 @@ class ObjRenderer {
                            const std::string& obj_file_name,
                            const std::string& png_file_name);
 
+  void InitializeGlContent(AAssetManager*, const std::string&);
+
+
   // Sets the surface's lighting reflectace properties.  Diffuse is modulated by
   // the texture's color.
   void SetMaterialProperty(float ambient, float diffuse, float specular,
