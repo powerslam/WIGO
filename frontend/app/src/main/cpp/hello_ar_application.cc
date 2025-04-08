@@ -266,7 +266,7 @@ namespace hello_ar {
                 LOGI("🚀 경로 탐색 성공! A* 결과:");
 
                 JNIEnv* env = GetJniEnv();
-                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArActivity");
+                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
                 jmethodID ttsMethod = env->GetStaticMethodID(clazz, "playTTS", "(Ljava/lang/String;)V");
 
                 if (clazz != nullptr && ttsMethod != nullptr) {

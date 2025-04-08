@@ -29,6 +29,9 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.Locale;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import java.io.IOException;
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
@@ -298,6 +301,21 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   public static void updatePathStatusFromNative(String status) {
     if (pathStatusTextView != null) {
       pathStatusTextView.post(() -> pathStatusTextView.setText(status));
+    }
+  }
+
+  public static void playTTS(String text) {
+    Log.d("TTS", "✅ playTTS 호출됨, text = " + text);
+    String encoded = Uri.encode(text);
+    String url = "http://34.216.149.187:8888/tts?text=" + encoded;
+
+    MediaPlayer mediaPlayer = new MediaPlayer();
+    try {
+      mediaPlayer.setDataSource(url);
+      mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+      mediaPlayer.prepareAsync();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 }
