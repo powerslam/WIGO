@@ -8,7 +8,7 @@
     android:layout_height="wrap_content"
     android:padding="8dp"
     android:background="#FFFFFF"
-    tools:context=".DownloadActivity">
+    tools:context=".DownloadFragment">
 
     <!-- 지도 파일 이름 -->
     <com.google.android.material.textview.MaterialTextView
