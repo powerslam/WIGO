@@ -102,7 +102,7 @@ namespace hello_ar {
     }
 
 
-    void HelloArApplication::CheckCameraFollowingPath(const std::vector<Point>& path, float cam_x, float cam_z) {
+    void HelloArApplication::CheckCameraFollowingPath(float cam_x, float cam_z) {
         if (current_path_index >= path.size()) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
 
@@ -122,6 +122,33 @@ namespace hello_ar {
         float distance = std::sqrt(dx * dx + dz * dz);
 
 
+        const float deviation_threshold = 2.0f;  // 2m 이상 벗어나면 재탐색
+
+        if (distance > deviation_threshold) {
+            LOGI("🚨 경로 이탈 감지됨! 새 경로를 재탐색합니다.");
+    
+
+            path.clear();
+            path_generated_ = false;  // ⭐ 경로 재생성을 허용
+            path_ready_to_render_ = false;
+            current_path_index = 0;
+
+            // 기존 목표점으로 재탐색 시도
+            TryGeneratePathIfNeeded(cam_x, cam_z);
+    
+            if (!path.empty()) {
+                JNIEnv* env = GetJniEnv();
+                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+                jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+                jstring msg = env->NewStringUTF("🚨 경로 이탈 - 새 경로 탐색 완료");
+                env->CallStaticVoidMethod(clazz, method, msg);
+                env->DeleteLocalRef(msg);
+            } else {
+                LOGI("❌ 경로 재탐색 실패: 도달할 수 없음");
+            }
+    
+            return;
+        }
         
         std::string status;
         char buffer[128];
@@ -279,7 +306,7 @@ namespace hello_ar {
 
         // 6. 경로 따라가기
         if (!path.empty()) {
-            CheckCameraFollowingPath(path, cam_x, cam_z);
+            CheckCameraFollowingPath(cam_x, cam_z);
         }
 
         // [추가] Java로 pose 값을 전달
@@ -386,6 +413,14 @@ namespace hello_ar {
         plane_count_ = plane_list_size;
 
         if (path_ready_to_render_ && plane_count_ > 0) {
+
+            for (auto& anchor : anchors_) {
+                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
+                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
+            }
+            anchors_.clear();
+
+            
             // 감지된 첫 번째 평면의 높이 추출
             ArTrackable* first_trackable = nullptr;
             ArTrackableList_acquireItem(ar_session_, plane_list, 0, &first_trackable);
