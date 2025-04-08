@@ -50,6 +50,8 @@ class HelloArApplication {
   explicit HelloArApplication(AAssetManager* asset_manager);
   ~HelloArApplication();
 
+
+  void TryGeneratePathIfNeeded(float cam_x, float cam_z);
   void CheckCameraFollowingPath(const std::vector<Point>& path, float cam_x, float cam_z);
   // OnPause is called on the UI thread from the Activity's onPause method.
   void OnPause();

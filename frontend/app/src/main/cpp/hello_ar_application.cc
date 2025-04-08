@@ -67,6 +67,41 @@ namespace hello_ar {
         return nullptr;
     }
 
+
+    void HelloArApplication::TryGeneratePathIfNeeded(float cam_x, float cam_z) {
+        if (path_generated_ || plane_count_ <= 0) return;
+    
+        Point start = {cam_x, cam_z};
+        Point goal = {-10.0f, -18.0f}; // 목적지는 고정되어 있음
+    
+        std::vector<Point> outer_rect = {
+            {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
+        };
+        std::vector<Point> inner_rect = {
+            {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
+        };
+    
+        std::set<Point> obstacles;
+        for (int i = 0; i < outer_rect.size(); ++i) {
+            auto wall = generateWall(outer_rect[i], outer_rect[(i + 1) % outer_rect.size()]);
+            obstacles.insert(wall.begin(), wall.end());
+        }
+        for (int i = 0; i < inner_rect.size(); ++i) {
+            auto wall = generateWall(inner_rect[i], inner_rect[(i + 1) % inner_rect.size()]);
+            obstacles.insert(wall.begin(), wall.end());
+        }
+    
+        path = astar(start, goal, obstacles);
+        if (!path.empty()) {
+            path_generated_ = true;
+            path_ready_to_render_ = true;
+            LOGI("🚀 경로 탐색 성공! A* 결과:");
+        } else {
+            LOGI("❌ 경로 탐색 실패: 도달 불가능");
+        }
+    }
+
+
     void HelloArApplication::CheckCameraFollowingPath(const std::vector<Point>& path, float cam_x, float cam_z) {
         if (current_path_index >= path.size()) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
@@ -86,6 +121,8 @@ namespace hello_ar {
         float dz = cam_z - target.z;
         float distance = std::sqrt(dx * dx + dz * dz);
 
+
+        
         std::string status;
         char buffer[128];
 
@@ -234,43 +271,14 @@ namespace hello_ar {
         ArCamera_getPose(ar_session_, ar_camera, camera_pose);
         ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
 
-        // 🔧 [3] 카메라 트래킹이 정상일 때만 경로 생성
-        if (!path_generated_ && plane_count_ > 0) {
-            Point start = {pose_raw[4], pose_raw[6]};
-            Point goal = {-10.0f, -18.0f};
+        float cam_x = pose_raw[4];
+        float cam_z = pose_raw[6];
 
-            std::vector<Point> outer_rect = {
-                    {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
-            };
-            std::vector<Point> inner_rect = {
-                    {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
-            };
+        // 5. 경로 생성 시도
+        TryGeneratePathIfNeeded(cam_x, cam_z);
 
-            std::set<Point> obstacles;
-            for (int i = 0; i < outer_rect.size(); ++i) {
-                auto wall = generateWall(outer_rect[i], outer_rect[(i + 1) % outer_rect.size()]);
-                obstacles.insert(wall.begin(), wall.end());
-            }
-            for (int i = 0; i < inner_rect.size(); ++i) {
-                auto wall = generateWall(inner_rect[i], inner_rect[(i + 1) % inner_rect.size()]);
-                obstacles.insert(wall.begin(), wall.end());
-            }
-
-            path = astar(start, goal, obstacles);
-
-            if (!path.empty()) {
-                path_generated_ = true;
-                path_ready_to_render_ = true;
-                LOGI("🚀 경로 탐색 성공! A* 결과:");
-            }
-            else {
-                LOGI("❌ 경로 탐색 실패: 도달 불가능");
-            }
-        }
-
+        // 6. 경로 따라가기
         if (!path.empty()) {
-            float cam_x = pose_raw[4];
-            float cam_z = pose_raw[6];
             CheckCameraFollowingPath(path, cam_x, cam_z);
         }
 
