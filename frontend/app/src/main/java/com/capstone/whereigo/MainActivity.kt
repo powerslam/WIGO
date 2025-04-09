@@ -25,6 +25,14 @@ class MainActivity : AppCompatActivity() {
         val searchView = binding.searchView
         searchView.setupWithSearchBar(searchBar)
 
+        searchView.addTransitionListener { _, _, newState ->
+            if (newState == com.google.android.material.search.SearchView.TransitionState.SHOWN) {
+                HelloArFragment.setCameraPoseVisibility(false)
+            } else if (newState == com.google.android.material.search.SearchView.TransitionState.HIDDEN) {
+                HelloArFragment.setCameraPoseVisibility(true)
+            }
+        }
+
         val searchMenu = R.menu.search_menu
         searchBar.inflateMenu(searchMenu)
         searchBar.menu.findItem(R.id.action_menu).setOnMenuItemClickListener {

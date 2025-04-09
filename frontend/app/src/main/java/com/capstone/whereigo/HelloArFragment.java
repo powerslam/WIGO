@@ -300,4 +300,10 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       pathStatusTextView.post(() -> pathStatusTextView.setText(status));
     }
   }
+
+  public static void setCameraPoseVisibility(boolean visible) {
+    if (cameraPoseTextView != null) {
+      cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
+    }
+  }
 }
