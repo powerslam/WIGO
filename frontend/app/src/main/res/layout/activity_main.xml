@@ -26,18 +26,6 @@
             android:textColor="@android:color/white"
             android:textSize="16sp" />
 
-        <!-- TextView: path 상태 -->
-        <TextView
-            android:id="@+id/pathStatusTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:background="@android:color/darker_gray"
-            android:padding="8dp"
-            android:layout_gravity="bottom|center_horizontal"
-            android:layout_marginBottom="16dp" />
-
 
         <!-- 설정 버튼 -->
         <ImageButton
