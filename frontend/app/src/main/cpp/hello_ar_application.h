@@ -102,6 +102,7 @@ class HelloArApplication {
   int width_ = 1;
   int height_ = 1;
   int display_rotation_ = 0;
+  int current_path_index = 0;
   bool is_instant_placement_enabled_ = true;
 
   bool path_generated_ = false;
@@ -120,7 +121,7 @@ class HelloArApplication {
   JNIEnv* GetJniEnv();
 
   // class 멤버로 현재 도달해야 하는 경로 인덱스
-  int current_path_index = 0;
+  int current_path_indefx = 0;
 
   // The anchors at which we are drawing android models using given colors.
   struct ColoredAnchor {
