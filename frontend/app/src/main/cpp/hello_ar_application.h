@@ -37,6 +37,7 @@
 #include "util.h"
 #include "line_renderer.h"
 #include "astar_pathfinding.h"
+#include "audio_player.h"
 
 #include <queue>            // ✅ A*에 필요
 #include <cmath>            // ✅ 유클리드 거리 계산
@@ -107,6 +108,7 @@ class HelloArApplication {
 
   float stored_plane_y_ = 0.0f;
 
+  bool tts_direction_played_ = false;
 
   LineRenderer line_renderer_;
 

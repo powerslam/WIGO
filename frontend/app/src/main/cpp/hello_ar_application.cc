@@ -71,15 +71,15 @@ namespace hello_ar {
         if (current_path_index >= path.size()) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
 
-            if (tts_arrival_played_) return;
-
-            JNIEnv* env = GetJniEnv();
-            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
-            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
-
-            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
-            env->CallStaticVoidMethod(clazz, method, message);
-            env->DeleteLocalRef(message);
+//            if (tts_arrival_played_) return;
+//
+//            JNIEnv* env = GetJniEnv();
+//            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+//            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+//
+//            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
+//            env->CallStaticVoidMethod(clazz, method, message);
+//            env->DeleteLocalRef(message);
             return;
         }
 
@@ -266,14 +266,19 @@ namespace hello_ar {
                 LOGI("🚀 경로 탐색 성공! A* 결과:");
 
                 JNIEnv* env = GetJniEnv();
-                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
-                jmethodID ttsMethod = env->GetStaticMethodID(clazz, "playTTS", "(Ljava/lang/String;)V");
-
-                if (clazz != nullptr && ttsMethod != nullptr) {
-                    jstring message = env->NewStringUTF("경로 안내를 시작합니다.");
-                    env->CallStaticVoidMethod(clazz, ttsMethod, message);
-                    env->DeleteLocalRef(message);
+                if (env) {
+                    audio::PlayAudioFromAssets(env, "start.m4a");
                 }
+
+//                JNIEnv* env = GetJniEnv();
+//                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+//                jmethodID ttsMethod = env->GetStaticMethodID(clazz, "playTTS", "(Ljava/lang/String;)V");
+//
+//                if (clazz != nullptr && ttsMethod != nullptr) {
+//                    jstring message = env->NewStringUTF("경로 안내를 시작합니다.");
+//                    env->CallStaticVoidMethod(clazz, ttsMethod, message);
+//                    env->DeleteLocalRef(message);
+//                }
             }
             else {
                 LOGI("❌ 경로 탐색 실패: 도달 불가능");
