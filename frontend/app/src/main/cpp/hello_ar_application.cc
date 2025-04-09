@@ -68,8 +68,17 @@ namespace hello_ar {
     }
 
     void HelloArApplication::CheckCameraFollowingPath(const std::vector<Point>& path, float cam_x, float cam_z) {
-        if (current_path_index >= path.size()) {
+        if (current_path_index >= path.size() && !arrival_audio_played_) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
+
+            JNIEnv* env = GetJniEnv();
+            if (env) {
+                audio::PlayAudioFromAssets(env, "arrival.m4a");
+                arrival_audio_played_ = true;
+            }
+
+            arrival_audio_played_ = true;
+            return;
 
 //            if (tts_arrival_played_) return;
 //
@@ -80,8 +89,9 @@ namespace hello_ar {
 //            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
 //            env->CallStaticVoidMethod(clazz, method, message);
 //            env->DeleteLocalRef(message);
-            return;
         }
+
+        if (current_path_index >= path.size()) return;
 
         Point target = path[current_path_index];
         float dx = cam_x - target.x;
@@ -263,6 +273,7 @@ namespace hello_ar {
             if (!path.empty()) {
                 path_generated_ = true;
                 path_ready_to_render_ = true;
+                arrival_audio_played_ = false;
                 LOGI("🚀 경로 탐색 성공! A* 결과:");
 
                 JNIEnv* env = GetJniEnv();

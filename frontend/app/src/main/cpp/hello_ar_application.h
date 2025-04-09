@@ -110,6 +110,8 @@ class HelloArApplication {
 
   bool tts_direction_played_ = false;
 
+  bool arrival_audio_played_ = false;
+
   LineRenderer line_renderer_;
 
   AAssetManager* const asset_manager_;
