@@ -14,14 +14,14 @@ namespace audio {
             return;
         }
 
-        jmethodID playMethod = env->GetStaticMethodID(clazz, "playLocalAudio", "(Ljava/lang/String;)V");
-        if (playMethod == nullptr) {
-            LOGD("❌ playLocalAudio 메서드 못 찾음");
+        jmethodID queueMethod = env->GetStaticMethodID(clazz, "enqueueAudio", "(Ljava/lang/String;)V");
+        if (queueMethod == nullptr) {
+            LOGD("❌ enqueueAudio 메서드 못 찾음");
             return;
         }
 
         jstring jFilename = env->NewStringUTF(filename.c_str());
-        env->CallStaticVoidMethod(clazz, playMethod, jFilename);
+        env->CallStaticVoidMethod(clazz, queueMethod, jFilename);
         env->DeleteLocalRef(jFilename);
     }
 

@@ -34,7 +34,9 @@ import android.net.Uri;
 import android.content.res.AssetFileDescriptor;
 import java.io.IOException;
 import android.content.Context;
-
+import java.util.Queue;
+import java.util.LinkedList;
+import android.content.res.AssetManager;
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
@@ -64,9 +66,9 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private Activity activity;
 
-  private Runnable planeStatusCheckingRunnable;
-
   private static HelloArFragment instance;
+  private static Queue<String> audioQueue = new LinkedList<>();
+  private static boolean isPlaying = false;
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -351,6 +353,38 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       mediaPlayer.start();
     } catch (IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  public static void enqueueAudio(String filename) {
+    audioQueue.offer(filename);
+    if (!isPlaying) {
+      playNextAudio();
+    }
+  }
+
+  private static void playNextAudio() {
+    String next = audioQueue.poll();
+    if (next == null) {
+      isPlaying = false;
+      return;
+    }
+
+    isPlaying = true;
+    MediaPlayer player = new MediaPlayer();
+    try {
+      AssetManager assetManager = instance.getContext().getAssets();
+      AssetFileDescriptor afd = assetManager.openFd("audio/" + next);
+      player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+      player.prepare();
+      player.setOnCompletionListener(mp -> {
+        mp.release();
+        playNextAudio();  // 다음 오디오 재생
+      });
+      player.start();
+    } catch (IOException e) {
+      e.printStackTrace();
+      isPlaying = false;
     }
   }
 
