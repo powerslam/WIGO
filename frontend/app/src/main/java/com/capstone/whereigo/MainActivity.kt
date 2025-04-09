@@ -22,8 +22,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val menuButton = findViewById<ImageButton>(R.id.menu_button)
-        menuButton.setOnClickListener {
+        val settingsButton = findViewById<ImageButton>(R.id.settings_button)
+        settingsButton.setOnClickListener {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_setting, SettingsFragment())
                 .addToBackStack(null)
