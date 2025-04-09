@@ -108,13 +108,15 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     depthSettings.onCreate(activity);
     instantPlacementSettings.onCreate(activity);
 
-    ImageButton settingsButton = view.findViewById(R.id.settings_button);
-    settingsButton.setOnClickListener(v -> {
-      PopupMenu popup = new PopupMenu(activity, v);
-      popup.setOnMenuItemClickListener(this::settingsMenuClick);
-      popup.inflate(R.menu.settings_menu);
-      popup.show();
-    });
+
+
+    //ImageButton settingsButton = view.findViewById(R.id.settings_button);
+    //settingsButton.setOnClickListener(v -> {
+    //  PopupMenu popup = new PopupMenu(activity, v);
+    //  popup.setOnMenuItemClickListener(this::settingsMenuClick);
+    //  popup.inflate(R.menu.settings_menu);
+    //  popup.show();
+    //});
   }
 
   private boolean settingsMenuClick(MenuItem item) {
