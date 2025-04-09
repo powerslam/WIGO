@@ -31,7 +31,10 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.content.res.AssetFileDescriptor;
 import java.io.IOException;
+import android.content.Context;
+
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
@@ -59,6 +62,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private Runnable planeStatusCheckingRunnable;
 
+  private static HelloArFragment instance;
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -304,10 +308,15 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
+  public void onAttach(@NonNull Context context) {
+    super.onAttach(context);
+    instance = this;
+  }
+
   public static void playTTS(String text) {
     Log.d("TTS", "✅ playTTS 호출됨, text = " + text);
     String encoded = Uri.encode(text);
-    String url = "http://34.216.149.187:8888/tts?text=" + encoded;
+    String url = "http://54.70.209.130:8888/tts?text=" + encoded;
 
     MediaPlayer mediaPlayer = new MediaPlayer();
     try {
@@ -318,4 +327,18 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       e.printStackTrace();
     }
   }
+  public static void playLocalAudio(String filename) {
+    try {
+      AssetFileDescriptor afd = instance.requireActivity().getAssets().openFd("audio/" + filename);
+
+      MediaPlayer mediaPlayer = new MediaPlayer();
+      mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+      mediaPlayer.prepare();
+      mediaPlayer.start();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+
 }
