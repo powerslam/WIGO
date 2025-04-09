@@ -118,7 +118,6 @@ namespace hello_ar {
         }
     }
 
-
     void HelloArApplication::CheckCameraFollowingPath(float cam_x, float cam_z) {
         if (current_path_index >= path.size()) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
@@ -155,7 +154,11 @@ namespace hello_ar {
 
         if (distance > deviation_threshold) {
             LOGI("🚨 경로 이탈 감지됨! 새 경로를 재탐색합니다.");
-    
+
+            JNIEnv* env = GetJniEnv();
+            if (env) {
+                audio::PlayAudioFromAssets(env, "deviation.m4a");
+            }
 
             path.clear();
             path_generated_ = false;  // ⭐ 경로 재생성을 허용
@@ -183,6 +186,34 @@ namespace hello_ar {
         char buffer[128];
 
         if (distance < threshold) {
+            if (current_path_index + 2 < path.size()) {
+                Point prev = path[current_path_index];
+                Point next = path[current_path_index + 1];
+                Point next_next = path[current_path_index + 2];
+
+                float dx1 = next.x - prev.x;
+                float dz1 = next.z - prev.z;
+                float dx2 = next_next.x - next.x;
+                float dz2 = next_next.z - next.z;
+
+                float angle1 = atan2(dz1, dx1);
+                float angle2 = atan2(dz2, dx2);
+                float angle_diff = glm::degrees(angle2 - angle1);
+
+                // -180~180도로 정규화
+                if (angle_diff > 180.0f) angle_diff -= 360.0f;
+                if (angle_diff < -180.0f) angle_diff += 360.0f;
+
+                std::string file = nav::GetTurnAudioFile(angle_diff);
+                if (!file.empty()) {
+                    JNIEnv* env = GetJniEnv();
+                    if (env) {
+                        audio::PlayAudioFromAssets(env, file);
+                        LOGI("🔈 회전 안내 음성 재생: %s (%.2f도)", file.c_str(), angle_diff);
+                    }
+                }
+            }
+
             snprintf(buffer, sizeof(buffer), "✅ 경로 지점 %d 도달 (x=%.2f, z=%.2f)", current_path_index, target.x, target.z);
             current_path_index++;
         } else {
