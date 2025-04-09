@@ -29,6 +29,37 @@
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="16dp" />
 
+    <LinearLayout
+        android:id="@+id/surface_status_container"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="32dp"
+        android:padding="12dp"
+        android:background="@drawable/bg_surface_hint"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_scan"
+            app:tint="@color/primary" />
+
+        <TextView
+            android:id="@+id/surface_status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Searching for surfaces..."
+            android:textColor="@color/primary"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp"
+            android:translationX="15dp"
+            android:translationY="1.5dp"/>
+    </LinearLayout>
+
+
+    <!--
     <ImageButton
         android:id="@+id/settings_button"
         android:layout_width="50dp"
@@ -40,5 +71,5 @@
         android:background="@android:color/transparent"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true"
-        android:padding="4dp" />
+        android:padding="4dp" />-->
 </FrameLayout>

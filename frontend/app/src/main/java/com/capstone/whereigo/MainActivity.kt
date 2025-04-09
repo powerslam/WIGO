@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import android.widget.ImageButton
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -21,18 +22,32 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val searchBar = binding.searchBar
-        val searchView = binding.searchView
-        searchView.setupWithSearchBar(searchBar)
-
-        val searchMenu = R.menu.search_menu
-        searchBar.inflateMenu(searchMenu)
-        searchBar.menu.findItem(R.id.action_menu).setOnMenuItemClickListener {
+        val settingsButton = findViewById<ImageButton>(R.id.settings_button)
+        settingsButton.setOnClickListener {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_setting, SettingsFragment())
                 .addToBackStack(null)
                 .commit()
+        }
+
+        val searchBar = binding.searchBar
+        val searchView = binding.searchView
+        searchView.setupWithSearchBar(searchBar)
+
+
+        searchBar.inflateMenu(R.menu.search_menu)
+
+        searchBar.menu.findItem(R.id.action_voice_search).setOnMenuItemClickListener {
+            Toast.makeText(this, "음성 검색 실행!", Toast.LENGTH_SHORT).show()
             true
+        }
+
+        searchView.addTransitionListener { _, _, newState ->
+            if (newState == com.google.android.material.search.SearchView.TransitionState.SHOWN) {
+                HelloArFragment.setCameraPoseVisibility(false)
+            } else if (newState == com.google.android.material.search.SearchView.TransitionState.HIDDEN) {
+                HelloArFragment.setCameraPoseVisibility(true)
+            }
         }
 
         searchView.editText.setOnEditorActionListener { _, actionId, _ ->

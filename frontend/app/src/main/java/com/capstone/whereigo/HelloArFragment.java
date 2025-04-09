@@ -45,6 +45,11 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private int viewportWidth;
   private int viewportHeight;
 
+  private Handler planeStatusCheckingHandler;
+  private Runnable planeStatusCheckingRunnable;
+  private View surfaceStatus;
+  private TextView surfaceStatusText;
+
   private static TextView cameraPoseTextView;
   private static TextView pathStatusTextView;
 
@@ -56,8 +61,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private long nativeApplication;
   private GestureDetector gestureDetector;
-  private Snackbar snackbar;
-  private Handler planeStatusCheckingHandler;
+
   private Activity activity;
 
   private Runnable planeStatusCheckingRunnable;
@@ -73,6 +77,11 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     activity = requireActivity();
     surfaceView = view.findViewById(R.id.surfaceview);
+
+
+    surfaceStatus = view.findViewById(R.id.surface_status_container);
+    surfaceStatusText = view.findViewById(R.id.surface_status_text);
+
 
     gestureDetector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
       @Override
@@ -115,13 +124,15 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     depthSettings.onCreate(activity);
     instantPlacementSettings.onCreate(activity);
 
-    ImageButton settingsButton = view.findViewById(R.id.settings_button);
-    settingsButton.setOnClickListener(v -> {
-      PopupMenu popup = new PopupMenu(activity, v);
-      popup.setOnMenuItemClickListener(this::settingsMenuClick);
-      popup.inflate(R.menu.settings_menu);
-      popup.show();
-    });
+
+
+    //ImageButton settingsButton = view.findViewById(R.id.settings_button);
+    //settingsButton.setOnClickListener(v -> {
+    //  PopupMenu popup = new PopupMenu(activity, v);
+    //  popup.setOnMenuItemClickListener(this::settingsMenuClick);
+    //  popup.inflate(R.menu.settings_menu);
+    //  popup.show();
+    //});
   }
 
   private boolean settingsMenuClick(MenuItem item) {
@@ -150,18 +161,23 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       surfaceView.onResume();
     } catch (Exception e) {
       Log.e(TAG, "Exception creating session", e);
-      displayInSnackbar(e.getMessage());
+      surfaceStatus.setVisibility(View.VISIBLE);
+      surfaceStatusText.setText("AR 세션 오류: " + e.getMessage());
       return;
     }
 
-    displayInSnackbar("Searching for surfaces...");
+    surfaceStatus.setVisibility(View.VISIBLE);
+    surfaceStatusText.setText("Searching for surfaces...");
+
+    pathStatusTextView.setVisibility(View.GONE);
+
+    planeStatusCheckingHandler = new Handler();
+
     planeStatusCheckingRunnable = () -> {
       try {
         if (JniInterface.hasDetectedPlanes(nativeApplication)) {
-          if (snackbar != null) {
-            snackbar.dismiss();
-          }
-          snackbar = null;
+          surfaceStatus.setVisibility(View.GONE);
+          pathStatusTextView.setVisibility(View.VISIBLE);
         } else {
           planeStatusCheckingHandler.postDelayed(planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
         }
@@ -169,6 +185,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
         Log.e(TAG, e.getMessage());
       }
     };
+    planeStatusCheckingHandler.post(planeStatusCheckingRunnable);
 
     activity.getSystemService(DisplayManager.class).registerDisplayListener(this, null);
   }
@@ -178,7 +195,9 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     super.onPause();
     surfaceView.onPause();
     JniInterface.onPause(nativeApplication);
-    planeStatusCheckingHandler.removeCallbacks(planeStatusCheckingRunnable);
+    if (planeStatusCheckingHandler != null && planeStatusCheckingRunnable != null) {
+      planeStatusCheckingHandler.removeCallbacks(planeStatusCheckingRunnable);
+    }
     activity.getSystemService(DisplayManager.class).unregisterDisplayListener(this);
   }
 
@@ -191,11 +210,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
-  private void displayInSnackbar(String message) {
-    snackbar = Snackbar.make(requireView(), message, Snackbar.LENGTH_INDEFINITE);
-    snackbar.getView().setBackgroundColor(0xbf323232);
-    snackbar.show();
-  }
 
   private void showOcclusionDialogIfNeeded() {
     boolean isDepthSupported = JniInterface.isDepthSupported(nativeApplication);
@@ -340,5 +354,9 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
-
+  public static void setCameraPoseVisibility(boolean visible) {
+    if (cameraPoseTextView != null) {
+      cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
+    }
+  }
 }
