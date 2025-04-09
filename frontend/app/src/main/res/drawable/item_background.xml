@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <corners android:radius="12dp"/>  <!-- 둥근 모서리 -->
+    <corners android:radius="9dp"/>  <!-- 둥근 모서리 -->
     <solid android:color="#FFFFFF"/>  <!-- 배경색 -->
     <padding android:left="12dp" android:right="12dp" android:top="8dp" android:bottom="8dp"/>  <!-- 내부 패딩 -->
     <stroke android:width="1dp" android:color="#FFFFFF"/>  <!-- 테두리 -->
