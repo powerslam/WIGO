@@ -131,12 +131,14 @@ class HelloArApplication {
   };
 
   std::vector<ColoredAnchor> anchors_;
+  std::vector<ColoredAnchor> arrow_anchors_;
 
   PointCloudRenderer point_cloud_renderer_;
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
   ObjRenderer andy_renderer_;
   ObjRenderer location_pin_renderer_;
+  ObjRenderer arrow_renderer_;
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;

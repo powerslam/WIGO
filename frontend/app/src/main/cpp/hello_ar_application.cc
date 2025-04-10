@@ -239,6 +239,7 @@ namespace hello_ar {
                                        depth_texture_.GetHeight());
         location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
+        arrow_renderer_.InitializeGlContent(asset_manager_, "models/arrow.obj", "models/arrow.png");
 
         line_renderer_.InitializeGlContent(asset_manager_);
     }
@@ -361,7 +362,59 @@ namespace hello_ar {
             line_renderer_.Draw(line_points, projection_mat, view_mat);
         }
 
+        const float green_arrow_color_correction[4] = {0.8f, 0.9f, 0.3f, 1.0f};
+        ColoredAnchor arrow_colored_anchor;
+        arrow_colored_anchor.anchor = nullptr;
+        arrow_colored_anchor.trackable = nullptr;
+        SetColor(0.8f, 0.9f, 0.3f, 1.0f, arrow_colored_anchor.color);
 
+        if (!path.empty()) {
+            for (size_t i = 0; i < arrow_anchors_.size(); ++i) {
+                if (i >= path.size() - 1) continue;
+
+                const ColoredAnchor& arrow_anchor = arrow_anchors_[i];
+
+                Point from = path[i];
+                Point to = path[i + 1];
+
+                glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
+                float length = glm::length(direction);
+                if (length < 0.01f) continue;
+
+                direction = glm::normalize(direction);
+                float angle = std::atan2(direction.x, direction.z);
+                angle -= glm::pi<float>();
+
+                glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                // 📍 중간 위치 계산
+                glm::vec3 mid_pos((from.x + to.x) * 0.5f, stored_plane_y_, (from.z + to.z) * 0.5f);
+
+                // 📍 카메라 위치
+                glm::vec3 camera_pos(cam_x, stored_plane_y_, cam_z); // 평면 기준으로 y는 맞춤
+
+                // 📏 평면 거리
+                float camera_distance = glm::length(mid_pos - camera_pos);
+
+                // 📏 수직 높이 차이 (추가로 반영하면 더 정밀함)
+                float height_diff = std::abs(stored_plane_y_ - pose_raw[5]);
+
+                // 🎯 최종 스케일 보정: 거리와 높이 반영
+                float dynamic_scale = length * glm::clamp(1.0f / (camera_distance + 0.5f + height_diff), 0.15f, 1.0f);
+
+
+                glm::vec3 scale_size(0.1f, dynamic_scale, 0.1f);
+
+                glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), scale_size);
+
+                glm::mat4 model_mat(1.0f);
+                util::GetTransformMatrixFromAnchor(*arrow_anchor.anchor, ar_session_, &model_mat);
+                model_mat = model_mat *rotation_mat* scale_mat;
+
+                arrow_renderer_.Draw(projection_mat, view_mat, model_mat,
+                                     green_arrow_color_correction, arrow_anchor.color);
+            }
+        }
 
         //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
@@ -420,6 +473,11 @@ namespace hello_ar {
             }
             anchors_.clear();
 
+            for (auto& anchor : arrow_anchors_) {
+                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
+                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
+            }
+            arrow_anchors_.clear();
             
             // 감지된 첫 번째 평면의 높이 추출
             ArTrackable* first_trackable = nullptr;
@@ -430,6 +488,7 @@ namespace hello_ar {
             ArPlane_getCenterPose(ar_session_, first_plane, plane_pose);
 
             float center_pose_raw[7];
+
             ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
             stored_plane_y_ = center_pose_raw[5];  // 평면의 y값 저장
 
@@ -456,8 +515,41 @@ namespace hello_ar {
                 anchors_.push_back(colored_anchor);
                 LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
             }
-
             ArPose_destroy(pose);
+
+
+            for (size_t i = 0; i < path.size() - 1; ++i) {
+                Point from = path[i];
+                Point to = path[i + 1];
+
+                glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
+                float length = glm::length(direction);
+                if (length < 0.01f) continue;
+
+                direction = glm::normalize(direction);
+                glm::vec3 mid_pos =
+                        glm::vec3(from.x, stored_plane_y_, from.z) + direction * (length * 0.5f);
+
+                float anchor_pose[7] = {0};
+                anchor_pose[4] = mid_pos.x;
+                anchor_pose[5] = mid_pos.y;
+                anchor_pose[6] = mid_pos.z;
+
+                ArPose *pose = nullptr;
+                ArPose_create(ar_session_, anchor_pose, &pose);
+
+                ArAnchor *anchor = nullptr;
+                if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                    ColoredAnchor arrow_anchor;
+                    arrow_anchor.anchor = anchor;
+                    arrow_anchor.trackable = nullptr;
+                    SetColor(0.3f, 0.9f, 0.3f, 1.0f, arrow_anchor.color);  // 초록색
+                    arrow_anchors_.push_back(arrow_anchor);
+                }
+                ArPose_destroy(pose);
+            }
+
+
 
             path_ready_to_render_ = false;  // 앵커 생성 완료
         }
