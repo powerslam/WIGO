@@ -240,7 +240,7 @@ namespace hello_ar {
         location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
         arrow_renderer_.InitializeGlContent(asset_manager_, "models/arrow.obj", "models/arrow.png");
-
+        car_arrow_renderer_.InitializeGlContent(asset_manager_, "models/carArrow.obj", "models/carArrow.png");
         line_renderer_.InitializeGlContent(asset_manager_);
     }
 
@@ -411,8 +411,8 @@ namespace hello_ar {
                 util::GetTransformMatrixFromAnchor(*arrow_anchor.anchor, ar_session_, &model_mat);
                 model_mat = model_mat *rotation_mat* scale_mat;
 
-                arrow_renderer_.Draw(projection_mat, view_mat, model_mat,
-                                     green_arrow_color_correction, arrow_anchor.color);
+                //arrow_renderer_.Draw(projection_mat, view_mat, model_mat,
+                //                     green_arrow_color_correction, arrow_anchor.color);
             }
         }
 
@@ -478,6 +478,35 @@ namespace hello_ar {
                 if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
             }
             arrow_anchors_.clear();
+
+            for (auto& anchor : carArrow_anchors_) {
+                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
+                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
+            }
+            carArrow_anchors_.clear();
+
+            for (size_t i = 0; i < path.size() - 1; ++i) {
+                const Point& p = path[i];
+            
+                float anchor_pose[7] = {0};
+                anchor_pose[4] = p.x;
+                anchor_pose[5] = stored_plane_y_;  // 평면 높이로 고정
+                anchor_pose[6] = p.z;
+            
+                ArPose* pose = nullptr;
+                ArPose_create(ar_session_, anchor_pose, &pose);
+            
+                ArAnchor* anchor = nullptr;
+                if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                    ColoredAnchor car_anchor;
+                    car_anchor.anchor = anchor;
+                    car_anchor.trackable = nullptr;
+                    SetColor(1.0f, 1.0f, 1.0f, 1.0f, car_anchor.color);  // 흰색 또는 원하는 색
+                    carArrow_anchors_.push_back(car_anchor);
+                }
+            
+                ArPose_destroy(pose);
+            }
             
             // 감지된 첫 번째 평면의 높이 추출
             ArTrackable* first_trackable = nullptr;
@@ -599,6 +628,40 @@ namespace hello_ar {
             location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
                                 colored_anchor.color);
         }
+
+        for (size_t i = 0; i < carArrow_anchors_.size(); ++i) {
+            if (i >= path.size()) continue;
+        
+            // 👉 경로 시작점
+            const Point& from = path[i];
+        
+            // 👉 도착점이 있으면 방향 계산 (마지막 점은 생략 가능)
+            Point to = (i + 1 < path.size()) ? path[i + 1] : from;
+        
+            // 방향 벡터 계산
+            glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
+            float length = glm::length(direction);
+            if (length < 0.01f) continue;
+        
+            direction = glm::normalize(direction);
+            float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
+        
+            // 👉 위치는 path[i]로, y축은 stored_plane_y_로 고정
+            glm::vec3 position(from.x, stored_plane_y_, from.z);
+        
+            // 👉 모델 행렬 구성
+            glm::mat4 model_mat = glm::translate(glm::mat4(1.0f), position);
+            glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
+            glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
+        
+            model_mat = model_mat * rotation_mat * scale_mat;
+        
+            // 👉 렌더링
+            const ColoredAnchor& car_anchor = carArrow_anchors_[i];
+            car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, car_anchor.color);
+        }
+        
+
 
 
         // Update and render point cloud.
