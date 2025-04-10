@@ -22,13 +22,12 @@
 
 #include "include/arcore/arcore_c_api.h"
 #include "plane_renderer.h"
+#include "line_renderer.h"
 #include "util.h"
 
 namespace hello_ar {
     namespace {
         constexpr size_t kMaxNumberOfAndroidsToRender = 20;
-
-        const glm::vec3 kWhite = {255, 255, 255};
 
 // Assumed distance from the device camera to the surface on which user will
 // try to place objects. This value affects the apparent scale of objects
@@ -58,6 +57,117 @@ namespace hello_ar {
             ArSession_destroy(ar_session_);
             ArFrame_destroy(ar_frame_);
         }
+    }
+
+    JNIEnv* HelloArApplication::GetJniEnv() {
+        JNIEnv* env = nullptr;
+        if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+            return env;
+        }
+        return nullptr;
+    }
+
+
+    void HelloArApplication::TryGeneratePathIfNeeded(float cam_x, float cam_z) {
+        if (path_generated_ || plane_count_ <= 0) return;
+    
+        Point start = {cam_x, cam_z};
+        Point goal = {-10.0f, -18.0f}; // 목적지는 고정되어 있음
+    
+        std::vector<Point> outer_rect = {
+            {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
+        };
+        std::vector<Point> inner_rect = {
+            {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
+        };
+    
+        std::set<Point> obstacles;
+        for (int i = 0; i < outer_rect.size(); ++i) {
+            auto wall = generateWall(outer_rect[i], outer_rect[(i + 1) % outer_rect.size()]);
+            obstacles.insert(wall.begin(), wall.end());
+        }
+        for (int i = 0; i < inner_rect.size(); ++i) {
+            auto wall = generateWall(inner_rect[i], inner_rect[(i + 1) % inner_rect.size()]);
+            obstacles.insert(wall.begin(), wall.end());
+        }
+    
+        path = astar(start, goal, obstacles);
+        if (!path.empty()) {
+            path_generated_ = true;
+            path_ready_to_render_ = true;
+            LOGI("🚀 경로 탐색 성공! A* 결과:");
+        } else {
+            LOGI("❌ 경로 탐색 실패: 도달 불가능");
+        }
+    }
+
+
+    void HelloArApplication::CheckCameraFollowingPath(float cam_x, float cam_z) {
+        if (current_path_index >= path.size()) {
+            LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
+
+            JNIEnv* env = GetJniEnv();
+            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+
+            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
+            env->CallStaticVoidMethod(clazz, method, message);
+            env->DeleteLocalRef(message);
+            return;
+        }
+
+        Point target = path[current_path_index];
+        float dx = cam_x - target.x;
+        float dz = cam_z - target.z;
+        float distance = std::sqrt(dx * dx + dz * dz);
+
+
+        const float deviation_threshold = 2.0f;  // 2m 이상 벗어나면 재탐색
+
+        if (distance > deviation_threshold) {
+            LOGI("🚨 경로 이탈 감지됨! 새 경로를 재탐색합니다.");
+    
+
+            path.clear();
+            path_generated_ = false;  // ⭐ 경로 재생성을 허용
+            path_ready_to_render_ = false;
+            current_path_index = 0;
+
+            // 기존 목표점으로 재탐색 시도
+            TryGeneratePathIfNeeded(cam_x, cam_z);
+    
+            if (!path.empty()) {
+                JNIEnv* env = GetJniEnv();
+                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+                jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+                jstring msg = env->NewStringUTF("🚨 경로 이탈 - 새 경로 탐색 완료");
+                env->CallStaticVoidMethod(clazz, method, msg);
+                env->DeleteLocalRef(msg);
+            } else {
+                LOGI("❌ 경로 재탐색 실패: 도달할 수 없음");
+            }
+    
+            return;
+        }
+        
+        std::string status;
+        char buffer[128];
+
+        if (distance < threshold) {
+            snprintf(buffer, sizeof(buffer), "✅ 경로 지점 %d 도달 (x=%.2f, z=%.2f)", current_path_index, target.x, target.z);
+            current_path_index++;
+        } else {
+            snprintf(buffer, sizeof(buffer), "📍 경로 %d 접근 중... x 방향: %.2f m, z 방향: %.2f m",
+                     current_path_index, dx, dz);
+        }
+
+        JNIEnv* env = GetJniEnv();
+        jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+        jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+
+        jstring message = env->NewStringUTF(buffer);
+        env->CallStaticVoidMethod(clazz, method, message);
+        env->DeleteLocalRef(message);
     }
 
     void HelloArApplication::OnPause() {
@@ -127,7 +237,10 @@ namespace hello_ar {
         andy_renderer_.SetDepthTexture(depth_texture_.GetTextureId(),
                                        depth_texture_.GetWidth(),
                                        depth_texture_.GetHeight());
+        location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
+
+        line_renderer_.InitializeGlContent(asset_manager_);
     }
 
     void HelloArApplication::OnDisplayGeometryChanged(int display_rotation,
@@ -168,6 +281,53 @@ namespace hello_ar {
         ArCamera* ar_camera = nullptr;
         ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
 
+        // 🔧 [1] 카메라 트래킹 상태 확인
+        ArTrackingState camera_tracking_state;
+        ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
+
+        if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
+            LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 및 경로 생성 생략");
+            ArCamera_release(ar_camera);
+            return;
+        }
+
+        // 🔧 [2] 카메라 Pose 추출
+        ArPose* camera_pose;
+        ArPose_create(ar_session_, nullptr, &camera_pose);
+        float pose_raw[7];
+        ArCamera_getPose(ar_session_, ar_camera, camera_pose);
+        ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
+
+        float cam_x = pose_raw[4];
+        float cam_z = pose_raw[6];
+
+        // 5. 경로 생성 시도
+        TryGeneratePathIfNeeded(cam_x, cam_z);
+
+        // 6. 경로 따라가기
+        if (!path.empty()) {
+            CheckCameraFollowingPath(cam_x, cam_z);
+        }
+
+        // [추가] Java로 pose 값을 전달
+        JavaVM* java_vm;
+        JNIEnv* env = nullptr;
+
+        if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+            jfloatArray pose_array = env->NewFloatArray(7);
+            env->SetFloatArrayRegion(pose_array, 0, 7, pose_raw);
+
+            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+            jmethodID method = env->GetStaticMethodID(clazz, "updatePoseFromNative", "([F)V");
+
+            if (clazz != nullptr && method != nullptr) {
+                env->CallStaticVoidMethod(clazz, method, pose_array);
+            }
+        }
+        // 6. Pose 객체 해제
+        ArPose_destroy(camera_pose);
+        ArCamera_release(ar_camera);
+
         int32_t geometry_changed = 0;
         ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);
         if (geometry_changed != 0 || !calculate_uv_transform_) {
@@ -187,15 +347,28 @@ namespace hello_ar {
                 /*near=*/0.1f, /*far=*/100.f,
                                      glm::value_ptr(projection_mat));
 
+
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
 
-        ArTrackingState camera_tracking_state;
+        // line
+        if (!path.empty()) {
+            std::vector<glm::vec3> line_points;
+            for (const auto& p : path) {
+                line_points.emplace_back(p.x, stored_plane_y_, p.z);
+            }
+
+            line_renderer_.Draw(line_points, projection_mat, view_mat);
+        }
+
+
+
+        //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
-        ArCamera_release(ar_camera);
 
         // If the camera isn't tracking don't bother rendering other objects.
         if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
+            LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 생성 불가");
             return;
         }
 
@@ -239,6 +412,57 @@ namespace hello_ar {
         ArTrackableList_getSize(ar_session_, plane_list, &plane_list_size);
         plane_count_ = plane_list_size;
 
+        if (path_ready_to_render_ && plane_count_ > 0) {
+
+            for (auto& anchor : anchors_) {
+                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
+                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
+            }
+            anchors_.clear();
+
+            
+            // 감지된 첫 번째 평면의 높이 추출
+            ArTrackable* first_trackable = nullptr;
+            ArTrackableList_acquireItem(ar_session_, plane_list, 0, &first_trackable);
+            ArPlane* first_plane = ArAsPlane(first_trackable);
+            ArPose* plane_pose = nullptr;
+            ArPose_create(ar_session_, nullptr, &plane_pose);
+            ArPlane_getCenterPose(ar_session_, first_plane, plane_pose);
+
+            float center_pose_raw[7];
+            ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
+            stored_plane_y_ = center_pose_raw[5];  // 평면의 y값 저장
+
+            ArTrackable_release(first_trackable);
+            ArPose_destroy(plane_pose);
+
+            LOGI("📐 평면 감지됨, 높이: %.2f", stored_plane_y_);
+
+            const auto& p = path.back();
+            float anchor_pose[7] = {0};
+            anchor_pose[4] = p.x;
+            anchor_pose[5] = stored_plane_y_ + 2.3f;  // 평면 높이 사용
+            anchor_pose[6] = p.z;
+
+            ArPose* pose = nullptr;
+            ArPose_create(ar_session_, anchor_pose, &pose);
+
+            ArAnchor* anchor = nullptr;
+            if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                ColoredAnchor colored_anchor;
+                colored_anchor.anchor = anchor;
+                colored_anchor.trackable = nullptr;
+                SetColor(255, 0, 0, 255, colored_anchor.color);
+                anchors_.push_back(colored_anchor);
+                LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
+            }
+
+            ArPose_destroy(pose);
+
+            path_ready_to_render_ = false;  // 앵커 생성 완료
+        }
+
+
         for (int i = 0; i < plane_list_size; ++i) {
             ArTrackable* ar_trackable = nullptr;
             ArTrackableList_acquireItem(ar_session_, plane_list, i, &ar_trackable);
@@ -272,18 +496,18 @@ namespace hello_ar {
         // Render Andy objects.
         glm::mat4 model_mat(1.0f);
         for (auto& colored_anchor : anchors_) {
-            ArTrackingState tracking_state = AR_TRACKING_STATE_STOPPED;
-            ArAnchor_getTrackingState(ar_session_, colored_anchor.anchor,
-                                      &tracking_state);
-            if (tracking_state == AR_TRACKING_STATE_TRACKING) {
+            // 🔧 수정: trackable이 nullptr일 경우 UpdateAnchorColor 생략
+            if (colored_anchor.trackable != nullptr) {
                 UpdateAnchorColor(&colored_anchor);
-                // Render object only if the tracking state is AR_TRACKING_STATE_TRACKING.
-                util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
-                                                   &model_mat);
-                andy_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
-                                    colored_anchor.color);
             }
+
+            // 무조건 렌더
+            util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
+                                               &model_mat);
+            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
+                                colored_anchor.color);
         }
+
 
         // Update and render point cloud.
         ArPointCloud* ar_point_cloud = nullptr;
@@ -462,6 +686,11 @@ namespace hello_ar {
     }
 
     void HelloArApplication::UpdateAnchorColor(ColoredAnchor* colored_anchor) {
+        if (colored_anchor->trackable == nullptr) {
+            // 기본 흰색 설정
+            SetColor(255.0f, 255.0f, 255.0f, 255.0f, colored_anchor->color);
+            return;
+        }
         ArTrackable* ar_trackable = colored_anchor->trackable;
         float* color = colored_anchor->color;
 
@@ -500,6 +729,7 @@ namespace hello_ar {
                 return;
             }
         }
+
 
         // Fallback color
         SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);

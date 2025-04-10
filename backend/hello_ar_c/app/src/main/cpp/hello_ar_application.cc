@@ -212,11 +212,11 @@ namespace hello_ar {
                                        depth_texture_.GetWidth(),
                                        depth_texture_.GetHeight());
 
-        ArCamera* ar_camera = nullptr;
+        ArCamera *ar_camera = nullptr;
         ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
 
         // 2. Pose 객체 생성
-        ArPose* camera_pose;
+        ArPose *camera_pose;
         //ArPose* camera_pose = nullptr;
         ArPose_create(ar_session_, nullptr, &camera_pose);
         // 3. 카메라의 Pose 얻기
@@ -232,16 +232,14 @@ namespace hello_ar {
 
         if (!path_generated_) {
 
-        if (!path_generated_) {
-
             Point start = {pose_raw[4], pose_raw[6]};
             Point goal = {-10.0f, -18.0f};  // 원하는 도착 위치
 
             std::vector<Point> outer_rect = {
-                    {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
+                    {-11.5f, 1.8f},{-11.5f, -20.25f},{1.5f,   -20.25f}, {1.5f,   1.8f}
             };
             std::vector<Point> inner_rect = {
-                    {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
+                    {-8.58f, -0.6f},{-8.58f, -15.89f},{-1.49f, -15.89f},{-1.49f, -0.6f}
             };
 
             std::set<Point> obstacles;
@@ -259,7 +257,7 @@ namespace hello_ar {
             // A* 경로 탐색 수행
             if (!path.empty()) {
                 LOGI("🚀 경로 탐색 성공! A* 결과 경로:");
-                for (const auto& p : path) {
+                for (const auto &p: path) {
                     LOGI(" -> x=%.2f, z=%.2f", p.x, p.z);
                 }
                 path_generated_ = true;  // 한 번만 실행되도록 설정
@@ -275,10 +273,11 @@ namespace hello_ar {
         }
 
         // [추가] Java로 pose 값을 전달
-        JavaVM* java_vm;
-        JNIEnv* env = nullptr;
+        JavaVM *java_vm;
+        JNIEnv *env = nullptr;
 
-        if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+        if (java_vm_ &&
+            java_vm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) == JNI_OK) {
             jfloatArray pose_array = env->NewFloatArray(7);
             env->SetFloatArrayRegion(pose_array, 0, 7, pose_raw);
 
@@ -289,7 +288,7 @@ namespace hello_ar {
                 env->CallStaticVoidMethod(clazz, method, pose_array);
             }
         }
-    // 6. Pose 객체 해제
+        // 6. Pose 객체 해제
         ArPose_destroy(camera_pose);
 
         int32_t geometry_changed = 0;
@@ -331,7 +330,7 @@ namespace hello_ar {
         }
 
         // Get light estimation value.
-        ArLightEstimate* ar_light_estimate;
+        ArLightEstimate *ar_light_estimate;
         ArLightEstimateState ar_light_estimate_state;
         ArLightEstimate_create(ar_session_, &ar_light_estimate);
 
@@ -352,7 +351,7 @@ namespace hello_ar {
         ar_light_estimate = nullptr;
 
         // Update and render planes.
-        ArTrackableList* plane_list = nullptr;
+        ArTrackableList *plane_list = nullptr;
         ArTrackableList_create(ar_session_, &plane_list);
         CHECK(plane_list != nullptr);
 
@@ -364,14 +363,14 @@ namespace hello_ar {
         plane_count_ = plane_list_size;
 
         for (int i = 0; i < plane_list_size; ++i) {
-            ArTrackable* ar_trackable = nullptr;
+            ArTrackable *ar_trackable = nullptr;
             ArTrackableList_acquireItem(ar_session_, plane_list, i, &ar_trackable);
-            ArPlane* ar_plane = ArAsPlane(ar_trackable);
+            ArPlane *ar_plane = ArAsPlane(ar_trackable);
             ArTrackingState out_tracking_state;
             ArTrackable_getTrackingState(ar_session_, ar_trackable,
                                          &out_tracking_state);
 
-            ArPlane* subsume_plane;
+            ArPlane *subsume_plane;
             ArPlane_acquireSubsumedBy(ar_session_, ar_plane, &subsume_plane);
             if (subsume_plane != nullptr) {
                 ArTrackable_release(ArAsTrackable(subsume_plane));
@@ -395,7 +394,7 @@ namespace hello_ar {
 
         // Render Andy objects.
         glm::mat4 model_mat(1.0f);
-        for (auto& colored_anchor : anchors_) {
+        for (auto &colored_anchor: anchors_) {
             ArTrackingState tracking_state = AR_TRACKING_STATE_STOPPED;
             ArAnchor_getTrackingState(ar_session_, colored_anchor.anchor,
                                       &tracking_state);
@@ -410,7 +409,7 @@ namespace hello_ar {
         }
 
         // Update and render point cloud.
-        ArPointCloud* ar_point_cloud = nullptr;
+        ArPointCloud *ar_point_cloud = nullptr;
         ArStatus point_cloud_status =
                 ArFrame_acquirePointCloud(ar_session_, ar_frame_, &ar_point_cloud);
         if (point_cloud_status == AR_SUCCESS) {
@@ -452,7 +451,6 @@ namespace hello_ar {
 
     void HelloArApplication::OnSettingsChange(bool is_instant_placement_enabled) {
         is_instant_placement_enabled_ = is_instant_placement_enabled;
-
         if (ar_session_ != nullptr) {
             ConfigureSession();
         }
