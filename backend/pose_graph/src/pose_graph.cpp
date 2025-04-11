@@ -34,8 +34,8 @@ PoseGraph::PoseGraph(
     
     FileSystemHelper::createDirectoryIfNotExists(POSE_GRAPH_SAVE_PATH.c_str());
     
-    t_loopClosure = std::thread(&PoseGraph::loopClosure, this);
-    t_optimization = std::thread(&PoseGraph::optimize4DoF, this);
+    // t_loopClosure = std::thread(&PoseGraph::loopClosure, this);
+    // t_optimization = std::thread(&PoseGraph::optimize4DoF, this);
 }
 
 PoseGraph::~PoseGraph()
@@ -51,7 +51,11 @@ void PoseGraph::loadVocabulary(std::string voc_path)
 
 void PoseGraph::addKeyFrameBuf(KeyFramePtr keyframe){
     m_buf.lock();
-    keyframe_buf.push(keyframe);
+
+    if(keyframe_buf.size() < 10){
+        keyframe_buf.push(keyframe);
+    }
+
     m_buf.unlock();
 }
 
