@@ -30,10 +30,6 @@ set_target_properties(ceres PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/../../backend/third_party/ceres-solver/${ANDROID_ABI}/include
 )
 
-# eigen (header-only)
-include_directories(${CMAKE_SOURCE_DIR}/../../backend/third_party)
-include_directories(${CMAKE_SOURCE_DIR}/../../backend/third_party/eigen3)
-
 # ========== Boost (added) ==========
 
 set(Boost_NO_SYSTEM_PATHS ON)
@@ -58,10 +54,12 @@ file(GLOB_RECURSE SRC_FILES
 
 add_library(pose_graph SHARED ${SRC_FILES})
 
-target_include_directories(pose_graph PRIVATE
+target_include_directories(pose_graph PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${OpenCV_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/../../backend/third_party
+    ${CMAKE_SOURCE_DIR}/../../backend/third_party/eigen3
 )
 
 target_link_libraries(pose_graph
