@@ -48,7 +48,10 @@ add_library(hello_ar_native SHARED
            src/main/cpp/astar_pathfinding.cc
            src/main/cpp/line_renderer.cc)
 
+set(POSE_GRAPH_INCLUDE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../backend/pose_graph/src/include)
+
 target_include_directories(hello_ar_native PRIVATE
+           ${POSE_GRAPH_INCLUDE_SRC}
            src/main/cpp
            src/main/cpp/include)
            
