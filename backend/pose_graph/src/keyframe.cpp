@@ -11,8 +11,7 @@ static void reduceVector(vector<Derived> &v, vector<uchar> status)
 }
 
 // create keyframe online
-KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image,
-		           vector<cv::Point3f> &_point_3d, vector<double> &_point_id, int _sequence)
+KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image, int _sequence)
 {
 	time_stamp = _time_stamp;
 	index = _index;
@@ -24,8 +23,6 @@ KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3
 	origin_vio_R = vio_R_w_i;
 	image = _image.clone();
 	cv::resize(image, thumbnail, cv::Size(80, 60));
-	point_3d = _point_3d;
-	point_id = _point_id;
 	has_loop = false;
 	loop_index = -1;
 	has_fast_point = false;
