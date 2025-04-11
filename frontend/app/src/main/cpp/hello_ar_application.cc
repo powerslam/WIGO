@@ -24,6 +24,8 @@
 #include "plane_renderer.h"
 #include "line_renderer.h"
 #include "util.h"
+#include "pose_graph.h"
+#include "keyframe.h"
 
 namespace hello_ar {
     namespace {
