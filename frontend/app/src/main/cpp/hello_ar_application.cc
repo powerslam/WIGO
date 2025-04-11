@@ -474,28 +474,13 @@ namespace hello_ar {
         ArTrackableList_getSize(ar_session_, plane_list, &plane_list_size);
         plane_count_ = plane_list_size;
 
-        if (path_ready_to_render_ && plane_count_ > 0) {
+        if (path_ready_to_render_) {
 
             for (auto& anchor : anchors_) {
                 if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
                 if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
             }
             anchors_.clear();
-
-            
-            // 감지된 첫 번째 평면의 높이 추출
-            ArTrackable* first_trackable = nullptr;
-            ArTrackableList_acquireItem(ar_session_, plane_list, 0, &first_trackable);
-            ArPlane* first_plane = ArAsPlane(first_trackable);
-            ArPose* plane_pose = nullptr;
-            ArPose_create(ar_session_, nullptr, &plane_pose);
-            ArPlane_getCenterPose(ar_session_, first_plane, plane_pose);
-
-            float center_pose_raw[7];
-            ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
-
-            ArTrackable_release(first_trackable);
-            ArPose_destroy(plane_pose);
 
             const auto& p = path.back();
             float anchor_pose[7] = {0};
