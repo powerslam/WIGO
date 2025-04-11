@@ -110,8 +110,6 @@ class HelloArApplication {
   bool path_generated_ = false;
   bool path_ready_to_render_ = false;
 
-  float stored_plane_y_ = 0.0f;
-
   bool tts_direction_played_ = false;
 
   bool arrival_audio_played_ = false;
@@ -119,6 +117,8 @@ class HelloArApplication {
   LineRenderer line_renderer_;
 
   AAssetManager* const asset_manager_;
+
+  bool start_flag = false;
 
   std::vector<Point> path;
   float threshold = 0.8f; // 거리 허용 오차

@@ -98,9 +98,11 @@ namespace hello_ar {
             arrival_audio_played_ = false;
             LOGI("🚀 경로 탐색 성공! A* 결과:");
 
-            JNIEnv* env = GetJniEnv();
-            if (env) {
+            if (!start_flag){
+                JNIEnv* env = GetJniEnv();
                 audio::PlayAudioFromAssets(env, "start.m4a");
+                start_flag = true;
+                LOGI("start.m4a 재생 성공");
             }
 
 //                JNIEnv* env = GetJniEnv();
@@ -415,7 +417,7 @@ namespace hello_ar {
         if (!path.empty()) {
             std::vector<glm::vec3> line_points;
             for (const auto& p : path) {
-                line_points.emplace_back(p.x, stored_plane_y_, p.z);
+                line_points.emplace_back(p.x, -1.6f, p.z);
             }
 
             line_renderer_.Draw(line_points, projection_mat, view_mat);
@@ -491,17 +493,14 @@ namespace hello_ar {
 
             float center_pose_raw[7];
             ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
-            stored_plane_y_ = center_pose_raw[5];  // 평면의 y값 저장
 
             ArTrackable_release(first_trackable);
             ArPose_destroy(plane_pose);
 
-            LOGI("📐 평면 감지됨, 높이: %.2f", stored_plane_y_);
-
             const auto& p = path.back();
             float anchor_pose[7] = {0};
             anchor_pose[4] = p.x;
-            anchor_pose[5] = stored_plane_y_ + 2.3f;  // 평면 높이 사용
+            anchor_pose[5] = -1.6f;  // 평면 높이 사용
             anchor_pose[6] = p.z;
 
             ArPose* pose = nullptr;
