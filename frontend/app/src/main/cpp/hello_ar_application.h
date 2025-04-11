@@ -27,6 +27,9 @@
 #include <string>
 #include <unordered_map>
 
+#include "pose_graph.h"
+#include "keyframe.h"
+
 #include "include/arcore/arcore_c_api.h"
 #include "background_renderer.h"
 #include "glm.h"
@@ -94,6 +97,8 @@ class HelloArApplication {
                                       const ArFrame* frame);
   ArSession* ar_session_ = nullptr;
   ArFrame* ar_frame_ = nullptr;
+
+  PoseGraph pose_graph;
 
   JavaVM* java_vm_ = nullptr;
 
