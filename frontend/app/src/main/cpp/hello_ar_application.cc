@@ -24,8 +24,6 @@
 #include "plane_renderer.h"
 #include "line_renderer.h"
 #include "util.h"
-#include "pose_graph.h"
-#include "keyframe.h"
 
 namespace hello_ar {
     namespace {
@@ -52,7 +50,7 @@ namespace hello_ar {
     }  // namespace
 
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-            : asset_manager_(asset_manager) {}
+            : asset_manager_(asset_manager), pose_graph("", "", "", false, 0, 2, 640, 480) {}
 
     HelloArApplication::~HelloArApplication() {
         if (ar_session_ != nullptr) {
@@ -327,30 +325,70 @@ namespace hello_ar {
             }
         }
 
-        //Camera Intrinsic
+        //Camera Intrinsic 놀랍게도 성공
 
         ArCameraIntrinsics* intrinsics = nullptr;
         ArCameraIntrinsics_create(ar_session_, &intrinsics);
 
         ArCamera_getImageIntrinsics(ar_session_, ar_camera, intrinsics);
-
+    
         float fx, fy, cx, cy;
         ArCameraIntrinsics_getFocalLength(ar_session_, intrinsics, &fx, &fy);
         ArCameraIntrinsics_getPrincipalPoint(ar_session_, intrinsics, &cx, &cy);
 
-        int width, height;
-        ArCameraIntrinsics_getImageDimensions(ar_session_, intrinsics, &width, &height);
+        Eigen::Vector3d _vio_T_w_i;
+        Eigen::Matrix3d _vio_R_w_i;
 
+        _vio_T_w_i = Eigen::Vector3d(pose_raw[4], pose_raw[5], pose_raw[6]);
+        Eigen::Quaterniond q(pose_raw[3], pose_raw[0], pose_raw[1], pose_raw[2]);  // w, x, y, z
+        _vio_R_w_i = q.toRotationMatrix();
 
-        LOGI("Camera Intrinsics - width: %d, height: %d, fx: %f, fy: %f, cx: %f, cy: %f", width, height, fx, fy, cx, cy);
+        glm::mat4 view_mat;
+        glm::mat4 projection_mat;
+        ArCamera_getViewMatrix(ar_session_, ar_camera, glm::value_ptr(view_mat));
+        ArCamera_getProjectionMatrix(ar_session_, ar_camera,
+                /*near=*/0.1f, /*far=*/100.f,
+                                     glm::value_ptr(projection_mat));
 
+        const float* point_cloud_data;
+        const int* point_cloud_ids;
+        ArPointCloud* ar_point_cloud = nullptr;
+        ArStatus point_cloud_status =
+                ArFrame_acquirePointCloud(ar_session_, ar_frame_, &ar_point_cloud);
+
+        if (point_cloud_status == AR_SUCCESS) {
+          point_cloud_renderer_.Draw(projection_mat * view_mat, ar_session_,
+                                     ar_point_cloud);
+          ArPointCloud_getData(ar_session_, ar_point_cloud, &point_cloud_data);
+          ArPointCloud_getPointIds(ar_session_, ar_point_cloud, &point_cloud_ids);
+          ArPointCloud_release(ar_point_cloud);
+        }
+
+        ArImage* image = nullptr;
+        if(ArFrame_acquireCameraImage(ar_session_, ar_frame_, &image) == AR_SUCCESS) {
+          const uint8_t *y_plane = nullptr;
+          int y_row_stride = 0;
+          int width = 0;
+          int height = 0;
+          int data_length = 0;
+
+          ArImage_getWidth(ar_session_, image, &width);
+          ArImage_getHeight(ar_session_, image, &height);
+          ArImage_getPlaneData(ar_session_, image, 0, &y_plane, &data_length);  // 0 = Y 채널
+          ArImage_getPlaneRowStride(ar_session_, image, 0, &y_row_stride);
+
+          cv::Mat gray_image = cv::Mat(height, width, CV_8UC1, const_cast<uint8_t *>(y_plane),
+                                       y_row_stride);
+
+          KeyFramePtr keyframe = std::make_shared<KeyFrame>(0, 0, _vio_T_w_i, _vio_R_w_i, gray_image, 0);
+          pose_graph.addKeyFrameBuf(keyframe);
+          LOGI("frame buf size : %d", pose_graph.keyframe_buf.size());
+        }
 
         // 6. Pose 객체 해제
+        ArImage_release(image);
         ArPose_destroy(camera_pose);
         ArCamera_release(ar_camera);
-
-
-
 
 
         int32_t geometry_changed = 0;
@@ -364,13 +402,6 @@ namespace hello_ar {
             glm::mat3 transform = GetTextureTransformMatrix(ar_session_, ar_frame_);
             andy_renderer_.SetUvTransformMatrix(transform);
         }
-
-        glm::mat4 view_mat;
-        glm::mat4 projection_mat;
-        ArCamera_getViewMatrix(ar_session_, ar_camera, glm::value_ptr(view_mat));
-        ArCamera_getProjectionMatrix(ar_session_, ar_camera,
-                /*near=*/0.1f, /*far=*/100.f,
-                                     glm::value_ptr(projection_mat));
 
 
         background_renderer_.Draw(ar_session_, ar_frame_,
@@ -535,14 +566,7 @@ namespace hello_ar {
 
 
         // Update and render point cloud.
-        ArPointCloud* ar_point_cloud = nullptr;
-        ArStatus point_cloud_status =
-                ArFrame_acquirePointCloud(ar_session_, ar_frame_, &ar_point_cloud);
-        if (point_cloud_status == AR_SUCCESS) {
-            point_cloud_renderer_.Draw(projection_mat * view_mat, ar_session_,
-                                       ar_point_cloud);
-            ArPointCloud_release(ar_point_cloud);
-        }
+
     }
 
     bool HelloArApplication::IsDepthSupported() {
