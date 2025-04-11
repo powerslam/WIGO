@@ -324,9 +324,32 @@ namespace hello_ar {
                 env->CallStaticVoidMethod(clazz, method, pose_array);
             }
         }
+
+        //Camera Intrinsic
+
+        ArCameraIntrinsics* intrinsics = nullptr;
+        ArCameraIntrinsics_create(ar_session_, &intrinsics);
+
+        ArCamera_getImageIntrinsics(ar_session_, ar_camera, intrinsics);
+
+        float fx, fy, cx, cy;
+        ArCameraIntrinsics_getFocalLength(ar_session_, intrinsics, &fx, &fy);
+        ArCameraIntrinsics_getPrincipalPoint(ar_session_, intrinsics, &cx, &cy);
+
+        int width, height;
+        ArCameraIntrinsics_getImageDimensions(ar_session_, intrinsics, &width, &height);
+
+
+        LOGI("Camera Intrinsics - width: %d, height: %d, fx: %f, fy: %f, cx: %f, cy: %f", width, height, fx, fy, cx, cy);
+
+
         // 6. Pose 객체 해제
         ArPose_destroy(camera_pose);
         ArCamera_release(ar_camera);
+
+
+
+
 
         int32_t geometry_changed = 0;
         ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);
