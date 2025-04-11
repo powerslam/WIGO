@@ -66,7 +66,7 @@ public:
 	Eigen::Matrix3d w_r_vio;
 	Eigen::Vector3d last_t = Eigen::Vector3d(-100, -100, -100);
 
-private:
+public:
 	int detectLoop(KeyFramePtr keyframe, int frame_index);
 	void addKeyFrameIntoVoc(KeyFramePtr keyframe);
 	void addKeyFrameBuf(KeyFramePtr data);
