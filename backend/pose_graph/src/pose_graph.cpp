@@ -95,55 +95,55 @@ void PoseGraph::addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
         //printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
         KeyFramePtr old_kf = getKeyFrame(loop_index);
 
-        if (cur_kf->findConnection(old_kf))
-        {
-            if (earliest_loop_index > loop_index || earliest_loop_index == -1)
-                earliest_loop_index = loop_index;
-
-            Vector3d w_P_old, w_P_cur, vio_P_cur;
-            Matrix3d w_R_old, w_R_cur, vio_R_cur;
-            old_kf->getVioPose(w_P_old, w_R_old);
-            cur_kf->getVioPose(vio_P_cur, vio_R_cur);
-
-            Vector3d relative_t;
-            Quaterniond relative_q;
-            relative_t = cur_kf->getLoopRelativeT();
-            relative_q = (cur_kf->getLoopRelativeQ()).toRotationMatrix();
-            w_P_cur = w_R_old * relative_t + w_P_old;
-            w_R_cur = w_R_old * relative_q;
-            double shift_yaw;
-            Matrix3d shift_r;
-            Vector3d shift_t;
-            shift_yaw = Utility::R2ypr(w_R_cur).x() - Utility::R2ypr(vio_R_cur).x();
-            shift_r = Utility::ypr2R(Vector3d(shift_yaw, 0, 0));
-            shift_t = w_P_cur - w_R_cur * vio_R_cur.transpose() * vio_P_cur;
-            // shift vio pose of whole sequence to the world frame
-            if (old_kf->sequence != cur_kf->sequence && sequence_loop[cur_kf->sequence] == 0)
-            {
-                w_r_vio = shift_r;
-                w_t_vio = shift_t;
-                vio_P_cur = w_r_vio * vio_P_cur + w_t_vio;
-                vio_R_cur = w_r_vio *  vio_R_cur;
-                cur_kf->updateVioPose(vio_P_cur, vio_R_cur);
-                list<KeyFramePtr>::iterator it = keyframelist.begin();
-                for (; it != keyframelist.end(); it++)
-                {
-                    if((*it)->sequence == cur_kf->sequence)
-                    {
-                        Vector3d vio_P_cur;
-                        Matrix3d vio_R_cur;
-                        (*it)->getVioPose(vio_P_cur, vio_R_cur);
-                        vio_P_cur = w_r_vio * vio_P_cur + w_t_vio;
-                        vio_R_cur = w_r_vio *  vio_R_cur;
-                        (*it)->updateVioPose(vio_P_cur, vio_R_cur);
-                    }
-                }
-                sequence_loop[cur_kf->sequence] = 1;
-            }
-            m_optimize_buf.lock();
-            optimize_buf.push(cur_kf->index);
-            m_optimize_buf.unlock();
-        }
+//        if (cur_kf->findConnection(old_kf))
+//        {
+//            if (earliest_loop_index > loop_index || earliest_loop_index == -1)
+//                earliest_loop_index = loop_index;
+//
+//            Vector3d w_P_old, w_P_cur, vio_P_cur;
+//            Matrix3d w_R_old, w_R_cur, vio_R_cur;
+//            old_kf->getVioPose(w_P_old, w_R_old);
+//            cur_kf->getVioPose(vio_P_cur, vio_R_cur);
+//
+//            Vector3d relative_t;
+//            Quaterniond relative_q;
+//            relative_t = cur_kf->getLoopRelativeT();
+//            relative_q = (cur_kf->getLoopRelativeQ()).toRotationMatrix();
+//            w_P_cur = w_R_old * relative_t + w_P_old;
+//            w_R_cur = w_R_old * relative_q;
+//            double shift_yaw;
+//            Matrix3d shift_r;
+//            Vector3d shift_t;
+//            shift_yaw = Utility::R2ypr(w_R_cur).x() - Utility::R2ypr(vio_R_cur).x();
+//            shift_r = Utility::ypr2R(Vector3d(shift_yaw, 0, 0));
+//            shift_t = w_P_cur - w_R_cur * vio_R_cur.transpose() * vio_P_cur;
+//            // shift vio pose of whole sequence to the world frame
+//            if (old_kf->sequence != cur_kf->sequence && sequence_loop[cur_kf->sequence] == 0)
+//            {
+//                w_r_vio = shift_r;
+//                w_t_vio = shift_t;
+//                vio_P_cur = w_r_vio * vio_P_cur + w_t_vio;
+//                vio_R_cur = w_r_vio *  vio_R_cur;
+//                cur_kf->updateVioPose(vio_P_cur, vio_R_cur);
+//                list<KeyFramePtr>::iterator it = keyframelist.begin();
+//                for (; it != keyframelist.end(); it++)
+//                {
+//                    if((*it)->sequence == cur_kf->sequence)
+//                    {
+//                        Vector3d vio_P_cur;
+//                        Matrix3d vio_R_cur;
+//                        (*it)->getVioPose(vio_P_cur, vio_R_cur);
+//                        vio_P_cur = w_r_vio * vio_P_cur + w_t_vio;
+//                        vio_R_cur = w_r_vio *  vio_R_cur;
+//                        (*it)->updateVioPose(vio_P_cur, vio_R_cur);
+//                    }
+//                }
+//                sequence_loop[cur_kf->sequence] = 1;
+//            }
+//            m_optimize_buf.lock();
+//            optimize_buf.push(cur_kf->index);
+//            m_optimize_buf.unlock();
+//        }
 	}
 	m_keyframelist.lock();
 
@@ -174,15 +174,15 @@ void PoseGraph::loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
     {
         printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
         KeyFramePtr old_kf = getKeyFrame(loop_index);
-        if (cur_kf->findConnection(old_kf))
-        {
-            if (earliest_loop_index > loop_index || earliest_loop_index == -1)
-                earliest_loop_index = loop_index;
-
-            m_optimize_buf.lock();
-            optimize_buf.push(cur_kf->index);
-            m_optimize_buf.unlock();
-        }
+//        if (cur_kf->findConnection(old_kf))
+//        {
+//            if (earliest_loop_index > loop_index || earliest_loop_index == -1)
+//                earliest_loop_index = loop_index;
+//
+//            m_optimize_buf.lock();
+//            optimize_buf.push(cur_kf->index);
+//            m_optimize_buf.unlock();
+//        }
     }
 
     m_keyframelist.lock();
