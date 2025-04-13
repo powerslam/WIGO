@@ -69,7 +69,7 @@ namespace hello_ar {
 
 
     void HelloArApplication::TryGeneratePathIfNeeded(float cam_x, float cam_z) {
-        if (path_generated_ || plane_count_ <= 0) return;
+        if (path_generated_) return;
     
         Point start = {cam_x, cam_z};
         Point goal = {-10.0f, -18.0f}; // 목적지는 고정되어 있음
@@ -288,8 +288,6 @@ namespace hello_ar {
 
         if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
             LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 및 경로 생성 생략");
-            ArCamera_release(ar_camera);
-            return;
         }
 
         // 🔧 [2] 카메라 Pose 추출

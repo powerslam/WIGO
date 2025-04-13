@@ -157,26 +157,26 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       return;
     }
 
-    surfaceStatus.setVisibility(View.VISIBLE);
-    surfaceStatusText.setText("Searching for surfaces...");
+    surfaceStatus.setVisibility(View.GONE);
+//    surfaceStatusText.setText("Searching for surfaces...");
 
-    pathStatusTextView.setVisibility(View.GONE);
+    pathStatusTextView.setVisibility(View.VISIBLE);
 
-    planeStatusCheckingHandler = new Handler();
-
-    planeStatusCheckingRunnable = () -> {
-      try {
-        if (JniInterface.hasDetectedPlanes(nativeApplication)) {
-          surfaceStatus.setVisibility(View.GONE);
-          pathStatusTextView.setVisibility(View.VISIBLE);
-        } else {
-          planeStatusCheckingHandler.postDelayed(planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
-        }
-      } catch (Exception e) {
-        Log.e(TAG, e.getMessage());
-      }
-    };
-    planeStatusCheckingHandler.post(planeStatusCheckingRunnable);
+//    planeStatusCheckingHandler = new Handler();
+//
+//    planeStatusCheckingRunnable = () -> {
+//      try {
+//        if (JniInterface.hasDetectedPlanes(nativeApplication)) {
+//          surfaceStatus.setVisibility(View.GONE);
+//          pathStatusTextView.setVisibility(View.VISIBLE);
+//        } else {
+//          planeStatusCheckingHandler.postDelayed(planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
+//        }
+//      } catch (Exception e) {
+//        Log.e(TAG, e.getMessage());
+//      }
+//    };
+//    planeStatusCheckingHandler.post(planeStatusCheckingRunnable);
 
     activity.getSystemService(DisplayManager.class).registerDisplayListener(this, null);
   }
