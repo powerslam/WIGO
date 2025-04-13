@@ -99,6 +99,7 @@ class HelloArApplication {
   ArFrame* ar_frame_ = nullptr;
 
   PoseGraph pose_graph;
+  IntrinsicParameter intrinsic_param;
 
   JavaVM* java_vm_ = nullptr;
 
