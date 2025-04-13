@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <android/log.h>
+#include <android/asset_manager.h>
 #include <eigen3/Eigen/Dense>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
@@ -32,7 +34,7 @@ public:
 	double m_inv_K11, m_inv_K13, m_inv_K22, m_inv_K23;
 
 public:
-	explicit IntrinsicParameter(double fx, double fy, double cx, double cy){
+	void update_parameter(double fx, double fy, double cx, double cy){
 		this->fx = fx;
 		this->fy = fy;
 		this->cx = cx;
