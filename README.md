@@ -2,7 +2,7 @@
 # WIGO - 시각 장애인 및 초행자용 실내 네비게이션 
 
 ## 1.1. 프로젝트 명
-![배너](https://github.com/user-attachments/assets/9af927b7-2828-4f59-83be-831909c20375)
+![베너](https://github.com/user-attachments/assets/388b845e-cfd1-48f2-8411-13fc7648f69c)
 
 ## 1.2. 프로젝트 기간
 * 프로젝트 기간 : (2025.01.03 ~ 2025.05.30)
