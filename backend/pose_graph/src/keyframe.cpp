@@ -58,7 +58,7 @@ KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3
 	brief_descriptors = _brief_descriptors;
 }
 
-void KeyFrame::computeBRIEFPoint()
+void KeyFrame::computeBRIEFPoint(const IntrinsicParameter& param)
 {
 	BriefExtractor extractor(BRIEF_PATTERN_FILE.c_str());
 	const int fast_th = 20; // corner detector response threshold
@@ -80,14 +80,14 @@ void KeyFrame::computeBRIEFPoint()
 	// }
 
 	extractor(image, keypoints, brief_descriptors);
-	for (int i = 0; i < (int)keypoints.size(); i++)
-	{
-		// @todo 이 부분은 나중에 ARCore PointCloud 정보로부터 카메라 Frame으로 재투영 할 필요가 있음
-		// Eigen::Vector3d tmp_p;
-		// m_camera->liftProjective(Eigen::Vector2d(keypoints[i].pt.x, keypoints[i].pt.y), tmp_p);
-		// cv::KeyPoint tmp_norm;
-		// tmp_norm.pt = cv::Point2f(tmp_p.x()/tmp_p.z(), tmp_p.y()/tmp_p.z());
-		// keypoints_norm.push_back(tmp_norm);
+
+    double mx_u, my_u;
+	for (int i = 0; i < (int)keypoints.size(); i++) {
+        mx_u = param.m_inv_K11 * keypoints[i].pt.x + param.m_inv_K13;
+        my_u = param.m_inv_K22 * keypoints[i].pt.y + param.m_inv_K23;
+        
+        keypoints_norm.emplace_back(cv::KeyPoint());
+        keypoints_norm.back().pt = cv::Point2f(mx_u, my_u);
 	}
 }
 
