@@ -14,6 +14,11 @@
 
 #define MIN_LOOP_NUM 25
 
+#ifndef LOGI
+#define LOGI(...) \
+  __android_log_print(ANDROID_LOG_INFO, "hello_ar_example_c", __VA_ARGS__)
+#endif  // LOGI
+
 using namespace Eigen;
 using namespace std;
 using namespace DVision;
@@ -23,7 +28,7 @@ class BriefExtractor
 {
 public:
   virtual void operator()(const cv::Mat &im, vector<cv::KeyPoint> &keys, vector<BRIEF::bitset> &descriptors) const;
-  BriefExtractor(const std::string &pattern_file);
+  BriefExtractor(AAssetManager* asset_manager);
 
   DVision::BRIEF m_brief;
 };
@@ -58,7 +63,7 @@ public:
 			 vector<cv::KeyPoint> &_keypoints, vector<cv::KeyPoint> &_keypoints_norm, vector<BRIEF::bitset> &_brief_descriptors);
 	bool findConnection(std::shared_ptr<KeyFrame> old_kf);
 	void computeWindowBRIEFPoint();
-	void computeBRIEFPoint(const IntrinsicParameter& param);
+	void computeBRIEFPoint(AAssetManager* asset_manager, const IntrinsicParameter& param);
 	//void extractBrief();
 	int HammingDis(const BRIEF::bitset &a, const BRIEF::bitset &b);
 	bool searchInAera(const BRIEF::bitset window_descriptor,
