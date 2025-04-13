@@ -8,9 +8,9 @@ Eigen::Matrix3d qic;
 PoseGraph::PoseGraph(
     const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
     const std::string& vocabulary_file, const bool load_previous_pose_graph,
-    int skip_cnt, int skip_dis, int row, int col): POSE_GRAPH_SAVE_PATH(pose_graph_save_path), 
-    VOCABULARY_FILE(vocabulary_file), LOAD_PREVIOUS_POSE_GRAPH(load_previous_pose_graph), 
-    SKIP_CNT(skip_cnt), SKIP_DIS(skip_dis), frame_index(frame_index)
+    int skip_dis, int row, int col): POSE_GRAPH_SAVE_PATH(pose_graph_save_path), 
+    VOCABULARY_FILE(vocabulary_file), LOAD_PREVIOUS_POSE_GRAPH(load_previous_pose_graph),
+    SKIP_DIS(skip_dis), frame_index(frame_index)
 {
     earliest_loop_index = -1;
 
@@ -34,7 +34,7 @@ PoseGraph::PoseGraph(
     
     FileSystemHelper::createDirectoryIfNotExists(POSE_GRAPH_SAVE_PATH.c_str());
     
-    // t_loopClosure = std::thread(&PoseGraph::loopClosure, this);
+    t_loopClosure = std::thread(&PoseGraph::loopClosure, this);
     // t_optimization = std::thread(&PoseGraph::optimize4DoF, this);
 }
 
@@ -43,16 +43,36 @@ PoseGraph::~PoseGraph()
 	t_optimization.join();
 }
 
-void PoseGraph::loadVocabulary(std::string voc_path)
-{
-    voc = new BriefVocabulary(voc_path);
+void PoseGraph::loadVocabulary(AAssetManager* asset_manager){
+    std::string dir_path = "/data/data/com.capstone.whereigo/files/brief";
+    std::string internal_path = "/data/data/com.capstone.whereigo/files/" + VOCABULARY_FILE;
+    mkdir(dir_path.c_str(), 0777);
+  
+    AAsset* asset = AAssetManager_open(asset_manager, VOCABULARY_FILE.c_str(), AASSET_MODE_STREAMING);
+    if (!asset) throw std::runtime_error("Could not open asset: " + VOCABULARY_FILE);
+  
+    FILE* out = fopen(internal_path.c_str(), "wb");
+    if (!out) {
+      AAsset_close(asset);
+      throw std::runtime_error("Could not create output file: " + internal_path);
+    }
+  
+    char buffer[1024];
+    int bytes_read;
+    while ((bytes_read = AAsset_read(asset, buffer, sizeof(buffer))) > 0) {
+      fwrite(buffer, 1, bytes_read, out);
+    }
+    fclose(out);
+    AAsset_close(asset);
+    
+    voc = new BriefVocabulary(internal_path);
     db.setVocabulary(*voc, false, 0);
-}
+  }
 
 void PoseGraph::addKeyFrameBuf(KeyFramePtr keyframe){
     m_buf.lock();
 
-    if(keyframe_buf.size() < 10){
+    if(keyframe_buf.size() < 20){
         keyframe_buf.push(keyframe);
     }
 
@@ -215,26 +235,30 @@ int PoseGraph::detectLoop(KeyFramePtr keyframe, int frame_index)
     //first query; then add this frame into database!
     QueryResults ret;
     TicToc t_query;
-    db.query(keyframe->brief_descriptors, ret, 4, frame_index - 50);
-    //printf("query time: %f", t_query.toc());
-    //cout << "Searching for Image " << frame_index << ". " << ret << endl;
 
-    TicToc t_add;
-    db.add(keyframe->brief_descriptors);
-    //printf("add feature time: %f", t_add.toc());
+//    LOGI("size : %d", keyframe->brief_descriptors.size());
+//    assert(keyframe->brief_descriptors.size() != 0);
+
+    db.query(keyframe->brief_descriptors, ret, 4, frame_index - 50);
+    // //printf("query time: %f", t_query.toc());
+    // //cout << "Searching for Image " << frame_index << ". " << ret << endl;
+
+    // TicToc t_add;
+    // db.add(keyframe->brief_descriptors);
+    // //printf("add feature time: %f", t_add.toc());
     bool find_loop = false;
-    // a good match with its nerghbour
-    if (ret.size() >= 1 &&ret[0].Score > 0.05)
-    {
-        for (unsigned int i = 1; i < ret.size(); i++)
-        {
-            //if (ret[i].Score > ret[0].Score * 0.3)
-            if (ret[i].Score > 0.015)
-            {
-                find_loop = true;
-            }
-        }
-    }
+    // // a good match with its nerghbour
+    // if (ret.size() >= 1 &&ret[0].Score > 0.05)
+    // {
+    //     for (unsigned int i = 1; i < ret.size(); i++)
+    //     {
+    //         //if (ret[i].Score > ret[0].Score * 0.3)
+    //         if (ret[i].Score > 0.015)
+    //         {
+    //             find_loop = true;
+    //         }
+    //     }
+    // }
 
     if (find_loop && frame_index > 50)
     {
@@ -475,7 +499,6 @@ void PoseGraph::loopClosure()
     {
         KeyFramePtr keyframe = NULL;
         
-        // find out the messages with same time stamp
         m_buf.lock();
         
         if(!keyframe_buf.empty()){
@@ -493,17 +516,6 @@ void PoseGraph::loopClosure()
                 skip_first_cnt++;
                 continue;
             }
-
-            if (skip_cnt < SKIP_CNT)
-            {
-                skip_cnt++;
-                continue;
-            }
-            
-            else
-            {
-                skip_cnt = 0;
-            }
             
             Eigen::Vector3d T;
             Eigen::Matrix3d R;
@@ -512,6 +524,7 @@ void PoseGraph::loopClosure()
             if((T - last_t).norm() > SKIP_DIS)
             {
                 m_process.lock();
+                keyframe->index = frame_index;
                 addKeyFrame(keyframe, 1);
                 m_process.unlock();
                 frame_index++;

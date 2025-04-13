@@ -50,7 +50,9 @@
      }  // namespace
  
      HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-             : pose_graph("brief/brief_pattern.yml", "", "", false, 0, 2, 640, 480), asset_manager_(asset_manager) {}
+             : pose_graph("brief/brief_pattern.yml", "", "brief/brief_k10L6.bin", false, 2, 640, 480), asset_manager_(asset_manager) {
+                pose_graph.loadVocabulary(asset_manager_);
+     }
  
      HelloArApplication::~HelloArApplication() {
          if (ar_session_ != nullptr) {
