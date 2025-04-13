@@ -26,6 +26,25 @@ public:
   DVision::BRIEF m_brief;
 };
 
+struct IntrinsicParameter {
+public:
+	double fx, fy, cx, cy;
+	double m_inv_K11, m_inv_K13, m_inv_K22, m_inv_K23;
+
+public:
+	explicit IntrinsicParameter(double fx, double fy, double cx, double cy){
+		this->fx = fx;
+		this->fy = fy;
+		this->cx = cx;
+		this->cy = cy;
+	
+		this->m_inv_K11 = 1.0 / this->fx;
+		this->m_inv_K13 = -this->cx / this->fx;
+		this->m_inv_K22 = 1.0 / this->fy;
+		this->m_inv_K23 = -this->cy / this->fy;
+	}
+};
+
 class KeyFrame
 {
 public:
@@ -37,7 +56,7 @@ public:
 			 vector<cv::KeyPoint> &_keypoints, vector<cv::KeyPoint> &_keypoints_norm, vector<BRIEF::bitset> &_brief_descriptors);
 	bool findConnection(std::shared_ptr<KeyFrame> old_kf);
 	void computeWindowBRIEFPoint();
-	void computeBRIEFPoint();
+	void computeBRIEFPoint(const IntrinsicParameter& param);
 	//void extractBrief();
 	int HammingDis(const BRIEF::bitset &a, const BRIEF::bitset &b);
 	bool searchInAera(const BRIEF::bitset window_descriptor,
@@ -64,6 +83,8 @@ public:
 	void updatePose(const Eigen::Vector3d &_T_w_i, const Eigen::Matrix3d &_R_w_i);
 	void updateVioPose(const Eigen::Vector3d &_T_w_i, const Eigen::Matrix3d &_R_w_i);
 	void updateLoop(Eigen::Matrix<double, 8, 1 > &_loop_info);
+
+	cv::Point2f undistorted(const IntrinsicParameter& param, const Eigen::Vector2d& p);
 
 	Eigen::Vector3d getLoopRelativeT();
 	double getLoopRelativeYaw();
