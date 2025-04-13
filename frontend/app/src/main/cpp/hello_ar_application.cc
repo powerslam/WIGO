@@ -356,7 +356,7 @@ namespace hello_ar {
         if (!path.empty()) {
             std::vector<glm::vec3> line_points;
             for (const auto& p : path) {
-                line_points.emplace_back(p.x, stored_plane_y_, p.z);
+                line_points.emplace_back(p.x, plane_y_, p.z);
             }
 
             line_renderer_.Draw(line_points, projection_mat, view_mat);
@@ -388,16 +388,16 @@ namespace hello_ar {
                 glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
                 // 📍 중간 위치 계산
-                glm::vec3 mid_pos((from.x + to.x) * 0.5f, stored_plane_y_, (from.z + to.z) * 0.5f);
+                glm::vec3 mid_pos((from.x + to.x) * 0.5f, plane_y_, (from.z + to.z) * 0.5f);
 
                 // 📍 카메라 위치
-                glm::vec3 camera_pos(cam_x, stored_plane_y_, cam_z); // 평면 기준으로 y는 맞춤
+                glm::vec3 camera_pos(cam_x, plane_y_, cam_z); // 평면 기준으로 y는 맞춤
 
                 // 📏 평면 거리
                 float camera_distance = glm::length(mid_pos - camera_pos);
 
                 // 📏 수직 높이 차이 (추가로 반영하면 더 정밀함)
-                float height_diff = std::abs(stored_plane_y_ - pose_raw[5]);
+                float height_diff = std::abs(plane_y_ - pose_raw[5]);
 
                 // 🎯 최종 스케일 보정: 거리와 높이 반영
                 float dynamic_scale = length * glm::clamp(1.0f / (camera_distance + 0.5f + height_diff), 0.15f, 1.0f);
@@ -490,7 +490,7 @@ namespace hello_ar {
             
                 float anchor_pose[7] = {0};
                 anchor_pose[4] = p.x;
-                anchor_pose[5] = stored_plane_y_;  // 평면 높이로 고정
+                anchor_pose[5] = plane_y_;  // 평면 높이로 고정
                 anchor_pose[6] = p.z;
             
                 ArPose* pose = nullptr;
@@ -519,17 +519,14 @@ namespace hello_ar {
             float center_pose_raw[7];
 
             ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
-            stored_plane_y_ = center_pose_raw[5];  // 평면의 y값 저장
 
             ArTrackable_release(first_trackable);
             ArPose_destroy(plane_pose);
 
-            LOGI("📐 평면 감지됨, 높이: %.2f", stored_plane_y_);
-
             const auto& p = path.back();
             float anchor_pose[7] = {0};
             anchor_pose[4] = p.x;
-            anchor_pose[5] = stored_plane_y_ + 2.3f;  // 평면 높이 사용
+            anchor_pose[5] = plane_y_;
             anchor_pose[6] = p.z;
 
             ArPose* pose = nullptr;
@@ -557,7 +554,7 @@ namespace hello_ar {
 
                 direction = glm::normalize(direction);
                 glm::vec3 mid_pos =
-                        glm::vec3(from.x, stored_plane_y_, from.z) + direction * (length * 0.5f);
+                        glm::vec3(from.x, plane_y_, from.z) + direction * (length * 0.5f);
 
                 float anchor_pose[7] = {0};
                 anchor_pose[4] = mid_pos.x;
@@ -647,7 +644,7 @@ namespace hello_ar {
             float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
         
             // 👉 위치는 path[i]로, y축은 stored_plane_y_로 고정
-            glm::vec3 position(from.x, stored_plane_y_, from.z);
+            glm::vec3 position(from.x, plane_y_, from.z);
         
             // 👉 모델 행렬 구성
             glm::mat4 model_mat = glm::translate(glm::mat4(1.0f), position);

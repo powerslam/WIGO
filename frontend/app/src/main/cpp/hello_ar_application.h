@@ -108,8 +108,7 @@ class HelloArApplication {
   bool path_generated_ = false;
   bool path_ready_to_render_ = false;
 
-  float stored_plane_y_ = 0.0f;
-
+  float plane_y_ = -1.6f;
 
   LineRenderer line_renderer_;
 
