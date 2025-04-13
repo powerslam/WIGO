@@ -50,7 +50,7 @@ namespace hello_ar {
     }  // namespace
 
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-            : asset_manager_(asset_manager), pose_graph("", "", "", false, 0, 2, 640, 480) {}
+            : pose_graph("", "", "", false, 0, 2, 640, 480), asset_manager_(asset_manager) {}
 
     HelloArApplication::~HelloArApplication() {
         if (ar_session_ != nullptr) {
@@ -325,17 +325,19 @@ namespace hello_ar {
             }
         }
 
-        //Camera Intrinsic 놀랍게도 성공
+        if(this->intrinsic_param.fx == 0.0){
+            ArCameraIntrinsics* intrinsics = nullptr;
+            ArCameraIntrinsics_create(ar_session_, &intrinsics);
 
-        ArCameraIntrinsics* intrinsics = nullptr;
-        ArCameraIntrinsics_create(ar_session_, &intrinsics);
+            ArCamera_getImageIntrinsics(ar_session_, ar_camera, intrinsics);
+        
+            float fx, fy, cx, cy;
+            ArCameraIntrinsics_getFocalLength(ar_session_, intrinsics, &fx, &fy);
+            ArCameraIntrinsics_getPrincipalPoint(ar_session_, intrinsics, &cx, &cy);
 
-        ArCamera_getImageIntrinsics(ar_session_, ar_camera, intrinsics);
-    
-        float fx, fy, cx, cy;
-        ArCameraIntrinsics_getFocalLength(ar_session_, intrinsics, &fx, &fy);
-        ArCameraIntrinsics_getPrincipalPoint(ar_session_, intrinsics, &cx, &cy);
-
+            this->intrinsic_param.update_parameter(fx, fy, cx, cy);
+        }
+        
         Eigen::Vector3d _vio_T_w_i;
         Eigen::Matrix3d _vio_R_w_i;
 
