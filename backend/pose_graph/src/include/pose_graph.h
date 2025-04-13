@@ -35,15 +35,14 @@ public:
 	explicit PoseGraph(
 		const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
 		const std::string& vocabulary_file, const bool load_previous_pose_graph,
-		int skip_cnt, int skip_dis,
-		int row, int col
+		int skip_dis, int row, int col
 	);
 
 	~PoseGraph();
 	
 	void addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop);
-	void loadVocabulary(std::string voc_path);
+	void loadVocabulary(AAssetManager* asset_manager);
 	
 	KeyFramePtr getKeyFrame(int index);
 	
@@ -53,10 +52,9 @@ public:
 	const std::string VOCABULARY_FILE;
 	const bool LOAD_PREVIOUS_POSE_GRAPH;
 	const std::string POSE_GRAPH_SAVE_PATH;
-	const int SKIP_CNT, SKIP_DIS;
+	const int SKIP_DIS;
 
 	int skip_first_cnt = 0;
-	int skip_cnt = 0;
 
 	Eigen::Vector3d t_drift;
 	double yaw_drift;
