@@ -33,8 +33,10 @@ class PoseGraph
 {
 public:
 	explicit PoseGraph(
-		const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
-		const std::string& vocabulary_file, const bool load_previous_pose_graph,
+		std::string& external_path,
+		const std::string& brief_pattern_file,
+		const std::string& vocabulary_file, 
+		const bool load_previous_pose_graph,
 		int skip_dis, int row, int col
 	);
 
@@ -51,7 +53,6 @@ public:
 
 	const std::string VOCABULARY_FILE;
 	const bool LOAD_PREVIOUS_POSE_GRAPH;
-	const std::string POSE_GRAPH_SAVE_PATH;
 	const int SKIP_DIS;
 
 	int skip_first_cnt = 0;
