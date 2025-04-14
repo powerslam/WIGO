@@ -9,6 +9,7 @@
     <!-- Required to post notifications for Android T+ devices -->
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Google Play assumes that certain hardware related permissions indicate that the underlying
             hardware features are required by default.
             (https://developer.android.com/topic/arc/manifest.html#implied-features). -->
