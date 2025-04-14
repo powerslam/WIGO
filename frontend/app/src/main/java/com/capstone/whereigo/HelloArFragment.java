@@ -1,7 +1,9 @@
 package com.capstone.whereigo;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.hardware.display.DisplayManager;
@@ -17,6 +19,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -24,6 +27,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.snackbar.Snackbar;
 import java.util.Locale;
@@ -43,6 +48,8 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private Runnable planeStatusCheckingRunnable;
   private View surfaceStatus;
   private TextView surfaceStatusText;
+
+  private static TextView keyframelistSizeTextView;
 
   private static TextView cameraPoseTextView;
   private static TextView pathStatusTextView;
@@ -105,17 +112,23 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT));
 
+    keyframelistSizeTextView = view.findViewById(R.id.keyframe_list_size);
     pathStatusTextView = view.findViewById(R.id.pathStatusTextView);
 
+    //save posegraph
+    Button savePoseGraphButton = view.findViewById(R.id.button_save_posegraph);
+    savePoseGraphButton.setOnClickListener(v -> {
+      JniInterface.savePoseGraph(nativeApplication);
+      Toast.makeText(activity, "PoseGraph saved!", Toast.LENGTH_SHORT).show();
+    });
+
     JniInterface.assetManager = activity.getAssets();
-    nativeApplication = JniInterface.createNativeApplication(activity.getAssets());
+    nativeApplication = JniInterface.createNativeApplication(activity.getAssets(), this.getContext().getExternalFilesDir("pose_graph").getAbsolutePath());
 
     planeStatusCheckingHandler = new Handler();
 
     depthSettings.onCreate(activity);
     instantPlacementSettings.onCreate(activity);
-
-
 
     //ImageButton settingsButton = view.findViewById(R.id.settings_button);
     //settingsButton.setOnClickListener(v -> {
@@ -144,7 +157,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       CameraPermissionHelper.requestCameraPermission(activity);
       return;
     }
-
+    
     try {
       JniInterface.onSettingsChange(
               nativeApplication, instantPlacementSettings.isInstantPlacementEnabled());
@@ -307,12 +320,18 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
+  public static void updateSizeFromNative(int size) {
+    String sizeText = String.format(Locale.US, "keyframelist size: %d", size);
+    if (keyframelistSizeTextView != null) {
+      keyframelistSizeTextView.post(() -> keyframelistSizeTextView.setText(sizeText));
+    }
+  }
+
   public static void updatePathStatusFromNative(String status) {
     if (pathStatusTextView != null) {
       pathStatusTextView.post(() -> pathStatusTextView.setText(status));
     }
   }
-
   public static void setCameraPoseVisibility(boolean visible) {
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
