@@ -49,9 +49,11 @@
  
      }  // namespace
  
-     HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-             : pose_graph("brief/brief_pattern.yml", "", "brief/brief_k10L6.bin", false, 2, 640, 480), asset_manager_(asset_manager) {
-                pose_graph.loadVocabulary(asset_manager_);
+     HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path)
+             : pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 2, 640, 480), asset_manager_(asset_manager) {
+            
+            LOGI("external_path: %s", external_path.c_str());
+            pose_graph.loadVocabulary(asset_manager_);
      }
  
      HelloArApplication::~HelloArApplication() {
@@ -256,7 +258,7 @@
              ArSession_setDisplayGeometry(ar_session_, display_rotation, width, height);
          }
      }
- 
+
      void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
                                           bool useDepthForOcclusion) {
          // Render the scene.
@@ -388,13 +390,27 @@
            keyframe->computeBRIEFPoint(asset_manager_, intrinsic_param);
            pose_graph.addKeyFrameBuf(keyframe);
            LOGI("frame buf size : %d", pose_graph.keyframe_buf.size());
+
+           JNIEnv* env = nullptr;
+           if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+               // 전달할 정수값
+               jint index_value = pose_graph.keyframelist.size();  // 전달할 int 값을 이 변수에 담아라
+
+               // Java 클래스 및 메서드 찾기
+               jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+               jmethodID method = env->GetStaticMethodID(clazz, "updateSizeFromNative", "(I)V");
+
+               // 클래스와 메서드가 유효한 경우 호출
+               if (clazz != nullptr && method != nullptr) {
+                   env->CallStaticVoidMethod(clazz, method, index_value);
+               }
+           }
          }
  
          // 6. Pose 객체 해제
          ArImage_release(image);
          ArPose_destroy(camera_pose);
          ArCamera_release(ar_camera);
- 
  
          int32_t geometry_changed = 0;
          ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);
@@ -573,7 +589,11 @@
          // Update and render point cloud.
  
      }
- 
+
+     void HelloArApplication::SavePoseGraph() {
+       pose_graph.command();
+     }
+     
      bool HelloArApplication::IsDepthSupported() {
          int32_t is_supported = 0;
          ArSession_isDepthModeSupported(ar_session_, AR_DEPTH_MODE_AUTOMATIC,
