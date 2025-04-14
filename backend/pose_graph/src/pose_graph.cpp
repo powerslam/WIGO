@@ -1,21 +1,23 @@
 #include "include/pose_graph.h"
 
 int ROW, COL;
+std::string EXTERNAL_PATH;
 std::string BRIEF_PATTERN_FILE;
 Eigen::Vector3d tic;
 Eigen::Matrix3d qic;
 
 PoseGraph::PoseGraph(
-    const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
-    const std::string& vocabulary_file, const bool load_previous_pose_graph,
-    int skip_dis, int row, int col): POSE_GRAPH_SAVE_PATH(pose_graph_save_path), 
-    VOCABULARY_FILE(vocabulary_file), LOAD_PREVIOUS_POSE_GRAPH(load_previous_pose_graph),
-    SKIP_DIS(skip_dis), frame_index(frame_index)
+    std::string& external_path, const std::string& brief_pattern_file,
+    const std::string& vocabulary_file, const bool load_previous_pose_graph, int skip_dis, int row, int col): 
+    VOCABULARY_FILE(vocabulary_file), 
+    LOAD_PREVIOUS_POSE_GRAPH(load_previous_pose_graph),
+    SKIP_DIS(skip_dis), frame_index(0)
 {
     earliest_loop_index = -1;
 
     ROW = row;
     COL = col;
+    EXTERNAL_PATH = external_path;
     BRIEF_PATTERN_FILE = brief_pattern_file;
 
     tic = Eigen::Vector3d(0, 0, 0);
@@ -32,8 +34,6 @@ PoseGraph::PoseGraph(
     sequence_loop.push_back(0);
     base_sequence = 1;
     
-    FileSystemHelper::createDirectoryIfNotExists(POSE_GRAPH_SAVE_PATH.c_str());
-    
     t_loopClosure = std::thread(&PoseGraph::loopClosure, this);
     // t_optimization = std::thread(&PoseGraph::optimize4DoF, this);
 }
@@ -44,11 +44,9 @@ PoseGraph::~PoseGraph()
 }
 
 void PoseGraph::loadVocabulary(AAssetManager* asset_manager){
-    std::string dir_path = "/data/data/com.capstone.whereigo/files/brief";
-    std::string internal_path = "/data/data/com.capstone.whereigo/files/" + VOCABULARY_FILE;
-    mkdir(dir_path.c_str(), 0777);
-  
-    AAsset* asset = AAssetManager_open(asset_manager, VOCABULARY_FILE.c_str(), AASSET_MODE_STREAMING);
+    std::string internal_path = EXTERNAL_PATH + "/" + VOCABULARY_FILE;
+
+    AAsset* asset = AAssetManager_open(asset_manager, ("brief/" + VOCABULARY_FILE).c_str(), AASSET_MODE_STREAMING);
     if (!asset) throw std::runtime_error("Could not open asset: " + VOCABULARY_FILE);
   
     FILE* out = fopen(internal_path.c_str(), "wb");
@@ -473,24 +471,10 @@ void PoseGraph::new_sequence()
 // @todo 커멘드 대신에 버튼을 하나 만들어서 저장할 수 있도록 함
 void PoseGraph::command()
 {
-    while(1)
-    {
-        char c = getchar();
-        if (c == 's')
-        {
-            m_process.lock();
-            savePoseGraph();
-            m_process.unlock();
-            printf("save pose graph finish\nyou can set 'load_previous_pose_graph' to 1 in the config file to reuse it next time\n");
-            // printf("program shutting down...\n");
-            // ros::shutdown();
-        }
-        if (c == 'n')
-            new_sequence();
-
-        std::chrono::milliseconds dura(5);
-        std::this_thread::sleep_for(dura);
-    }
+    m_process.lock();
+    savePoseGraph();
+    m_process.unlock();
+    LOGI("save pose graph finish\nyou can set 'load_previous_pose_graph' to 1 in the config file to reuse it next time\n");
 }
 
 void PoseGraph::loopClosure()
@@ -542,10 +526,9 @@ void PoseGraph::savePoseGraph()
     m_keyframelist.lock();
     TicToc tmp_t;
     FILE *pFile;
-    printf("pose graph path: %s\n",POSE_GRAPH_SAVE_PATH.c_str());
-    printf("pose graph saving... \n");
-    string file_path = POSE_GRAPH_SAVE_PATH + "pose_graph.txt";
-    pFile = fopen (file_path.c_str(),"w");
+    string file_path = EXTERNAL_PATH + "/pose_graph.txt";
+    pFile = fopen(file_path.c_str(), "w");
+    assert(pFile != nullptr);
     
     list<KeyFramePtr>::iterator it;
     for (it = keyframelist.begin(); it != keyframelist.end(); it++)
@@ -567,10 +550,10 @@ void PoseGraph::savePoseGraph()
                                     (int)(*it)->keypoints.size());
 
         assert((*it)->keypoints.size() == (*it)->brief_descriptors.size());
-        brief_path = POSE_GRAPH_SAVE_PATH + to_string((*it)->index) + "_briefdes.dat";
+        brief_path = EXTERNAL_PATH + "/" + to_string((*it)->index) + "_briefdes.dat";
         std::ofstream brief_file(brief_path, std::ios::binary);
         
-        keypoints_path = POSE_GRAPH_SAVE_PATH + to_string((*it)->index) + "_keypoints.txt";
+        keypoints_path = EXTERNAL_PATH + "/" + to_string((*it)->index) + "_keypoints.txt";
         FILE *keypoints_file;
         keypoints_file = fopen(keypoints_path.c_str(), "w");
         for (int i = 0; i < (int)(*it)->keypoints.size(); i++)
@@ -592,7 +575,7 @@ void PoseGraph::loadPoseGraph()
 {
     TicToc tmp_t;
     FILE * pFile;
-    string file_path = POSE_GRAPH_SAVE_PATH + "pose_graph.txt";
+    string file_path = EXTERNAL_PATH + "/pose_graph.txt";
     printf("lode pose graph from: %s \n", file_path.c_str());
     printf("pose graph loading...\n");
     pFile = fopen (file_path.c_str(),"r");
@@ -662,9 +645,9 @@ void PoseGraph::loadPoseGraph()
             }
 
         // load keypoints, brief_descriptors
-        string brief_path = POSE_GRAPH_SAVE_PATH + to_string(index) + "_briefdes.dat";
+        string brief_path = EXTERNAL_PATH + "/" + to_string(index) + "_briefdes.dat";
         std::ifstream brief_file(brief_path, std::ios::binary);
-        string keypoints_path = POSE_GRAPH_SAVE_PATH + to_string(index) + "_keypoints.txt";
+        string keypoints_path = EXTERNAL_PATH + "/" + to_string(index) + "_keypoints.txt";
         FILE *keypoints_file;
         keypoints_file = fopen(keypoints_path.c_str(), "r");
         vector<cv::KeyPoint> keypoints;

@@ -147,11 +147,9 @@ void KeyFrame::updateLoop(Eigen::Matrix<double, 8, 1 > &_loop_info)
 }
 
 BriefExtractor::BriefExtractor(AAssetManager* asset_manager){
-  std::string dir_path = "/data/data/com.capstone.whereigo/files/brief";
-  std::string internal_path = "/data/data/com.capstone.whereigo/files/" + BRIEF_PATTERN_FILE;
-  mkdir(dir_path.c_str(), 0777);
+  std::string internal_path = EXTERNAL_PATH + "/" + BRIEF_PATTERN_FILE;
 
-  AAsset* asset = AAssetManager_open(asset_manager, BRIEF_PATTERN_FILE.c_str(), AASSET_MODE_STREAMING);
+  AAsset* asset = AAssetManager_open(asset_manager, ("brief/" + BRIEF_PATTERN_FILE).c_str(), AASSET_MODE_STREAMING);
   if (!asset) throw std::runtime_error("Could not open asset: " + BRIEF_PATTERN_FILE);
 
   FILE* out = fopen(internal_path.c_str(), "wb");
