@@ -50,10 +50,11 @@ namespace hello_ar {
 class HelloArApplication {
  public:
   // Constructor and deconstructor.
-  explicit HelloArApplication(AAssetManager* asset_manager);
+  explicit HelloArApplication(AAssetManager* asset_manager, std::string& external_path);
   ~HelloArApplication();
 
-
+  // save pose graph
+  void SavePoseGraph();
   void TryGeneratePathIfNeeded(float cam_x, float cam_z);
   void CheckCameraFollowingPath(float cam_x, float cam_z);
   // OnPause is called on the UI thread from the Activity's onPause method.
