@@ -694,6 +694,7 @@ namespace hello_ar {
     }
 
     void HelloArApplication::OnTouched(float x, float y) {
+        return;
         if (ar_frame_ != nullptr && ar_session_ != nullptr) {
             ArHitResultList* hit_result_list = nullptr;
             ArHitResultList_create(ar_session_, &hit_result_list);
