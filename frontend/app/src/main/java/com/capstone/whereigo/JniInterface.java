@@ -33,7 +33,7 @@ public class JniInterface {
   private static final String TAG = "JniInterface";
   static AssetManager assetManager;
 
-  public static native long createNativeApplication(AssetManager assetManager);
+  public static native long createNativeApplication(AssetManager assetManager, String externalPath);
 
   public static native void destroyNativeApplication(long nativeApplication);
 
@@ -79,5 +79,7 @@ public class JniInterface {
   public static void loadTexture(int target, Bitmap bitmap) {
     GLUtils.texImage2D(target, 0, bitmap, 0);
   }
+  
+  public static native void savePoseGraph(long nativeApplication);
 
 }
