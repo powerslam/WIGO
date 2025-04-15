@@ -1,5 +1,10 @@
 package com.capstone.whereigo
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.speech.SpeechRecognizer
 import SearchResultAdapter
 import android.os.Bundle
 import android.view.View
@@ -8,12 +13,15 @@ import android.widget.ImageButton
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.whereigo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private val RECORD_AUDIO_REQUEST_CODE = 100
     private var backPressedTime: Long = 0
     private val backPressInterval: Long = 1000
 
@@ -23,6 +31,13 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val searchBar = binding.searchBar
+        val searchView = binding.searchView
+        searchView.setupWithSearchBar(searchBar)
+
+        val searchMenu = R.menu.search_menu
+        searchBar.inflateMenu(searchMenu)
+
         // 설정 버튼 → SettingsFragment 전환
         findViewById<ImageButton>(R.id.settings_button).setOnClickListener {
             supportFragmentManager.beginTransaction()
@@ -31,8 +46,21 @@ class MainActivity : AppCompatActivity() {
                 .commit()
         }
 
-        val searchBar = binding.searchBar
-        val searchView = binding.searchView
+        // 음성 검색 클릭
+        searchBar.menu.findItem(R.id.action_voice_search).setOnMenuItemClickListener {
+            if (checkAudioPermission()) {
+                if (SpeechRecognizer.isRecognitionAvailable(this)) {
+                    val dialog = VoiceRecordDialog()
+                    dialog.show(supportFragmentManager, "VoiceRecordDialog")
+                } else {
+                    Toast.makeText(this, "음성 인식을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                requestAudioPermission()
+            }
+            true
+        }
+
         val recyclerView = searchView.findViewById<RecyclerView>(R.id.search_result)
 
         // SearchBar와 SearchView 연결
@@ -84,12 +112,53 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.fragment_container, HelloArFragment())
                 .commit()
         }
-
         // 카메라 Pose 표시 on/off
         searchView.addTransitionListener { _, _, newState ->
             HelloArFragment.setCameraPoseVisibility(
                 newState != com.google.android.material.search.SearchView.TransitionState.SHOWN
             )
+        }
+
+        setupWakeWordListener()
+    }
+    // 오디오 권한 확인
+    private fun checkAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // 오디오 권한 요청
+    private fun requestAudioPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.RECORD_AUDIO),
+            RECORD_AUDIO_REQUEST_CODE
+        )
+    }
+
+    // 권한 요청 결과 처리
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
+            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                Toast.makeText(this, "음성 권한이 허용되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun setupWakeWordListener() {
+        if (!checkAudioPermission()) {
+            requestAudioPermission()
+            return
         }
     }
 }

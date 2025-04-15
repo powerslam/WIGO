@@ -69,6 +69,7 @@ android {
 
 dependencies {
     implementation("com.google.ar:core:1.48.0")
+    implementation(libs.androidx.databinding.runtime)
     add("natives", "com.google.ar:core:1.48.0")
 
     implementation(libs.androidx.core.ktx)
@@ -83,6 +84,14 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(libs.material.v1110)
+
+    // import Kotlin API client BOM
+    implementation(platform("com.aallam.openai:openai-client-bom:4.0.1"))
+    // define dependencies without versions (handled by BOM)
+    implementation("com.aallam.openai:openai-client")
+    runtimeOnly("io.ktor:ktor-client-okhttp")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // json 형식 의존성
+
 }
 
 val extractNativeLibraries by tasks.registering(Copy::class) {
