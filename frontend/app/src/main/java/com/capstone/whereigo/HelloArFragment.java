@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.snackbar.Snackbar;
+import com.capstone.whereigo.ui.DirectionCompassView;
 import java.util.Locale;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -37,6 +38,10 @@ import android.content.Context;
 import java.util.Queue;
 import java.util.LinkedList;
 import android.content.res.AssetManager;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
+import android.os.Build;
+
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
@@ -51,6 +56,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private Runnable planeStatusCheckingRunnable;
   private View surfaceStatus;
   private TextView surfaceStatusText;
+  private DirectionCompassView compassView;
 
   private static TextView cameraPoseTextView;
   private static TextView pathStatusTextView;
@@ -126,7 +132,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     depthSettings.onCreate(activity);
     instantPlacementSettings.onCreate(activity);
 
-
+    compassView = view.findViewById(R.id.compassView);
 
     //ImageButton settingsButton = view.findViewById(R.id.settings_button);
     //settingsButton.setOnClickListener(v -> {
@@ -309,12 +315,34 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     viewportChanged = true;
   }
 
+  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
+    if (instance != null && instance.compassView != null) {
+      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
+    }
+  }
+
   public static void updatePoseFromNative(float[] pose) {
     String poseText = String.format(Locale.US,
             "Camera Pos: x=%.2f, y=%.2f, z=%.2f\nRot: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
             pose[4], pose[5], pose[6], pose[0], pose[1], pose[2], pose[3]);
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setText(poseText));
+    }
+
+
+
+    float qx = pose[0];
+    float qy = pose[1];
+    float qz = pose[2];
+    float qw = pose[3];
+
+    float siny_cosp = 2 * (qw * qy + qx * qz);
+    float cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
+    float yaw = (float) Math.toDegrees(Math.atan2(siny_cosp, cosy_cosp));
+    if (yaw < 0) yaw += 360;
+
+    if (instance != null && instance.compassView != null) {
+        updateYawFromNative(yaw, /*pathYaw은 C++에서 updateYawFromNative로 따로 전달됨*/ 0f);
     }
   }
 
@@ -393,4 +421,14 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
     }
   }
+  public static void vibrateOnce() {
+    Vibrator vibrator = (Vibrator) instance.requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+    if (vibrator != null && vibrator.hasVibrator()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            vibrator.vibrate(300); // deprecated but for older versions
+        }
+    }
+}
 }
