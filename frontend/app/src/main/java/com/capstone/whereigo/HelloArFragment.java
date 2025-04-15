@@ -328,22 +328,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setText(poseText));
     }
-
-
-
-    float qx = pose[0];
-    float qy = pose[1];
-    float qz = pose[2];
-    float qw = pose[3];
-
-    float siny_cosp = 2 * (qw * qy + qx * qz);
-    float cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
-    float yaw = (float) Math.toDegrees(Math.atan2(siny_cosp, cosy_cosp));
-    if (yaw < 0) yaw += 360;
-
-    if (instance != null && instance.compassView != null) {
-        updateYawFromNative(yaw, /*pathYaw은 C++에서 updateYawFromNative로 따로 전달됨*/ 0f);
-    }
   }
 
   public static void updatePathStatusFromNative(String status) {
