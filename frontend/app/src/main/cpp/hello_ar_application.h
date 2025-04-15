@@ -54,7 +54,9 @@ class HelloArApplication {
 
 
   void TryGeneratePathIfNeeded(float cam_x, float cam_z);
-  void CheckCameraFollowingPath(float cam_x, float cam_z);
+  void CheckCameraFollowingPath(float* pose_raw, float cam_x, float cam_z);
+
+  void CheckDirectionToNextNode(float* pose_raw, const Point& cam_position, const Point& target_node);
   // OnPause is called on the UI thread from the Activity's onPause method.
   void OnPause();
 
@@ -107,6 +109,8 @@ class HelloArApplication {
   int current_path_index = 0;
   bool is_instant_placement_enabled_ = true;
 
+  bool pitch_warning_issued_ = false;
+
   bool path_generated_ = false;
   bool path_ready_to_render_ = false;
 
@@ -117,6 +121,8 @@ class HelloArApplication {
   LineRenderer line_renderer_;
 
   AAssetManager* const asset_manager_;
+  int direction_match_count_;
+  bool direction_check_enabled_;
 
   bool start_flag = false;
 
