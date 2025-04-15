@@ -50,7 +50,10 @@ namespace hello_ar {
     }  // namespace
 
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-            : asset_manager_(asset_manager) {}
+            : asset_manager_(asset_manager),
+            direction_match_count_(0),         // ⭐ 방향 일치 카운트 초기화
+            direction_check_enabled_(true)     // ⭐ 방향 체크는 처음엔 활성화
+        {}
 
     HelloArApplication::~HelloArApplication() {
         if (ar_session_ != nullptr) {
@@ -95,14 +98,33 @@ namespace hello_ar {
         if (!path.empty()) {
             path_generated_ = true;
             path_ready_to_render_ = true;
+            arrival_audio_played_ = false;
             LOGI("🚀 경로 탐색 성공! A* 결과:");
-        } else {
+
+            if (!start_flag){
+                JNIEnv* env = GetJniEnv();
+                audio::PlayAudioFromAssets(env, "start.m4a");
+                start_flag = true;
+                LOGI("start.m4a 재생 성공");
+            }
+
+//                JNIEnv* env = GetJniEnv();
+//                jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+//                jmethodID ttsMethod = env->GetStaticMethodID(clazz, "playTTS", "(Ljava/lang/String;)V");
+//
+//                if (clazz != nullptr && ttsMethod != nullptr) {
+//                    jstring message = env->NewStringUTF("경로 안내를 시작합니다.");
+//                    env->CallStaticVoidMethod(clazz, ttsMethod, message);
+//                    env->DeleteLocalRef(message);
+//                }
+        }
+        else {
             LOGI("❌ 경로 탐색 실패: 도달 불가능");
         }
     }
+    
 
-
-    void HelloArApplication::CheckCameraFollowingPath(float cam_x, float cam_z) {
+    void HelloArApplication::CheckCameraFollowingPath(float* pose_raw, float cam_x, float cam_z) {
         if (current_path_index >= path.size()) {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
 
@@ -113,8 +135,26 @@ namespace hello_ar {
             jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
             env->CallStaticVoidMethod(clazz, method, message);
             env->DeleteLocalRef(message);
+            if (env) {
+                audio::PlayAudioFromAssets(env, "arrival.m4a");
+                arrival_audio_played_ = true;
+            }
+
+            arrival_audio_played_ = true;
             return;
+
+//            if (tts_arrival_played_) return;
+//
+//            JNIEnv* env = GetJniEnv();
+//            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+//            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+//
+//            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
+//            env->CallStaticVoidMethod(clazz, method, message);
+//            env->DeleteLocalRef(message);
         }
+
+        if (current_path_index >= path.size()) return;
 
         Point target = path[current_path_index];
         float dx = cam_x - target.x;
@@ -126,7 +166,11 @@ namespace hello_ar {
 
         if (distance > deviation_threshold) {
             LOGI("🚨 경로 이탈 감지됨! 새 경로를 재탐색합니다.");
-    
+
+            JNIEnv* env = GetJniEnv();
+            if (env) {
+                audio::PlayAudioFromAssets(env, "deviation.m4a");
+            }
 
             path.clear();
             path_generated_ = false;  // ⭐ 경로 재생성을 허용
@@ -154,9 +198,14 @@ namespace hello_ar {
         char buffer[128];
 
         if (distance < threshold) {
+            CheckDirectionToNextNode(pose_raw, {cam_x, cam_z}, target);
             snprintf(buffer, sizeof(buffer), "✅ 경로 지점 %d 도달 (x=%.2f, z=%.2f)", current_path_index, target.x, target.z);
+            // ✅ 방향 체크 다시 활성화
+            direction_check_enabled_ = true;
+            direction_match_count_ = 0;
             current_path_index++;
         } else {
+            CheckDirectionToNextNode(pose_raw, {cam_x, cam_z}, target);
             snprintf(buffer, sizeof(buffer), "📍 경로 %d 접근 중... x 방향: %.2f m, z 방향: %.2f m",
                      current_path_index, dx, dz);
         }
@@ -169,6 +218,73 @@ namespace hello_ar {
         env->CallStaticVoidMethod(clazz, method, message);
         env->DeleteLocalRef(message);
     }
+
+    void HelloArApplication::CheckDirectionToNextNode(float* pose_raw, const Point& cam_position, const Point& target_node) {
+        if (!direction_check_enabled_) return;
+
+        ArPose* camera_pose;
+        ArPose_create(ar_session_, nullptr, &camera_pose);
+        ArCamera* ar_camera = nullptr;
+        ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
+        ArCamera_getPose(ar_session_, ar_camera, camera_pose);
+
+        float matrix[16];
+        ArPose_getMatrix(ar_session_, camera_pose, matrix);
+        glm::vec3 forward(-matrix[8], -matrix[9], -matrix[10]);
+        float yawRad = std::atan2(forward.x, forward.z);
+        float yawDeg = glm::degrees(yawRad);
+        if (yawDeg < 0) yawDeg += 360.0f;
+
+        float dx = target_node.x - cam_position.x;
+        float dz = target_node.z - cam_position.z;
+        float pathDeg = std::atan2(dx, dz) * 180.0f / M_PI;
+        if (pathDeg < 0) pathDeg += 360.0f;
+
+        float angle_diff = std::fabs(yawDeg - pathDeg);
+        if (angle_diff > 180.0f) angle_diff = 360.0f - angle_diff;
+
+        if (angle_diff < 25.0f) {
+            direction_match_count_++;
+            if (direction_match_count_ >= 10) {
+                direction_check_enabled_ = false;
+                LOGI("🟢 방향 일치 10회 연속 → 방향 체크 중단");
+                // ⭐ 진동 울리기
+                JNIEnv* env = GetJniEnv();
+                if (env) {
+                    jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+                    jmethodID vibrateMethod = env->GetStaticMethodID(clazz, "vibrateOnce", "()V");
+                    if (vibrateMethod != nullptr) {
+                        env->CallStaticVoidMethod(clazz, vibrateMethod);
+                    }
+                }
+            } else {
+                LOGI("🟢 방향 일치 (%d회): camera=%.1f°, path=%.1f°, diff=%.1f°", direction_match_count_, yawDeg, pathDeg, angle_diff);
+            }
+        } else {
+            if (!direction_check_enabled_) {
+                direction_check_enabled_ = true;
+                direction_match_count_ = 0;
+                LOGI("🔁 방향 틀어짐 %.1f° → 방향 체크 재시작", angle_diff);
+            } else {
+                direction_match_count_ = 0;
+                LOGI("🔄 방향 불일치: camera=%.1f°, path=%.1f°, diff=%.1f°", yawDeg, pathDeg, angle_diff);
+            }
+        }
+
+        JNIEnv* env = GetJniEnv();
+        if (env) {
+            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+            jmethodID method = env->GetStaticMethodID(clazz, "updateYawFromNative", "(FF)V");
+            if (method != nullptr) {
+                env->CallStaticVoidMethod(clazz, method, yawDeg, pathDeg);
+            }
+        }
+
+        ArCamera_release(ar_camera);
+        ArPose_destroy(camera_pose);
+    }
+
+    
 
     void HelloArApplication::OnPause() {
         LOGI("OnPause()");
@@ -305,7 +421,7 @@ namespace hello_ar {
 
         // 6. 경로 따라가기
         if (!path.empty()) {
-            CheckCameraFollowingPath(cam_x, cam_z);
+            CheckCameraFollowingPath(pose_raw, cam_x, cam_z);
         }
 
         // [추가] Java로 pose 값을 전달
@@ -525,40 +641,6 @@ namespace hello_ar {
                 LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
             }
             ArPose_destroy(pose);
-
-
-            for (size_t i = 0; i < path.size() - 1; ++i) {
-                Point from = path[i];
-                Point to = path[i + 1];
-
-                glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
-                float length = glm::length(direction);
-                if (length < 0.01f) continue;
-
-                direction = glm::normalize(direction);
-                glm::vec3 mid_pos =
-                        glm::vec3(from.x, plane_y_, from.z) + direction * (length * 0.5f);
-
-                float anchor_pose[7] = {0};
-                anchor_pose[4] = mid_pos.x;
-                anchor_pose[5] = mid_pos.y;
-                anchor_pose[6] = mid_pos.z;
-
-                ArPose *pose = nullptr;
-                ArPose_create(ar_session_, anchor_pose, &pose);
-
-                ArAnchor *anchor = nullptr;
-                if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
-                    ColoredAnchor arrow_anchor;
-                    arrow_anchor.anchor = anchor;
-                    arrow_anchor.trackable = nullptr;
-                    SetColor(0.3f, 0.9f, 0.3f, 1.0f, arrow_anchor.color);  // 초록색
-                    arrow_anchors_.push_back(arrow_anchor);
-                }
-                ArPose_destroy(pose);
-            }
-
-
 
             path_ready_to_render_ = false;  // 앵커 생성 완료
         }

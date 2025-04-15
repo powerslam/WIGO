@@ -59,6 +59,24 @@
     </LinearLayout>
 
 
+
+    <com.capstone.whereigo.ui.DirectionCompassView
+        android:id="@+id/compassView"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="20dp" />
+
+
+    <!-- 내 방향 노란 점 -->
+<!--        <ImageView-->
+<!--            android:id="@+id/yellow_dot"-->
+<!--            android:layout_width="20dp"-->
+<!--            android:layout_height="20dp"-->
+<!--            android:src="@drawable/yellow_dot"-->
+<!--            android:layout_gravity="center"/>-->
+
+<!--    </FrameLayout>-->
     <!--
     <ImageButton
         android:id="@+id/settings_button"

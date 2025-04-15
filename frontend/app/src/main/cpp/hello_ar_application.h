@@ -37,6 +37,8 @@
 #include "util.h"
 #include "line_renderer.h"
 #include "astar_pathfinding.h"
+#include "audio_player.h"
+#include "direction_utils.h"
 
 #include <queue>            // ✅ A*에 필요
 #include <cmath>            // ✅ 유클리드 거리 계산
@@ -52,7 +54,9 @@ class HelloArApplication {
 
 
   void TryGeneratePathIfNeeded(float cam_x, float cam_z);
-  void CheckCameraFollowingPath(float cam_x, float cam_z);
+  void CheckCameraFollowingPath(float* pose_raw, float cam_x, float cam_z);
+
+  void CheckDirectionToNextNode(float* pose_raw, const Point& cam_position, const Point& target_node);
   // OnPause is called on the UI thread from the Activity's onPause method.
   void OnPause();
 
@@ -105,14 +109,24 @@ class HelloArApplication {
   int current_path_index = 0;
   bool is_instant_placement_enabled_ = true;
 
+  bool pitch_warning_issued_ = false;
+
   bool path_generated_ = false;
   bool path_ready_to_render_ = false;
 
   float plane_y_ = -1.6f;
 
+  bool tts_direction_played_ = false;
+
+  bool arrival_audio_played_ = false;
+
   LineRenderer line_renderer_;
 
   AAssetManager* const asset_manager_;
+  int direction_match_count_;
+  bool direction_check_enabled_;
+
+  bool start_flag = false;
 
   std::vector<Point> path;
   float threshold = 0.8f; // 거리 허용 오차
@@ -143,6 +157,8 @@ class HelloArApplication {
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;
+
+  bool tts_arrival_played_ = false;
 
   void ConfigureSession();
 

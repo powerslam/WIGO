@@ -1,0 +1,7 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <size android:width="200dp" android:height="200dp"/>
+    <stroke
+        android:width="4dp"
+        android:color="#FFFF00" /> <!-- 노란색 외곽선 -->
+    <solid android:color="@android:color/transparent"/>
+</shape>

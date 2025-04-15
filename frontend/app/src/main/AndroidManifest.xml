@@ -3,10 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="LockedOrientationActivity">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- Required to post notifications for Android T+ devices -->
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Google Play assumes that certain hardware related permissions indicate that the underlying
             hardware features are required by default.
             (https://developer.android.com/topic/arc/manifest.html#implied-features). -->
@@ -26,6 +29,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Whereigo"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
         <meta-data android:name="com.google.ar.core" android:value="required" />

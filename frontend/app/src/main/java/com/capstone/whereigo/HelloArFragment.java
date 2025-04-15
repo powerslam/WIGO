@@ -26,9 +26,22 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.snackbar.Snackbar;
+import com.capstone.whereigo.ui.DirectionCompassView;
 import java.util.Locale;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.content.res.AssetFileDescriptor;
+import java.io.IOException;
+import android.content.Context;
+import java.util.Queue;
+import java.util.LinkedList;
+import android.content.res.AssetManager;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
+import android.os.Build;
+
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
@@ -43,6 +56,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private Runnable planeStatusCheckingRunnable;
   private View surfaceStatus;
   private TextView surfaceStatusText;
+  private DirectionCompassView compassView;
 
   private static TextView cameraPoseTextView;
   private static TextView pathStatusTextView;
@@ -58,6 +72,9 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private Activity activity;
 
+  private static HelloArFragment instance;
+  private static Queue<String> audioQueue = new LinkedList<>();
+  private static boolean isPlaying = false;
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -115,7 +132,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     depthSettings.onCreate(activity);
     instantPlacementSettings.onCreate(activity);
 
-
+    compassView = view.findViewById(R.id.compassView);
 
     //ImageButton settingsButton = view.findViewById(R.id.settings_button);
     //settingsButton.setOnClickListener(v -> {
@@ -298,12 +315,34 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     viewportChanged = true;
   }
 
+  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
+    if (instance != null && instance.compassView != null) {
+      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
+    }
+  }
+
   public static void updatePoseFromNative(float[] pose) {
     String poseText = String.format(Locale.US,
             "Camera Pos: x=%.2f, y=%.2f, z=%.2f\nRot: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
             pose[4], pose[5], pose[6], pose[0], pose[1], pose[2], pose[3]);
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setText(poseText));
+    }
+
+
+
+    float qx = pose[0];
+    float qy = pose[1];
+    float qz = pose[2];
+    float qw = pose[3];
+
+    float siny_cosp = 2 * (qw * qy + qx * qz);
+    float cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
+    float yaw = (float) Math.toDegrees(Math.atan2(siny_cosp, cosy_cosp));
+    if (yaw < 0) yaw += 360;
+
+    if (instance != null && instance.compassView != null) {
+        updateYawFromNative(yaw, /*pathYaw은 C++에서 updateYawFromNative로 따로 전달됨*/ 0f);
     }
   }
 
@@ -313,9 +352,83 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
+  public void onAttach(@NonNull Context context) {
+    super.onAttach(context);
+    instance = this;
+  }
+
+  public static void playTTS(String text) {
+    Log.d("TTS", "✅ playTTS 호출됨, text = " + text);
+    String encoded = Uri.encode(text);
+    String url = "http://54.70.209.130:8888/tts?text=" + encoded;
+
+    MediaPlayer mediaPlayer = new MediaPlayer();
+    try {
+      mediaPlayer.setDataSource(url);
+      mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+      mediaPlayer.prepareAsync();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+  public static void playLocalAudio(String filename) {
+    try {
+      AssetFileDescriptor afd = instance.requireActivity().getAssets().openFd("audio/" + filename);
+
+      MediaPlayer mediaPlayer = new MediaPlayer();
+      mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+      mediaPlayer.prepare();
+      mediaPlayer.start();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public static void enqueueAudio(String filename) {
+    audioQueue.offer(filename);
+    if (!isPlaying) {
+      playNextAudio();
+    }
+  }
+
+  private static void playNextAudio() {
+    String next = audioQueue.poll();
+    if (next == null) {
+      isPlaying = false;
+      return;
+    }
+
+    isPlaying = true;
+    MediaPlayer player = new MediaPlayer();
+    try {
+      AssetManager assetManager = instance.getContext().getAssets();
+      AssetFileDescriptor afd = assetManager.openFd("audio/" + next);
+      player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+      player.prepare();
+      player.setOnCompletionListener(mp -> {
+        mp.release();
+        playNextAudio();  // 다음 오디오 재생
+      });
+      player.start();
+    } catch (IOException e) {
+      e.printStackTrace();
+      isPlaying = false;
+    }
+  }
+
   public static void setCameraPoseVisibility(boolean visible) {
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
     }
   }
+  public static void vibrateOnce() {
+    Vibrator vibrator = (Vibrator) instance.requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+    if (vibrator != null && vibrator.hasVibrator()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            vibrator.vibrate(300); // deprecated but for older versions
+        }
+    }
+}
 }
