@@ -38,7 +38,7 @@ class VoiceRecordDialog : DialogFragment() {
     private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var recognizerIntent: Intent
     private var isListening = false
-    private val openAI = OpenAI("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")
+    private val openAI = OpenAI("")
 
 
     override fun onCreateView(
