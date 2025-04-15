@@ -328,7 +328,7 @@
                  env->CallStaticVoidMethod(clazz, method, pose_array);
              }
          }
- 
+
          if(this->intrinsic_param.fx == 0.0){
              ArCameraIntrinsics* intrinsics = nullptr;
              ArCameraIntrinsics_create(ar_session_, &intrinsics);
@@ -338,8 +338,11 @@
              float fx, fy, cx, cy;
              ArCameraIntrinsics_getFocalLength(ar_session_, intrinsics, &fx, &fy);
              ArCameraIntrinsics_getPrincipalPoint(ar_session_, intrinsics, &cx, &cy);
+             LOGI("focal length : %f, %f | principal point : %f, %f", fx, fy, cx, cy);
  
              this->intrinsic_param.update_parameter(fx, fy, cx, cy);
+
+             ArCameraIntrinsics_destroy(intrinsics);
          }
          
          Eigen::Vector3d _vio_T_w_i;
