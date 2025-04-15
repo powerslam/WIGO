@@ -35,7 +35,7 @@ public:
 
 struct IntrinsicParameter {
 public:
-	double fx, fy, cx, cy;
+	double fx = 0., fy = 0., cx = 0., cy = 0.;
 	double m_inv_K11, m_inv_K13, m_inv_K22, m_inv_K23;
 
 public:
