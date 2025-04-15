@@ -72,7 +72,7 @@ namespace hello_ar {
 
 
     void HelloArApplication::TryGeneratePathIfNeeded(float cam_x, float cam_z) {
-        if (path_generated_ || plane_count_ <= 0) return;
+        if (path_generated_) return;
     
         Point start = {cam_x, cam_z};
         Point goal = {-10.0f, -18.0f}; // 목적지는 고정되어 있음
@@ -129,6 +129,12 @@ namespace hello_ar {
             LOGI("🎉 모든 경로를 성공적으로 따라갔습니다!");
 
             JNIEnv* env = GetJniEnv();
+            jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+            jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+
+            jstring message = env->NewStringUTF("🎉 모든 경로를 따라갔습니다!");
+            env->CallStaticVoidMethod(clazz, method, message);
+            env->DeleteLocalRef(message);
             if (env) {
                 audio::PlayAudioFromAssets(env, "arrival.m4a");
                 arrival_audio_played_ = true;
@@ -349,7 +355,8 @@ namespace hello_ar {
                                        depth_texture_.GetHeight());
         location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
-
+        arrow_renderer_.InitializeGlContent(asset_manager_, "models/arrow.obj", "models/arrow.png");
+        car_arrow_renderer_.InitializeGlContent(asset_manager_, "models/carArrow.obj", "models/carArrow.png");
         line_renderer_.InitializeGlContent(asset_manager_);
     }
 
@@ -397,8 +404,6 @@ namespace hello_ar {
 
         if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
             LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 및 경로 생성 생략");
-            ArCamera_release(ar_camera);
-            return;
         }
 
         // 🔧 [2] 카메라 Pose 추출
@@ -465,13 +470,65 @@ namespace hello_ar {
         if (!path.empty()) {
             std::vector<glm::vec3> line_points;
             for (const auto& p : path) {
-                line_points.emplace_back(p.x, -1.6f, p.z);
+                line_points.emplace_back(p.x, plane_y_, p.z);
             }
 
             line_renderer_.Draw(line_points, projection_mat, view_mat);
         }
 
+        const float green_arrow_color_correction[4] = {0.8f, 0.9f, 0.3f, 1.0f};
+        ColoredAnchor arrow_colored_anchor;
+        arrow_colored_anchor.anchor = nullptr;
+        arrow_colored_anchor.trackable = nullptr;
+        SetColor(0.8f, 0.9f, 0.3f, 1.0f, arrow_colored_anchor.color);
 
+        if (!path.empty()) {
+            for (size_t i = 0; i < arrow_anchors_.size(); ++i) {
+                if (i >= path.size() - 1) continue;
+
+                const ColoredAnchor& arrow_anchor = arrow_anchors_[i];
+
+                Point from = path[i];
+                Point to = path[i + 1];
+
+                glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
+                float length = glm::length(direction);
+                if (length < 0.01f) continue;
+
+                direction = glm::normalize(direction);
+                float angle = std::atan2(direction.x, direction.z);
+                angle -= glm::pi<float>();
+
+                glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                // 📍 중간 위치 계산
+                glm::vec3 mid_pos((from.x + to.x) * 0.5f, plane_y_, (from.z + to.z) * 0.5f);
+
+                // 📍 카메라 위치
+                glm::vec3 camera_pos(cam_x, plane_y_, cam_z); // 평면 기준으로 y는 맞춤
+
+                // 📏 평면 거리
+                float camera_distance = glm::length(mid_pos - camera_pos);
+
+                // 📏 수직 높이 차이 (추가로 반영하면 더 정밀함)
+                float height_diff = std::abs(plane_y_ - pose_raw[5]);
+
+                // 🎯 최종 스케일 보정: 거리와 높이 반영
+                float dynamic_scale = length * glm::clamp(1.0f / (camera_distance + 0.5f + height_diff), 0.15f, 1.0f);
+
+
+                glm::vec3 scale_size(0.1f, dynamic_scale, 0.1f);
+
+                glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), scale_size);
+
+                glm::mat4 model_mat(1.0f);
+                util::GetTransformMatrixFromAnchor(*arrow_anchor.anchor, ar_session_, &model_mat);
+                model_mat = model_mat *rotation_mat* scale_mat;
+
+                //arrow_renderer_.Draw(projection_mat, view_mat, model_mat,
+                //                     green_arrow_color_correction, arrow_anchor.color);
+            }
+        }
 
         //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
@@ -530,10 +587,45 @@ namespace hello_ar {
             }
             anchors_.clear();
 
+            for (auto& anchor : arrow_anchors_) {
+                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
+                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
+            }
+            arrow_anchors_.clear();
+
+            for (auto& anchor : carArrow_anchors_) {
+                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
+                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
+            }
+            carArrow_anchors_.clear();
+
+            for (size_t i = 0; i < path.size() - 1; ++i) {
+                const Point& p = path[i];
+            
+                float anchor_pose[7] = {0};
+                anchor_pose[4] = p.x;
+                anchor_pose[5] = plane_y_;  // 평면 높이로 고정
+                anchor_pose[6] = p.z;
+            
+                ArPose* pose = nullptr;
+                ArPose_create(ar_session_, anchor_pose, &pose);
+            
+                ArAnchor* anchor = nullptr;
+                if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
+                    ColoredAnchor car_anchor;
+                    car_anchor.anchor = anchor;
+                    car_anchor.trackable = nullptr;
+                    SetColor(1.0f, 1.0f, 1.0f, 1.0f, car_anchor.color);  // 흰색 또는 원하는 색
+                    carArrow_anchors_.push_back(car_anchor);
+                }
+            
+                ArPose_destroy(pose);
+            }
+
             const auto& p = path.back();
             float anchor_pose[7] = {0};
             anchor_pose[4] = p.x;
-            anchor_pose[5] = -1.6f;  // 평면 높이 사용
+            anchor_pose[5] = plane_y_;
             anchor_pose[6] = p.z;
 
             ArPose* pose = nullptr;
@@ -548,7 +640,6 @@ namespace hello_ar {
                 anchors_.push_back(colored_anchor);
                 LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
             }
-
             ArPose_destroy(pose);
 
             path_ready_to_render_ = false;  // 앵커 생성 완료
@@ -599,6 +690,40 @@ namespace hello_ar {
             location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
                                 colored_anchor.color);
         }
+
+        for (size_t i = 0; i < carArrow_anchors_.size(); ++i) {
+            if (i >= path.size()) continue;
+        
+            // 👉 경로 시작점
+            const Point& from = path[i];
+        
+            // 👉 도착점이 있으면 방향 계산 (마지막 점은 생략 가능)
+            Point to = (i + 1 < path.size()) ? path[i + 1] : from;
+        
+            // 방향 벡터 계산
+            glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
+            float length = glm::length(direction);
+            if (length < 0.01f) continue;
+        
+            direction = glm::normalize(direction);
+            float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
+        
+            // 👉 위치는 path[i]로, y축은 stored_plane_y_로 고정
+            glm::vec3 position(from.x, plane_y_, from.z);
+        
+            // 👉 모델 행렬 구성
+            glm::mat4 model_mat = glm::translate(glm::mat4(1.0f), position);
+            glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
+            glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
+        
+            model_mat = model_mat * rotation_mat * scale_mat;
+        
+            // 👉 렌더링
+            const ColoredAnchor& car_anchor = carArrow_anchors_[i];
+            car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, car_anchor.color);
+        }
+        
+
 
 
         // Update and render point cloud.
@@ -651,6 +776,7 @@ namespace hello_ar {
     }
 
     void HelloArApplication::OnTouched(float x, float y) {
+        return;
         if (ar_frame_ != nullptr && ar_session_ != nullptr) {
             ArHitResultList* hit_result_list = nullptr;
             ArHitResultList_create(ar_session_, &hit_result_list);

@@ -114,6 +114,8 @@ class HelloArApplication {
   bool path_generated_ = false;
   bool path_ready_to_render_ = false;
 
+  float plane_y_ = -1.6f;
+
   bool tts_direction_played_ = false;
 
   bool arrival_audio_played_ = false;
@@ -142,12 +144,16 @@ class HelloArApplication {
   };
 
   std::vector<ColoredAnchor> anchors_;
+  std::vector<ColoredAnchor> arrow_anchors_;
+  std::vector<ColoredAnchor> carArrow_anchors_;
 
   PointCloudRenderer point_cloud_renderer_;
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
   ObjRenderer andy_renderer_;
   ObjRenderer location_pin_renderer_;
+  ObjRenderer arrow_renderer_;
+  ObjRenderer car_arrow_renderer_;
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;
