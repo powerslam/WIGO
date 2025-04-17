@@ -58,6 +58,7 @@ class HelloArApplication {
 
   void CheckDirectionToNextNode(float* pose_raw, const Point& cam_position, const Point& target_node);
   // OnPause is called on the UI thread from the Activity's onPause method.
+  
   void OnPause();
 
   // OnResume is called on the UI thread from the Activity's onResume method.
