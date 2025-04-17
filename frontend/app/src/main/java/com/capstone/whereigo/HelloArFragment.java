@@ -73,6 +73,9 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private Activity activity;
 
   private static HelloArFragment instance;
+
+  private static MediaPlayer player = null;
+
   private static Queue<String> audioQueue = new LinkedList<>();
   private static boolean isPlaying = false;
 
@@ -383,7 +386,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
 
     isPlaying = true;
-    MediaPlayer player = new MediaPlayer();
+    player = new MediaPlayer();
     try {
       AssetManager assetManager = instance.getContext().getAssets();
       AssetFileDescriptor afd = assetManager.openFd("audio/" + next);
