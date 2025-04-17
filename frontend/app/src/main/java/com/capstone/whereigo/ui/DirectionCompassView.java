@@ -62,10 +62,10 @@ public class DirectionCompassView extends View {
         float pathAngleRad = (float) Math.toRadians(pathYaw);
 
         float cameraX = (float) (centerX + radius * Math.sin(cameraAngleRad));
-        float cameraY = (float) (centerY - radius * Math.cos(cameraAngleRad));
+        float cameraY = (float) (centerY + radius * Math.cos(cameraAngleRad));
 
         float pathX = (float) (centerX + radius * Math.sin(pathAngleRad));
-        float pathY = (float) (centerY - radius * Math.cos(pathAngleRad));
+        float pathY = (float) (centerY + radius * Math.cos(pathAngleRad));
 
         // 내 방향 원 (노란색)
         canvas.drawCircle(cameraX, cameraY, 20, paintDot);
@@ -73,7 +73,7 @@ public class DirectionCompassView extends View {
         // 경로 방향 삼각형 (빨간색)
         float arrowSize = 40;
         float arrowX = (float) (centerX + (radius - arrowSize) * Math.sin(pathAngleRad));
-        float arrowY = (float) (centerY - (radius - arrowSize) * Math.cos(pathAngleRad));
+        float arrowY = (float) (centerY + (radius - arrowSize) * Math.cos(pathAngleRad));
         canvas.drawCircle(arrowX, arrowY, 15, paintArrow);  // 삼각형 대신 원으로 단순화
     }
 }
