@@ -467,6 +467,16 @@ namespace hello_ar {
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
 
+        // line
+        if (!path.empty()) {
+            std::vector<glm::vec3> line_points;
+            for (const auto& p : path) {
+                line_points.emplace_back(p.x, plane_y_, p.z);
+            }
+
+            line_renderer_.Draw(line_points, projection_mat, view_mat);
+        }
+
         const float green_arrow_color_correction[4] = {0.8f, 0.9f, 0.3f, 1.0f};
         ColoredAnchor arrow_colored_anchor;
         arrow_colored_anchor.anchor = nullptr;
