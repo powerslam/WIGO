@@ -17,6 +17,7 @@
 #include "hello_ar_application.h"
 
 #include <android/asset_manager.h>
+#include <jni.h>
 
 #include <array>
 
@@ -220,8 +221,6 @@ namespace hello_ar {
     }
 
     void HelloArApplication::CheckDirectionToNextNode(float* pose_raw, const Point& cam_position, const Point& target_node) {
-        if (!direction_check_enabled_) return;
-
         ArPose* camera_pose;
         ArPose_create(ar_session_, nullptr, &camera_pose);
         ArCamera* ar_camera = nullptr;
@@ -243,31 +242,33 @@ namespace hello_ar {
         float angle_diff = std::fabs(yawDeg - pathDeg);
         if (angle_diff > 180.0f) angle_diff = 360.0f - angle_diff;
 
-        if (angle_diff < 25.0f) {
-            direction_match_count_++;
-            if (direction_match_count_ >= 10) {
-                direction_check_enabled_ = false;
-                LOGI("🟢 방향 일치 10회 연속 → 방향 체크 중단");
-                // ⭐ 진동 울리기
-                JNIEnv* env = GetJniEnv();
-                if (env) {
-                    jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
-                    jmethodID vibrateMethod = env->GetStaticMethodID(clazz, "vibrateOnce", "()V");
-                    if (vibrateMethod != nullptr) {
-                        env->CallStaticVoidMethod(clazz, vibrateMethod);
+        if (direction_check_enabled_) {
+            if (angle_diff < 25.0f) {
+                direction_match_count_++;
+                if (direction_match_count_ >= 10) {
+                    direction_check_enabled_ = false;
+                    LOGI("🟢 방향 일치 10회 연속 → 방향 체크 중단");
+                    JNIEnv* env = GetJniEnv();
+                    if (env) {
+                        jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+                        jmethodID vibrateMethod = env->GetStaticMethodID(clazz, "vibrateOnce", "()V");
+                        if (vibrateMethod != nullptr) {
+                            env->CallStaticVoidMethod(clazz, vibrateMethod);
+                        }
                     }
+                } else {
+                    LOGI("🟢 방향 일치 (%d회): camera=%.1f°, path=%.1f°, diff=%.1f°", direction_match_count_, yawDeg, pathDeg, angle_diff);
                 }
-            } else {
-                LOGI("🟢 방향 일치 (%d회): camera=%.1f°, path=%.1f°, diff=%.1f°", direction_match_count_, yawDeg, pathDeg, angle_diff);
-            }
-        } else {
-            if (!direction_check_enabled_) {
-                direction_check_enabled_ = true;
-                direction_match_count_ = 0;
-                LOGI("🔁 방향 틀어짐 %.1f° → 방향 체크 재시작", angle_diff);
             } else {
                 direction_match_count_ = 0;
                 LOGI("🔄 방향 불일치: camera=%.1f°, path=%.1f°, diff=%.1f°", yawDeg, pathDeg, angle_diff);
+            }
+        } else {
+            // 틀어진 경우 체크 재개
+            if (angle_diff > 25.0f) {
+                direction_check_enabled_ = true;
+                direction_match_count_ = 0;
+                LOGI("🔁 방향 틀어짐 %.1f° → 방향 체크 재시작", angle_diff);
             }
         }
 
