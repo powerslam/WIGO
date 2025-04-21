@@ -65,7 +65,7 @@
         android:layout_width="250dp"
         android:layout_height="250dp"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="50dp" />
 
 
     <!-- 내 방향 노란 점 -->
