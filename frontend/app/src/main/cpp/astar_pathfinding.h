@@ -1,11 +1,7 @@
 #pragma once
 #include <vector>
 #include <set>
-
-struct Point {
-    float x, z;
-    bool operator<(const Point& other) const;
-};
+#include "types.h"
 
 float heuristic(const Point& a, const Point& b);
 bool isObstacle(const Point& pos, const std::set<Point>& obstacles, float radius = 1.0f);
