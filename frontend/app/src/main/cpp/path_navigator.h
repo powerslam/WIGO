@@ -12,6 +12,7 @@ public:
     void TryGeneratePathIfNeeded(const Point& camera_pos);
     bool UpdateNavigation(const Point& cam_pos, float* pose_raw, DirectionHelper& direction_helper);
     bool IsReadyToRender() const;
+    void MarkPathRendered();
 
     const std::vector<Point>& GetPath() const;
     bool HasPath() const;

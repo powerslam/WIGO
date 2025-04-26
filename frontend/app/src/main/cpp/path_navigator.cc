@@ -96,6 +96,10 @@ bool PathNavigator::IsReadyToRender() const {
     return path_ready_to_render_;
 }
 
+void PathNavigator::MarkPathRendered() {
+    path_ready_to_render_ = false;
+}
+
 const std::vector<Point>& PathNavigator::GetPath() const {
     return path_;
 }
