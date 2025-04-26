@@ -93,6 +93,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     surfaceStatus = view.findViewById(R.id.surface_status_container);
     surfaceStatusText = view.findViewById(R.id.surface_status_text);
 
+    JniInterface.setClassLoader(this.getClass().getClassLoader());
 
     gestureDetector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
       @Override
@@ -337,6 +338,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     if (pathStatusTextView != null) {
       pathStatusTextView.post(() -> pathStatusTextView.setText(status));
     }
+
   }
 
   public void onAttach(@NonNull Context context) {

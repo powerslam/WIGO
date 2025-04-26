@@ -19,6 +19,7 @@
 #include <jni.h>
 
 #include "hello_ar_application.h"
+#include "java_bridge.h"
 
 #define JNI_METHOD(return_type, method_name) \
   JNIEXPORT return_type JNICALL              \
@@ -29,6 +30,10 @@ extern "C" {
 namespace {
 // maintain a reference to the JVM so we can use it later.
 static JavaVM *g_vm = nullptr;
+
+static jobject g_class_loader = nullptr;
+static jmethodID g_load_class_method = nullptr;
+
 
 inline jlong jptr(hello_ar::HelloArApplication *native_hello_ar_application) {
   return reinterpret_cast<intptr_t>(native_hello_ar_application);
@@ -42,6 +47,7 @@ inline hello_ar::HelloArApplication *native(jlong ptr) {
 
 jint JNI_OnLoad(JavaVM *vm, void *) {
   g_vm = vm;
+  JavaBridge::SetJavaVM(vm);
   return JNI_VERSION_1_6;
 }
 
@@ -83,6 +89,16 @@ JNI_METHOD(void, onResume)
   native(native_application)->OnResume(env, context, activity);
 }
 
+JNI_METHOD(void, setClassLoader)
+(JNIEnv *env, jclass, jobject classLoader) {
+    g_class_loader = env->NewGlobalRef(classLoader);
+
+    jclass classLoaderClass = env->FindClass("java/lang/ClassLoader");
+    g_load_class_method = env->GetMethodID(classLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+
+    JavaBridge::SetClassLoader(classLoader);
+}
+
 JNI_METHOD(void, onGlSurfaceCreated)
 (JNIEnv *, jclass, jlong native_application) {
   native(native_application)->OnSurfaceCreated();
@@ -119,9 +135,15 @@ JNIEnv *GetJniEnv() {
   return result == JNI_OK ? env : nullptr;
 }
 
-jclass FindClass(const char *classname) {
-  JNIEnv *env = GetJniEnv();
-  return env->FindClass(classname);
+jclass FindClass(const char* classname) {
+    JNIEnv* env = GetJniEnv();
+    if (!g_class_loader || !g_load_class_method) {
+        return env->FindClass(classname);
+    }
+    jstring str_class_name = env->NewStringUTF(classname);
+    jobject clazz = env->CallObjectMethod(g_class_loader, g_load_class_method, str_class_name);
+    env->DeleteLocalRef(str_class_name);
+    return static_cast<jclass>(clazz);
 }
 
 }  // extern "C"
