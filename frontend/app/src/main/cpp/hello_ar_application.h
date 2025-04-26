@@ -43,6 +43,9 @@
 #include <queue>            // ✅ A*에 필요
 #include <cmath>            // ✅ 유클리드 거리 계산
 
+#include "path_navigator.h"
+#include "direction_helper.h"
+
 namespace hello_ar {
 
 // HelloArApplication handles all application logics.
@@ -133,6 +136,9 @@ class HelloArApplication {
   float threshold = 0.8f; // 거리 허용 오차
 
   JNIEnv* GetJniEnv();
+
+  PathNavigator path_navigator_;
+  DirectionHelper direction_helper_;
 
   // class 멤버로 현재 도달해야 하는 경로 인덱스
   int current_path_indefx = 0;
