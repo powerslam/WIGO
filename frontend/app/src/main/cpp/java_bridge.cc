@@ -1,0 +1,97 @@
+#include "java_bridge.h"
+#include <android/log.h>
+
+JavaVM* JavaBridge::java_vm_ = nullptr;
+jobject JavaBridge::class_loader_ = nullptr;
+jmethodID JavaBridge::find_class_method_ = nullptr;
+
+void JavaBridge::SetJavaVM(JavaVM* vm) {
+    java_vm_ = vm;
+}
+
+void JavaBridge::SetClassLoader(jobject class_loader) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+    class_loader_ = env->NewGlobalRef(class_loader);
+
+    jclass class_loader_class = env->GetObjectClass(class_loader_);
+    find_class_method_ = env->GetMethodID(class_loader_class, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+}
+
+jclass JavaBridge::FindClass(const char* class_name) {
+    JNIEnv* env = GetEnv();
+//    if (!env) {
+//        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: env is null");
+//        return nullptr;
+//    }
+//    if (!class_loader_) {
+//        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: class_loader_ is null");
+//        return nullptr;
+//    }
+//    if (!find_class_method_) {
+//        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: find_class_method_ is null");
+//        return nullptr;
+//    }
+
+    jstring str_class_name = env->NewStringUTF(class_name);
+    jobject clazz = env->CallObjectMethod(class_loader_, find_class_method_, str_class_name);
+    env->DeleteLocalRef(str_class_name);
+
+//    if (!clazz) {
+//        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: loadClass 호출 실패: %s", class_name);
+//    } else {
+//        __android_log_print(ANDROID_LOG_INFO, "JavaBridge", "FindClass 성공: %s", class_name);
+//    }
+    return static_cast<jclass>(clazz);
+}
+
+
+void JavaBridge::UpdateYaw(float cameraYaw, float pathYaw) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = FindClass("com/capstone/whereigo/HelloArFragment");
+    if (!clazz) return;
+
+    jmethodID method = env->GetStaticMethodID(clazz, "updateYawFromNative", "(FF)V");
+    if (!method) return;
+
+    env->CallStaticVoidMethod(clazz, method, cameraYaw, pathYaw);
+}
+
+void JavaBridge::UpdatePathStatus(const char* status) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = FindClass("com/capstone/whereigo/HelloArFragment");
+    if (!clazz) return;
+
+    jmethodID method = env->GetStaticMethodID(clazz, "updatePathStatusFromNative", "(Ljava/lang/String;)V");
+    if (!method) return;
+
+    jstring jstatus = env->NewStringUTF(status);
+    env->CallStaticVoidMethod(clazz, method, jstatus);
+    env->DeleteLocalRef(jstatus);
+}
+
+void JavaBridge::VibrateOnce() {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = FindClass("com/capstone/whereigo/HelloArFragment");
+    if (!clazz) return;
+
+    jmethodID method = env->GetStaticMethodID(clazz, "vibrateOnce", "()V");
+    if (!method) return;
+
+    env->CallStaticVoidMethod(clazz, method);
+}
+
+JNIEnv* JavaBridge::GetEnv() {
+    if (!java_vm_) return nullptr;
+    JNIEnv* env = nullptr;
+    if (java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+        return env;
+    }
+    return nullptr;
+}
