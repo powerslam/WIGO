@@ -44,7 +44,8 @@ add_library(hello_ar_native SHARED
            src/main/cpp/astar_pathfinding.cc
            src/main/cpp/line_renderer.cc
            src/main/cpp/audio_player.cc
-           src/main/cpp/direction_utils.cc)
+           src/main/cpp/direction_utils.cc
+           src/main/cpp/types.cc)
 
 target_include_directories(hello_ar_native PRIVATE
            src/main/cpp
