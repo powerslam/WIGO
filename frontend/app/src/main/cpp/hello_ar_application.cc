@@ -194,34 +194,37 @@ namespace hello_ar {
         // 🔥 [1] 카메라 Pose 추출
         ArPose* camera_pose = nullptr;
         ArPose_create(ar_session_, nullptr, &camera_pose);
-        float pose_raw[7];
+        float matrix[16];
         ArCamera_getPose(ar_session_, ar_camera, camera_pose);
-        ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
+        ArPose_getMatrix(ar_session_, camera_pose, matrix);
 
-        glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
+        glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(matrix);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
         // 🔥 [2] PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
 
+        //float camera_yaw_deg = DirectionHelper::ExtractYawDeg(pose_raw);
         // 🔥 [3] 경로 따라가기
-        path_navigator_.UpdateNavigation(cam_pos, pose_raw, direction_helper_);
+        path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);
 
-        const auto& path = path_navigator_.GetPath();
+        JNIEnv* env = GetJniEnv(); 
 
-        // 🔥 [4] Java로 pose 정보 전달
-        JNIEnv* env = GetJniEnv();
         if (env) {
-            jfloatArray pose_array = env->NewFloatArray(7);
-            env->SetFloatArrayRegion(pose_array, 0, 7, pose_raw);
-
+            // 🔥 [4] yaw 정보 JNI로 전달
+            float camera_yaw = direction_helper_.GetLastCameraYaw();
+            float path_yaw = direction_helper_.GetLastPathYaw();
+        
             jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
-            jmethodID method = env->GetStaticMethodID(clazz, "updatePoseFromNative", "([F)V");
-
+            jmethodID method = env->GetStaticMethodID(clazz, "updateYawFromNative", "(FF)V");
+        
             if (clazz && method) {
-                env->CallStaticVoidMethod(clazz, method, pose_array);
+                env->CallStaticVoidMethod(clazz, method, camera_yaw, path_yaw);
             }
         }
+        
+
+        const auto& path = path_navigator_.GetPath();
 
         // 🔥 [5] 카메라 해제
         ArPose_destroy(camera_pose);

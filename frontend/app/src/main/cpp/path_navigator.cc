@@ -4,11 +4,12 @@
 #include "audio_player.h"
 #include <cmath>
 #include <android/log.h>
+#include <glm/glm.hpp>
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "PathNavigator", __VA_ARGS__)
 
 namespace {
-    constexpr float kDeviationThreshold = 2.0f;
+    constexpr float kDeviationThreshold = 5.0f;
     constexpr float kReachThreshold = 0.8f;
     const Point kGoal{-10.0f, -18.0f};
 }
@@ -44,7 +45,7 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     }
 }
 
-bool PathNavigator::UpdateNavigation(const Point& cam_pos, float* pose_raw, DirectionHelper& direction_helper) {
+bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
     if (current_path_index_ >= path_.size()) {
         if (!arrival_audio_played_) {
             JNIEnv* env = JavaBridge::GetEnv();
@@ -76,7 +77,7 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, float* pose_raw, Dire
         return false;
     }
 
-    direction_helper.Check(DirectionHelper::ExtractYawDeg(pose_raw), cam_pos, target);
+    direction_helper.Check(matrix, cam_pos, target);
 
     if (distance < kReachThreshold) {
         direction_helper.Reset();
