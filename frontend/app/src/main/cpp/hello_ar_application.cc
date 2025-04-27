@@ -194,11 +194,15 @@ namespace hello_ar {
         // 🔥 [1] 카메라 Pose 추출
         ArPose* camera_pose = nullptr;
         ArPose_create(ar_session_, nullptr, &camera_pose);
-        float matrix[16];
         ArCamera_getPose(ar_session_, ar_camera, camera_pose);
+
+        float pose_raw[7];
+        ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
+
+        float matrix[16];
         ArPose_getMatrix(ar_session_, camera_pose, matrix);
 
-        glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(matrix);
+        glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
         // 🔥 [2] PathNavigator로 경로 생성 시도
