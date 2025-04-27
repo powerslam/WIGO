@@ -307,17 +307,8 @@ namespace hello_ar {
 
         if (path_navigator_.IsReadyToRender()) {
 
-            for (auto& anchor : anchors_) {
-                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
-                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
-            }
-            anchors_.clear();
-
-            for (auto& anchor : arrow_anchors_) {
-                if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
-                if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
-            }
-            arrow_anchors_.clear();
+            if (location_pin_anchor_.anchor != nullptr) ArAnchor_release(location_pin_anchor_.anchor);
+            if (location_pin_anchor_.trackable != nullptr) ArTrackable_release(location_pin_anchor_.trackable);
 
             for (auto& anchor : carArrow_anchors_) {
                 if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
@@ -359,12 +350,9 @@ namespace hello_ar {
 
             ArAnchor* anchor = nullptr;
             if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
-                ColoredAnchor colored_anchor;
-                colored_anchor.anchor = anchor;
-                colored_anchor.trackable = nullptr;
-                SetColor(255, 0, 0, 255, colored_anchor.color);
-                anchors_.push_back(colored_anchor);
-                LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
+                location_pin_anchor_.anchor = anchor;
+                location_pin_anchor_.trackable = nullptr;
+                SetColor(255, 0, 0, 255, location_pin_anchor_.color);
             }
             ArPose_destroy(pose);
 
@@ -402,19 +390,13 @@ namespace hello_ar {
 
         andy_renderer_.setUseDepthForOcclusion(asset_manager_, useDepthForOcclusion);
 
-        // Render Andy objects.
         glm::mat4 model_mat(1.0f);
-        for (auto& colored_anchor : anchors_) {
-            // 🔧 수정: trackable이 nullptr일 경우 UpdateAnchorColor 생략
-            if (colored_anchor.trackable != nullptr) {
-                UpdateAnchorColor(&colored_anchor);
+        if (location_pin_anchor_.anchor != nullptr) {
+            if (location_pin_anchor_.trackable != nullptr) {
+                UpdateAnchorColor(&location_pin_anchor_);
             }
-
-            // 무조건 렌더
-            util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
-                                               &model_mat);
-            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
-                                colored_anchor.color);
+            util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
+            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
         }
 
         for (size_t i = 0; i < carArrow_anchors_.size(); ++i) {
@@ -448,9 +430,6 @@ namespace hello_ar {
             const ColoredAnchor& car_anchor = carArrow_anchors_[i];
             car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, car_anchor.color);
         }
-
-
-
 
         // Update and render point cloud.
         ArPointCloud* ar_point_cloud = nullptr;

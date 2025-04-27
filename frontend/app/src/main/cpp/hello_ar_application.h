@@ -121,18 +121,11 @@ class HelloArApplication {
   int direction_match_count_;
   bool direction_check_enabled_;
 
-  bool start_flag = false;
-
   std::vector<Point> path;
-  float threshold = 0.8f; // 거리 허용 오차
-
   JNIEnv* GetJniEnv();
 
   PathNavigator path_navigator_;
   DirectionHelper direction_helper_;
-
-  // class 멤버로 현재 도달해야 하는 경로 인덱스
-  int current_path_indefx = 0;
 
   // The anchors at which we are drawing android models using given colors.
   struct ColoredAnchor {
@@ -142,8 +135,9 @@ class HelloArApplication {
   };
 
   std::vector<ColoredAnchor> anchors_;
-  std::vector<ColoredAnchor> arrow_anchors_;
   std::vector<ColoredAnchor> carArrow_anchors_;
+  ColoredAnchor location_pin_anchor_;
+
 
   PointCloudRenderer point_cloud_renderer_;
   BackgroundRenderer background_renderer_;
