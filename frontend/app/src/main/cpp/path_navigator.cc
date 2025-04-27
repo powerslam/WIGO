@@ -96,7 +96,7 @@ bool PathNavigator::IsReadyToRender() const {
     return path_ready_to_render_;
 }
 
-void PathNavigator::MarkPathRendered() {
+void PathNavigator::SetReadyToRenderFalse() {
     path_ready_to_render_ = false;
 }
 

@@ -368,7 +368,7 @@ namespace hello_ar {
             }
             ArPose_destroy(pose);
 
-            path_navigator_.MarkPathRendered();
+            path_navigator_.SetReadyToRenderFalse();
         }
 
 
