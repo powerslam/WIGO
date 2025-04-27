@@ -183,7 +183,7 @@ namespace hello_ar {
         ArCamera* ar_camera = nullptr;
         ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
 
-        // 🔧 [1] 카메라 트래킹 상태 확인
+        // 카메라 트래킹 상태 확인
         ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
 
@@ -390,15 +390,6 @@ namespace hello_ar {
 
         andy_renderer_.setUseDepthForOcclusion(asset_manager_, useDepthForOcclusion);
 
-        glm::mat4 model_mat(1.0f);
-        if (location_pin_anchor_.anchor != nullptr) {
-            if (location_pin_anchor_.trackable != nullptr) {
-                UpdateAnchorColor(&location_pin_anchor_);
-            }
-            util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
-            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
-        }
-
         for (size_t i = 0; i < carArrow_anchors_.size(); ++i) {
             if (i >= path.size()) continue;
 
@@ -429,6 +420,15 @@ namespace hello_ar {
             // 👉 렌더링
             const ColoredAnchor& car_anchor = carArrow_anchors_[i];
             car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, car_anchor.color);
+        }
+
+        glm::mat4 model_mat(1.0f);
+        if (location_pin_anchor_.anchor != nullptr) {
+            if (location_pin_anchor_.trackable != nullptr) {
+                UpdateAnchorColor(&location_pin_anchor_);
+            }
+            util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
+            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
         }
 
         // Update and render point cloud.
