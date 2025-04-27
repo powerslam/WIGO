@@ -198,9 +198,8 @@ namespace hello_ar {
         ArCamera_getPose(ar_session_, ar_camera, camera_pose);
         ArPose_getPoseRaw(ar_session_, camera_pose, pose_raw);
 
-        float cam_x = pose_raw[4];
-        float cam_z = pose_raw[6];
-        Point cam_pos{cam_x, cam_z};
+        glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
+        Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
         // 🔥 [2] PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);

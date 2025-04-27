@@ -39,6 +39,7 @@
 #include "astar_pathfinding.h"
 #include "audio_player.h"
 #include "direction_utils.h"
+#include "pose_helper.h"
 
 #include <queue>            // ✅ A*에 필요
 #include <cmath>            // ✅ 유클리드 거리 계산
