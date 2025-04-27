@@ -41,9 +41,6 @@
 #include "direction_utils.h"
 #include "pose_helper.h"
 
-#include <queue>            // ✅ A*에 필요
-#include <cmath>            // ✅ 유클리드 거리 계산
-
 #include "path_navigator.h"
 #include "direction_helper.h"
 
@@ -54,14 +51,7 @@ class HelloArApplication {
  public:
   // Constructor and deconstructor.
   explicit HelloArApplication(AAssetManager* asset_manager);
-  ~HelloArApplication();
-
-
-  void TryGeneratePathIfNeeded(float cam_x, float cam_z);
-  void CheckCameraFollowingPath(float* pose_raw, float cam_x, float cam_z);
-
-  void CheckDirectionToNextNode(float* pose_raw, const Point& cam_position, const Point& target_node);
-  // OnPause is called on the UI thread from the Activity's onPause method.
+  ~HelloArApplication();  // OnPause is called on the UI thread from the Activity's onPause method.
   
   void OnPause();
 
