@@ -9,12 +9,9 @@ public:
     // 방향 체크 진행, 방향 일치하면 true 반환
     void Check(const float* matrix, const Point& cam_pos, const Point& target);
 
-    // 카메라 yaw 추출 (행렬 → 각도 변환)
-    static float ExtractYawDeg(const float* pose_matrix);
 
     float GetLastCameraYaw() const;
     float GetLastPathYaw() const;
-    bool IsDirectionMatched() const;
 
     // 상태 초기화
     void Reset();

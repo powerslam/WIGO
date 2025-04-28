@@ -69,10 +69,7 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
         if (env) {
             audio::PlayAudioFromAssets(env, "deviation.m4a");
         }
-        path_.clear();
-        path_generated_ = false;
-        path_ready_to_render_ = false;
-        current_path_index_ = 0;
+        Reset();
         TryGeneratePathIfNeeded(cam_pos);
         return false;
     }
@@ -105,16 +102,12 @@ const std::vector<Point>& PathNavigator::GetPath() const {
     return path_;
 }
 
-bool PathNavigator::HasPath() const {
-    return path_generated_ && !path_.empty();
-}
 
 void PathNavigator::Reset() {
     path_.clear();
     path_generated_ = false;
     path_ready_to_render_ = false;
     arrival_audio_played_ = false;
-    start_flag_ = false;
     current_path_index_ = 0;
 }
 

@@ -23,7 +23,6 @@
 
 #include "include/arcore/arcore_c_api.h"
 #include "plane_renderer.h"
-#include "line_renderer.h"
 #include "util.h"
 
 namespace hello_ar {
@@ -51,9 +50,7 @@ namespace hello_ar {
     }  // namespace
 
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-            : asset_manager_(asset_manager),
-            direction_match_count_(0),         // ⭐ 방향 일치 카운트 초기화
-            direction_check_enabled_(true)     // ⭐ 방향 체크는 처음엔 활성화
+            : asset_manager_(asset_manager)
         {}
 
     HelloArApplication::~HelloArApplication() {
@@ -133,16 +130,9 @@ namespace hello_ar {
         background_renderer_.InitializeGlContent(asset_manager_,
                                                  depth_texture_.GetTextureId());
         point_cloud_renderer_.InitializeGlContent(asset_manager_);
-        andy_renderer_.InitializeGlContent(asset_manager_, "models/andy.obj",
-                                           "models/andy.png");
-        andy_renderer_.SetDepthTexture(depth_texture_.GetTextureId(),
-                                       depth_texture_.GetWidth(),
-                                       depth_texture_.GetHeight());
         location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
-        arrow_renderer_.InitializeGlContent(asset_manager_, "models/arrow.obj", "models/arrow.png");
         car_arrow_renderer_.InitializeGlContent(asset_manager_, "models/carArrow.obj", "models/carArrow.png");
-        line_renderer_.InitializeGlContent(asset_manager_);
     }
 
     void HelloArApplication::OnDisplayGeometryChanged(int display_rotation,
@@ -176,10 +166,6 @@ namespace hello_ar {
             LOGE("HelloArApplication::OnDrawFrame ArSession_update error");
         }
 
-        andy_renderer_.SetDepthTexture(depth_texture_.GetTextureId(),
-                                       depth_texture_.GetWidth(),
-                                       depth_texture_.GetHeight());
-
         ArCamera* ar_camera = nullptr;
         ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
 
@@ -191,7 +177,7 @@ namespace hello_ar {
             LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 및 경로 생성 생략");
         }
 
-        // 🔥 [1] 카메라 Pose 추출
+        // camera pose raw 가져옴
         ArPose* camera_pose = nullptr;
         ArPose_create(ar_session_, nullptr, &camera_pose);
         ArCamera_getPose(ar_session_, ar_camera, camera_pose);
@@ -205,17 +191,16 @@ namespace hello_ar {
         glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
-        // 🔥 [2] PathNavigator로 경로 생성 시도
+        // PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
 
-        //float camera_yaw_deg = DirectionHelper::ExtractYawDeg(pose_raw);
-        // 🔥 [3] 경로 따라가기
+        // 경로 따라가기
         path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);
 
         JNIEnv* env = GetJniEnv(); 
 
         if (env) {
-            // 🔥 [4] yaw 정보 JNI로 전달
+            // yaw 정보 JNI로 전달
             float camera_yaw = direction_helper_.GetLastCameraYaw();
             float path_yaw = direction_helper_.GetLastPathYaw();
         
@@ -230,21 +215,10 @@ namespace hello_ar {
 
         const auto& path = path_navigator_.GetPath();
 
-        // 🔥 [5] 카메라 해제
+        // 카메라 해제
         ArPose_destroy(camera_pose);
         ArCamera_release(ar_camera);
 
-        int32_t geometry_changed = 0;
-        ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);
-        if (geometry_changed != 0 || !calculate_uv_transform_) {
-            // The UV Transform represents the transformation between screenspace in
-            // normalized units and screenspace in units of pixels.  Having the size of
-            // each pixel is necessary in the virtual object shader, to perform
-            // kernel-based blur effects.
-            calculate_uv_transform_ = false;
-            glm::mat3 transform = GetTextureTransformMatrix(ar_session_, ar_frame_);
-            andy_renderer_.SetUvTransformMatrix(transform);
-        }
 
         glm::mat4 view_mat;
         glm::mat4 projection_mat;
@@ -256,12 +230,6 @@ namespace hello_ar {
 
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
-
-        const float green_arrow_color_correction[4] = {0.8f, 0.9f, 0.3f, 1.0f};
-        ColoredAnchor arrow_colored_anchor;
-        arrow_colored_anchor.anchor = nullptr;
-        arrow_colored_anchor.trackable = nullptr;
-        SetColor(0.8f, 0.9f, 0.3f, 1.0f, arrow_colored_anchor.color);
 
         //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
@@ -328,7 +296,7 @@ namespace hello_ar {
 
                 float anchor_pose[7] = {0};
                 anchor_pose[4] = p.x;
-                anchor_pose[5] = plane_y_;  // 평면 높이로 고정
+                anchor_pose[5] = plane_y_;
                 anchor_pose[6] = p.z;
 
                 ArPose* pose = nullptr;
@@ -339,7 +307,7 @@ namespace hello_ar {
                     ColoredAnchor car_anchor;
                     car_anchor.anchor = anchor;
                     car_anchor.trackable = nullptr;
-                    SetColor(1.0f, 1.0f, 1.0f, 1.0f, car_anchor.color);  // 흰색 또는 원하는 색
+                    SetColor(1.0f, 1.0f, 1.0f, 1.0f, car_anchor.color);  // 흰색
                     carArrow_anchors_.push_back(car_anchor);
                 }
 
@@ -349,7 +317,7 @@ namespace hello_ar {
             const auto& p = path.back();
             float anchor_pose[7] = {0};
             anchor_pose[4] = p.x;
-            anchor_pose[5] = plane_y_;
+            anchor_pose[5] = plane_y_ + 2.3f;
             anchor_pose[6] = p.z;
 
             ArPose* pose = nullptr;
@@ -395,15 +363,13 @@ namespace hello_ar {
         ArTrackableList_destroy(plane_list);
         plane_list = nullptr;
 
-        andy_renderer_.setUseDepthForOcclusion(asset_manager_, useDepthForOcclusion);
-
         for (size_t i = 0; i < carArrow_anchors_.size(); ++i) {
             if (i >= path.size()) continue;
 
-            // 👉 경로 시작점
+            // 경로 시작점
             const Point& from = path[i];
 
-            // 👉 도착점이 있으면 방향 계산 (마지막 점은 생략 가능)
+            // 도착점이 있으면 방향 계산 (마지막 점은 생략)
             Point to = (i + 1 < path.size()) ? path[i + 1] : from;
 
             // 방향 벡터 계산
@@ -414,17 +380,17 @@ namespace hello_ar {
             direction = glm::normalize(direction);
             float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
 
-            // 👉 위치는 path[i]로, y축은 stored_plane_y_로 고정
+            // 위치는 path[i]로, y축은 stored_plane_y_로 고정
             glm::vec3 position(from.x, plane_y_, from.z);
 
-            // 👉 모델 행렬 구성
+            // 모델 행렬 구성
             glm::mat4 model_mat = glm::translate(glm::mat4(1.0f), position);
             glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
             glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
 
             model_mat = model_mat * rotation_mat * scale_mat;
 
-            // 👉 렌더링
+            // 렌더링
             const ColoredAnchor& car_anchor = carArrow_anchors_[i];
             car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, car_anchor.color);
         }
@@ -663,35 +629,5 @@ namespace hello_ar {
 
         // Fallback color
         SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);
-    }
-
-// This method returns a transformation matrix that when applied to screen space
-// uvs makes them match correctly with the quad texture coords used to render
-// the camera feed. It takes into account device orientation.
-    glm::mat3 HelloArApplication::GetTextureTransformMatrix(
-            const ArSession* session, const ArFrame* frame) {
-        float frameTransform[6];
-        float uvTransform[9];
-        // XY pairs of coordinates in NDC space that constitute the origin and points
-        // along the two principal axes.
-        const float ndcBasis[6] = {0, 0, 1, 0, 0, 1};
-        ArFrame_transformCoordinates2d(
-                session, frame, AR_COORDINATES_2D_OPENGL_NORMALIZED_DEVICE_COORDINATES, 3,
-                ndcBasis, AR_COORDINATES_2D_TEXTURE_NORMALIZED, frameTransform);
-
-        // Convert the transformed points into an affine transform and transpose it.
-        float ndcOriginX = frameTransform[0];
-        float ndcOriginY = frameTransform[1];
-        uvTransform[0] = frameTransform[2] - ndcOriginX;
-        uvTransform[1] = frameTransform[3] - ndcOriginY;
-        uvTransform[2] = 0;
-        uvTransform[3] = frameTransform[4] - ndcOriginX;
-        uvTransform[4] = frameTransform[5] - ndcOriginY;
-        uvTransform[5] = 0;
-        uvTransform[6] = ndcOriginX;
-        uvTransform[7] = ndcOriginY;
-        uvTransform[8] = 1;
-
-        return glm::make_mat3(uvTransform);
     }
 }  // namespace hello_ar

@@ -60,8 +60,4 @@ float DirectionHelper::GetLastPathYaw() const {
     return last_path_yaw_;
 }
 
-bool DirectionHelper::IsDirectionMatched() const {
-    return !check_enabled_;
-}
-
 

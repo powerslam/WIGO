@@ -35,12 +35,10 @@
 #include "point_cloud_renderer.h"
 #include "texture.h"
 #include "util.h"
-#include "line_renderer.h"
 #include "astar_pathfinding.h"
 #include "audio_player.h"
 #include "direction_utils.h"
 #include "pose_helper.h"
-
 #include "path_navigator.h"
 #include "direction_helper.h"
 
@@ -90,7 +88,7 @@ class HelloArApplication {
 
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session,
-                                      const ArFrame* frame);
+  const ArFrame* frame);
   ArSession* ar_session_ = nullptr;
   ArFrame* ar_frame_ = nullptr;
 
@@ -101,25 +99,11 @@ class HelloArApplication {
   int width_ = 1;
   int height_ = 1;
   int display_rotation_ = 0;
-  int current_path_index = 0;
   bool is_instant_placement_enabled_ = true;
-
-  bool pitch_warning_issued_ = false;
-
-  bool path_generated_ = false;
-  bool path_ready_to_render_ = false;
 
   float plane_y_ = -1.6f;
 
-  bool tts_direction_played_ = false;
-
-  bool arrival_audio_played_ = false;
-
-  LineRenderer line_renderer_;
-
   AAssetManager* const asset_manager_;
-  int direction_match_count_;
-  bool direction_check_enabled_;
 
   std::vector<Point> path;
   JNIEnv* GetJniEnv();
@@ -142,15 +126,12 @@ class HelloArApplication {
   PointCloudRenderer point_cloud_renderer_;
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
-  ObjRenderer andy_renderer_;
   ObjRenderer location_pin_renderer_;
   ObjRenderer arrow_renderer_;
   ObjRenderer car_arrow_renderer_;
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;
-
-  bool tts_arrival_played_ = false;
 
   void ConfigureSession();
 
