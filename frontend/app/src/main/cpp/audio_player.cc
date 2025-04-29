@@ -1,4 +1,5 @@
 #include "audio_player.h"
+#include "java_bridge.h"
 #include <jni.h>
 #include <android/log.h>
 
@@ -7,10 +8,14 @@
 
 namespace audio {
 
-    void PlayAudioFromAssets(JNIEnv* env, const std::string& filename) {
-        jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+    void PlayAudioFromAssets(const std::string& filename) {
+        JNIEnv* env = JavaBridge::GetEnv();
+        if (!env) return;
+
+        // java에 선언된 enqueue method를 사용하기 위해 FindClass 사용
+        jclass clazz = JavaBridge::FindClass("com/capstone/whereigo/HelloArFragment");
         if (clazz == nullptr) {
-            LOGD("❌ HelloArFragment 클래스 못 찾음");
+            LOGD("❌ HelloArFragment 클래스 못 찾음 (JavaBridge)");
             return;
         }
 

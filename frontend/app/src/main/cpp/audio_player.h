@@ -3,10 +3,11 @@
 
 #include <jni.h>
 #include <string>
+#include "java_bridge.h"
 
 namespace audio {
 
-    void PlayAudioFromAssets(JNIEnv* env, const std::string& filename);
+    void PlayAudioFromAssets(const std::string& filename);
 
 }  // namespace audio
 

@@ -1,17 +1,11 @@
 #include "path_navigator.h"
-#include "astar_pathfinding.h"
-#include "java_bridge.h"
-#include "audio_player.h"
-#include <cmath>
-#include <android/log.h>
-#include <glm/glm.hpp>
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "PathNavigator", __VA_ARGS__)
 
 namespace {
     constexpr float kDeviationThreshold = 5.0f;
     constexpr float kReachThreshold = 0.8f;
-    const Point kGoal{-10.0f, -18.0f};
+    const Point kGoal{0, -1.0f};
 }
 
 PathNavigator::PathNavigator() {}
@@ -36,10 +30,7 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
         arrival_audio_played_ = false;
         LOGI("🚀 경로 탐색 성공!");
 
-//        JNIEnv* env = JavaBridge::GetEnv();
-//        if (env) {
-//            audio::PlayAudioFromAssets(env, "start.m4a");
-//        }
+        audio::PlayAudioFromAssets("start.m4a");
     } else {
         LOGI("❌ 경로 탐색 실패");
     }
@@ -48,13 +39,15 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
     if (current_path_index_ >= path_.size()) {
         if (!arrival_audio_played_) {
-            JNIEnv* env = JavaBridge::GetEnv();
-            if (env) {
-//                JavaBridge::NotifyArrival("🎉 모든 경로를 따라갔습니다!");
-                audio::PlayAudioFromAssets(env, "arrival.m4a");
-                arrival_audio_played_ = true;
-            }
+            audio::PlayAudioFromAssets("arrival.m4a");
+            arrival_audio_played_ = true;
         }
+
+        // 상태 업데이트 메시지 전달
+        char buffer[128];
+        snprintf(buffer, sizeof(buffer), "목적지에 도착하였습니다");
+        JavaBridge::UpdatePathStatus(buffer);
+
         return true;
     }
 
@@ -65,10 +58,7 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
 
     if (distance > kDeviationThreshold) {
         LOGI("🚨 경로 이탈 감지됨. 재탐색 시작");
-        JNIEnv* env = JavaBridge::GetEnv();
-        if (env) {
-            audio::PlayAudioFromAssets(env, "deviation.m4a");
-        }
+        audio::PlayAudioFromAssets("deviation.m4a");
         Reset();
         TryGeneratePathIfNeeded(cam_pos);
         return false;

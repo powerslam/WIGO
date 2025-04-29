@@ -21,6 +21,9 @@
 #include "hello_ar_application.h"
 #include "java_bridge.h"
 
+#include <android/log.h>
+
+
 #define JNI_METHOD(return_type, method_name) \
   JNIEXPORT return_type JNICALL              \
   Java_com_capstone_whereigo_JniInterface_##method_name
