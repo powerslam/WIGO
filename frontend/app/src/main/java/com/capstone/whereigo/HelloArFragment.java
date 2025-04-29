@@ -89,6 +89,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     activity = requireActivity();
     surfaceView = view.findViewById(R.id.surfaceview);
 
+    TtsManager.INSTANCE.init(requireContext());
 
     surfaceStatus = view.findViewById(R.id.surface_status_container);
     surfaceStatusText = view.findViewById(R.id.surface_status_text);
