@@ -127,7 +127,6 @@ class HelloArApplication {
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
   ObjRenderer location_pin_renderer_;
-  ObjRenderer arrow_renderer_;
   ObjRenderer car_arrow_renderer_;
   Texture depth_texture_;
 
