@@ -50,7 +50,8 @@ namespace hello_ar {
     }  // namespace
 
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-            : asset_manager_(asset_manager)
+            : asset_manager_(asset_manager),
+              location_pin_anchor_{nullptr, nullptr}
         {}
 
     HelloArApplication::~HelloArApplication() {
