@@ -30,5 +30,7 @@ private:
 
     int current_path_index_ = 0;
 
+    std::set<Point> obstacles_;  
+
     std::set<Point> GenerateObstacles();
 };

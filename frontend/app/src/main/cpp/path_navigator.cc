@@ -5,20 +5,15 @@
 namespace {
     constexpr float kDeviationThreshold = 5.0f;
     constexpr float kReachThreshold = 0.8f;
-    const Point kGoal{0, -1.0f};
+    const Point kGoal{-10.0f, -18.0f};
 }
 
-PathNavigator::PathNavigator() {}
+PathNavigator::PathNavigator() {
+    obstacles_ = GenerateObstacles();
+}
 
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     if (path_generated_) return;
-
-    std::vector<Point> outer_rect = {
-        {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
-    };
-    std::vector<Point> inner_rect = {
-        {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
-    };
 
     std::set<Point> obstacles = GenerateObstacles();
 
