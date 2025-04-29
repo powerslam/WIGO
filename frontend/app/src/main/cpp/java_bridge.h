@@ -8,6 +8,7 @@ public:
     static void SetClassLoader(jobject class_loader);
     static JNIEnv* GetEnv();
     static jclass FindClass(const char* class_name);
+    static void SpeakText(const char* text);
 
     static void UpdateYaw(float cameraYaw, float pathYaw);
     static void UpdatePathStatus(const char* status);
