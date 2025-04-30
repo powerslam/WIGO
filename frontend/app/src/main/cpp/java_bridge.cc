@@ -45,6 +45,42 @@ jclass JavaBridge::FindClass(const char* class_name) {
     return static_cast<jclass>(clazz);
 }
 
+void JavaBridge::SpeakText(const char* text) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = FindClass("com/capstone/whereigo/TtsManager");
+    if (!clazz) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ TtsManager 클래스 못 찾음");
+        return;
+    }
+
+    // 1. INSTANCE 필드 가져오기
+    jfieldID instanceField = env->GetStaticFieldID(clazz, "INSTANCE", "Lcom/capstone/whereigo/TtsManager;");
+    if (!instanceField) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ TtsManager.INSTANCE 필드 못 찾음");
+        return;
+    }
+
+    jobject instance = env->GetStaticObjectField(clazz, instanceField);
+    if (!instance) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ TtsManager.INSTANCE 객체 못 찾음");
+        return;
+    }
+
+    // 2. INSTANCE에서 speak 메서드 가져오기 (instance method)
+    jmethodID speakMethod = env->GetMethodID(clazz, "speak", "(Ljava/lang/String;)V");
+    if (!speakMethod) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ TtsManager.speak 메서드 못 찾음");
+        return;
+    }
+
+    // 3. INSTANCE를 통해 메서드 호출
+    jstring jText = env->NewStringUTF(text);
+    env->CallVoidMethod(instance, speakMethod, jText);
+    env->DeleteLocalRef(jText);
+}
+
 
 void JavaBridge::UpdateYaw(float cameraYaw, float pathYaw) {
     JNIEnv* env = GetEnv();
