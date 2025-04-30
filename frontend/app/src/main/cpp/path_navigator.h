@@ -4,6 +4,12 @@
 #include <set>
 #include "types.h"
 #include "direction_helper.h"
+#include "astar_pathfinding.h"
+#include "java_bridge.h"
+#include "audio_player.h"
+#include <cmath>
+#include <android/log.h>
+#include <glm/glm.hpp>
 
 class PathNavigator {
 public:
@@ -24,6 +30,8 @@ private:
     bool arrival_audio_played_ = false;
 
     int current_path_index_ = 0;
+
+    std::set<Point> obstacles_;  
 
     std::set<Point> GenerateObstacles();
 };
