@@ -9,6 +9,7 @@ public:
     static JNIEnv* GetEnv();
     static jclass FindClass(const char* class_name);
     static void SpeakText(const char* text);
+    static void EnqueueAudio(const char* filename);
 
     static void UpdateYaw(float cameraYaw, float pathYaw);
     static void UpdatePathStatus(const char* status);

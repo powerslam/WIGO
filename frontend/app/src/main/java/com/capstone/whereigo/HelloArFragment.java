@@ -90,6 +90,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     surfaceView = view.findViewById(R.id.surfaceview);
 
     TtsManager.INSTANCE.init(requireContext());
+    AudioManager.INSTANCE.init(requireContext());
 
     surfaceStatus = view.findViewById(R.id.surface_status_container);
     surfaceStatusText = view.findViewById(R.id.surface_status_text);

@@ -81,6 +81,38 @@ void JavaBridge::SpeakText(const char* text) {
     env->DeleteLocalRef(jText);
 }
 
+void JavaBridge::EnqueueAudio(const char* filename) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = FindClass("com/capstone/whereigo/AudioManager");
+    if (!clazz) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ AudioManager 클래스 못 찾음");
+        return;
+    }
+
+    jfieldID instanceField = env->GetStaticFieldID(clazz, "INSTANCE", "Lcom/capstone/whereigo/AudioManager;");
+    if (!instanceField) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ AudioManager.INSTANCE 필드 못 찾음");
+        return;
+    }
+
+    jobject instance = env->GetStaticObjectField(clazz, instanceField);
+    if (!instance) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ AudioManager.INSTANCE 객체 못 찾음");
+        return;
+    }
+
+    jmethodID enqueueMethod = env->GetMethodID(clazz, "enqueueAudio", "(Ljava/lang/String;)V");
+    if (!enqueueMethod) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "❌ enqueueAudio 메서드 못 찾음");
+        return;
+    }
+
+    jstring jFilename = env->NewStringUTF(filename);
+    env->CallVoidMethod(instance, enqueueMethod, jFilename);
+    env->DeleteLocalRef(jFilename);
+}
 
 void JavaBridge::UpdateYaw(float cameraYaw, float pathYaw) {
     JNIEnv* env = GetEnv();
