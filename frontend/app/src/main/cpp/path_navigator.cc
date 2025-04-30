@@ -57,6 +57,7 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
     if (distance > kDeviationThreshold) {
         LOGI("🚨 경로 이탈 감지됨. 재탐색 시작");
 //        JavaBridge::EnqueueAudio("deviation.m4a");
+        JavaBridge::SpeakText("경로를 이탈하였습니다. 경로를 재탐색합니다.");
         Reset();
         TryGeneratePathIfNeeded(cam_pos);
         return false;

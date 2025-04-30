@@ -36,7 +36,6 @@
 #include "texture.h"
 #include "util.h"
 #include "astar_pathfinding.h"
-#include "audio_player.h"
 #include "direction_utils.h"
 #include "pose_helper.h"
 #include "path_navigator.h"
