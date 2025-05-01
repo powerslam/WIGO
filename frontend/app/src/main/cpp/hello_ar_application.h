@@ -105,10 +105,8 @@ class HelloArApplication {
 
   AAssetManager* const asset_manager_;
 
-  std::vector<Point> path;
-  JNIEnv* GetJniEnv();
-
   PathNavigator path_navigator_;
+  JNIEnv* GetJniEnv();
   DirectionHelper direction_helper_;
 
   // The anchors at which we are drawing android models using given colors.

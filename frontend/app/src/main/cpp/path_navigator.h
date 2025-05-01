@@ -20,6 +20,7 @@ public:
     bool IsReadyToRender() const;
     void SetReadyToRenderFalse();
     const std::vector<Point>& GetPath() const;
+    int GetCurrentPathIndex() const;
     void Reset();
 
 private:

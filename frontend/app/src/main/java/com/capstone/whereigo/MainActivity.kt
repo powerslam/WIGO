@@ -10,6 +10,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.core.widget.doOnTextChanged
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -72,20 +73,16 @@ class MainActivity : AppCompatActivity() {
             "미래관 444호", "미래관 425호", "미래관 415호", "미래관 405호"
         )
 
-        // 검색어 입력 후 엔터 시 필터링 & 표시
-        searchView.editText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                val query = searchView.text.toString()
-                if (query.isNotBlank()) {
-                    val filtered = allResults.filter { it.contains(query, ignoreCase = true) }
-                    recyclerView.visibility = View.VISIBLE
-                    recyclerView.layoutManager = LinearLayoutManager(this)
-                    recyclerView.adapter = SearchResultAdapter(filtered)
-                    searchView.hide()
-                }
-                true
+        searchView.editText.doOnTextChanged { text, _, _, _ ->
+            val query = text.toString().trim()
+            val filtered = allResults.filter { it.contains(query, ignoreCase = true) }
+
+            if (query.isNotEmpty()) {
+                recyclerView.visibility = View.VISIBLE
+                recyclerView.layoutManager = LinearLayoutManager(this)
+                recyclerView.adapter = SearchResultAdapter(filtered)
             } else {
-                false
+                recyclerView.visibility = View.GONE
             }
         }
 
