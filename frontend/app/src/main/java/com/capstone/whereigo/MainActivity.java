@@ -1,19 +1,17 @@
 package com.capstone.whereigo;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.speech.SpeechRecognizer;
-import android.view.MenuItem;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.activity.OnBackPressedDispatcher;
-import androidx.activity.OnBackPressedDispatcherOwner;
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -27,9 +25,9 @@ import com.google.android.material.search.SearchView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
+
     private ActivityMainBinding binding;
     private final int RECORD_AUDIO_REQUEST_CODE = 100;
     private long backPressedTime = 0;
@@ -38,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -49,7 +48,8 @@ public class MainActivity extends AppCompatActivity {
         searchBar.inflateMenu(searchMenu);
 
         ImageButton settingsButton = findViewById(R.id.settings_button);
-        settingsButton.setOnClickListener(v -> getSupportFragmentManager().beginTransaction()
+        settingsButton.setOnClickListener(v -> getSupportFragmentManager()
+                .beginTransaction()
                 .replace(R.id.fragment_setting, new SettingsFragment())
                 .addToBackStack(null)
                 .commit());
@@ -79,21 +79,35 @@ public class MainActivity extends AppCompatActivity {
         allResults.add("미래관 415호");
         allResults.add("미래관 405호");
 
-        searchView.getEditText().setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                String query = searchView.getText().toString();
-                if (!query.isEmpty()) {
-                    List<String> filtered = allResults.stream()
-                            .filter(item -> item.toLowerCase().contains(query.toLowerCase()))
-                            .collect(Collectors.toList());
-                    recyclerView.setVisibility(View.VISIBLE);
-                    recyclerView.setLayoutManager(new LinearLayoutManager(this));
-                    recyclerView.setAdapter(new SearchResultAdapter(filtered));
-                    searchView.hide();
-                }
-                return true;
+        searchView.getEditText().addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // 필요 없다면 비워둠
             }
-            return false;
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String query = s.toString().trim();
+                List<String> filtered = new ArrayList<>();
+                for (String item : allResults) {
+                    if (item.toLowerCase().contains(query.toLowerCase())) {
+                        filtered.add(item);
+                    }
+                }
+
+                if (!query.isEmpty()) {
+                    recyclerView.setVisibility(View.VISIBLE);
+                    recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+                    recyclerView.setAdapter(new SearchResultAdapter(filtered));
+                } else {
+                    recyclerView.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // 필요 없다면 비워둠
+            }
         });
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -119,10 +133,9 @@ public class MainActivity extends AppCompatActivity {
                     .commit();
         }
 
-        searchView.addTransitionListener((searchView1, previousState, newState) -> 
-            HelloArFragment.setCameraPoseVisibility(
-                newState != com.google.android.material.search.SearchView.TransitionState.SHOWN
-            )
+        searchView.addTransitionListener((view, previousState, newState) ->
+                HelloArFragment.setCameraPoseVisibility(
+                        newState != com.google.android.material.search.SearchView.TransitionState.SHOWN)
         );
 
         setupWakeWordListener();
@@ -130,7 +143,8 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean checkAudioPermission() {
         return ContextCompat.checkSelfPermission(
-                this, Manifest.permission.RECORD_AUDIO
+                this,
+                Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED;
     }
 
@@ -143,7 +157,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == RECORD_AUDIO_REQUEST_CODE) {

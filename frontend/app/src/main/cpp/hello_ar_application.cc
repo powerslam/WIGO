@@ -212,9 +212,6 @@ namespace hello_ar {
                 env->CallStaticVoidMethod(clazz, method, camera_yaw, path_yaw);
             }
         }
-        
-
-        const auto& path = path_navigator_.GetPath();
 
         // 카메라 해제
         ArPose_destroy(camera_pose);
@@ -232,6 +229,7 @@ namespace hello_ar {
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
 
+        
         //ArTrackingState camera_tracking_state;
         ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
 
@@ -292,28 +290,36 @@ namespace hello_ar {
             }
             carArrow_anchors_.clear();
 
-            for (size_t i = 0; i < path.size() - 1; ++i) {
-                const Point& p = path[i];
+            const auto& path = path_navigator_.GetPath();
+            int current_index = path_navigator_.GetCurrentPathIndex();
+            int path_size = path.size();
 
+            for (int i = 0; i < 5; ++i) { 
+                int idx = current_index + i;
+                if (idx >= path_size) break;
+        
+                const Point& p = path[idx];
+        
                 float anchor_pose[7] = {0};
                 anchor_pose[4] = p.x;
                 anchor_pose[5] = plane_y_;
                 anchor_pose[6] = p.z;
-
+        
                 ArPose* pose = nullptr;
                 ArPose_create(ar_session_, anchor_pose, &pose);
-
+        
                 ArAnchor* anchor = nullptr;
                 if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
                     ColoredAnchor car_anchor;
                     car_anchor.anchor = anchor;
                     car_anchor.trackable = nullptr;
-                    SetColor(1.0f, 1.0f, 1.0f, 1.0f, car_anchor.color);  // 흰색
+                    SetColor(1.0f, 1.0f, 1.0f, 1.0f, car_anchor.color);
                     carArrow_anchors_.push_back(car_anchor);
                 }
-
                 ArPose_destroy(pose);
             }
+            path_navigator_.SetReadyToRenderFalse();
+
 
             const auto& p = path.back();
             float anchor_pose[7] = {0};
@@ -364,37 +370,41 @@ namespace hello_ar {
         ArTrackableList_destroy(plane_list);
         plane_list = nullptr;
 
-        for (size_t i = 0; i < carArrow_anchors_.size(); ++i) {
-            if (i >= path.size()) continue;
+        for (int i = 0; i < carArrow_anchors_.size(); ++i) {
+            if (i >= path_navigator_.GetPath().size()) break;
 
-            // 경로 시작점
-            const Point& from = path[i];
-
-            // 도착점이 있으면 방향 계산 (마지막 점은 생략)
-            Point to = (i + 1 < path.size()) ? path[i + 1] : from;
-
-            // 방향 벡터 계산
+            glm::mat4 model_mat(1.0f);
+        
+            // ⭐ Anchor로부터 변환행렬 가져오기 ⭐
+            util::GetTransformMatrixFromAnchor(*carArrow_anchors_[i].anchor, ar_session_, &model_mat);
+        
+            // 추가로 방향 회전은 여기서 적용
+            const auto& path = path_navigator_.GetPath();
+            int idx = path_navigator_.GetCurrentPathIndex() + i;
+            if (idx >= path.size()) continue;
+        
+            const Point& from = path[idx];
+            Point to = (idx + 1 < path.size()) ? path[idx + 1] : from;
+        
             glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
             float length = glm::length(direction);
             if (length < 0.01f) continue;
-
             direction = glm::normalize(direction);
+        
             float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
-
-            // 위치는 path[i]로, y축은 stored_plane_y_로 고정
+        
             glm::vec3 position(from.x, plane_y_, from.z);
 
-            // 모델 행렬 구성
-            glm::mat4 model_mat = glm::translate(glm::mat4(1.0f), position);
+            model_mat = glm::translate(glm::mat4(1.0f), position);
             glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
             glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
-
+        
             model_mat = model_mat * rotation_mat * scale_mat;
-
+        
             // 렌더링
-            const ColoredAnchor& car_anchor = carArrow_anchors_[i];
-            car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, car_anchor.color);
+            car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, carArrow_anchors_[i].color);
         }
+        
 
         glm::mat4 model_mat(1.0f);
         if (location_pin_anchor_.anchor != nullptr) {

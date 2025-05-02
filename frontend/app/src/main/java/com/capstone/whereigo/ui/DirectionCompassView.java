@@ -18,6 +18,7 @@ public class DirectionCompassView extends View {
     private float pathYaw = 0f;
     private Bitmap bitmapUser;
     private final Paint paintCircle = new Paint();
+    private final Paint WhitepaintCircle = new Paint();
     private final Paint paintDot = new Paint();
     private final Paint paintArrow = new Paint();
 
@@ -44,6 +45,9 @@ public class DirectionCompassView extends View {
         paintCircle.setColor(Color.parseColor("#133e33"));
         paintCircle.setStyle(Paint.Style.STROKE);
         paintCircle.setStrokeWidth(10);
+
+        WhitepaintCircle.setColor(Color.parseColor("#40FFFFFF"));
+        WhitepaintCircle.setStyle(Paint.Style.FILL);
 
         paintDot.setColor(Color.YELLOW);
         paintDot.setStyle(Paint.Style.FILL);
@@ -75,9 +79,10 @@ public class DirectionCompassView extends View {
         float centerY = getHeight() / 2f;
         float radius = Math.min(centerX, centerY) - 80;
 
+        canvas.drawCircle(centerX, centerY, radius+30, WhitepaintCircle);
         // 원 그리기
-        canvas.drawCircle(centerX, centerY, radius, paintCircle);
-        canvas.drawCircle(centerX, centerY, radius-75, paintCircle);
+        canvas.drawCircle(centerX, centerY, radius-70, paintCircle);
+        canvas.drawCircle(centerX, centerY, radius-160, paintCircle);
 
         // 방향 점 위치 계산
         float cameraAngleRad = (float) Math.toRadians(cameraYaw);
@@ -103,7 +108,7 @@ public class DirectionCompassView extends View {
 
         // 내 방향 원 (노란색)
         if (bitmapUser != null) {
-            float iconSize = 100f;
+            float iconSize = 180f;
 
             canvas.save(); // 현재 상태 저장
 
@@ -122,12 +127,11 @@ public class DirectionCompassView extends View {
             canvas.restore(); // 이전 상태로 되돌림 (다른 UI 요소에 영향 X)
         }
 
-
         // 경로 방향 삼각형 (빨간색)
-        float arrowSize = 80;
-        float arrowX = (float) (centerX + (radius - arrowSize) * Math.sin(pathAngleRad));
-        float arrowY = (float) (centerY + (radius - arrowSize) * Math.cos(pathAngleRad));
-        canvas.drawCircle(arrowX, arrowY, 35, paintArrow);  // 삼각형 대신 원으로 단순화
+        float arrowSize = 140;
+        float arrowX = (float) (centerX + (radius-30 - arrowSize) * Math.sin(pathAngleRad));
+        float arrowY = (float) (centerY + (radius-30 - arrowSize) * Math.cos(pathAngleRad));
+        canvas.drawCircle(arrowX, arrowY, 60, paintArrow);  // 삼각형 대신 원으로 단순화
 
         // 카메라 방향선
 //        float lineLength = radius * 0.9f;

@@ -91,6 +91,10 @@ const std::vector<Point>& PathNavigator::GetPath() const {
     return path_;
 }
 
+int PathNavigator::GetCurrentPathIndex() const {
+    return current_path_index_;
+}
+
 
 void PathNavigator::Reset() {
     path_.clear();
