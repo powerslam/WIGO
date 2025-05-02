@@ -59,6 +59,23 @@
   }
 #endif  // CHECKANDTHROW
 
+struct Point {
+  float x, z;
+  bool operator<(const Point& other) const;
+};
+
+class PoseHelper {
+public:
+    // 카메라 포지션(x, y, z)만 가져오는 함수
+    static glm::vec3 GetCameraPosition(const float* pose_raw);
+};
+
+namespace nav {
+
+  std::string GetTurnAudioFile(float angle);
+
+}
+
 namespace hello_ar {
 
 // Utilities for C hello AR project.

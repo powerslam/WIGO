@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <set>
-#include "types.h"
+#include "util.h"
 
 float heuristic(const Point& a, const Point& b);
 bool isObstacle(const Point& pos, const std::set<Point>& obstacles, float radius = 1.0f);

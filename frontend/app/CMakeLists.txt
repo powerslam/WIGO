@@ -42,12 +42,9 @@ add_library(hello_ar_native SHARED
            src/main/cpp/texture.cc
            src/main/cpp/util.cc
            src/main/cpp/astar_pathfinding.cc
-           src/main/cpp/direction_utils.cc
-           src/main/cpp/types.cc
            src/main/cpp/direction_helper.cc
            src/main/cpp/path_navigator.cc
-           src/main/cpp/java_bridge.cc
-           src/main/cpp/pose_helper.cc)
+           src/main/cpp/java_bridge.cc)
 
 target_include_directories(hello_ar_native PRIVATE
            src/main/cpp

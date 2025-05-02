@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <set>
-#include "types.h"
+#include "util.h"
 #include "direction_helper.h"
 #include "astar_pathfinding.h"
 #include "java_bridge.h"
