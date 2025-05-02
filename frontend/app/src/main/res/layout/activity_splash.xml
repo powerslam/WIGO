@@ -1,0 +1,46 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/md_theme_surfaceContainerLowest">
+
+
+    <ImageView
+        android:id="@+id/splash_large_icon"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:src="@mipmap/ic_launcher_round"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="250dp" />
+
+
+    <ImageView
+        android:id="@+id/splash_icon"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:src="@mipmap/ic_launcher_round"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="650dp"
+        android:layout_marginStart="50dp"/>
+
+    <ProgressBar
+        android:id="@+id/splash_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/splash_icon"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="0dp"
+        android:indeterminate="true"
+        android:progressDrawable="@drawable/progress_bar_custom" />
+
+    <TextView
+        android:id="@+id/splash_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Whereigo 로딩 중..."
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        android:layout_below="@id/splash_progress_bar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp" />
+</RelativeLayout>
