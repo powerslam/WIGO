@@ -20,23 +20,26 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <android/asset_manager.h>
+
 #include <jni.h>
 
-#include <memory>
 #include <set>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
 #include "include/arcore/arcore_c_api.h"
-#include "background_renderer.h"
+
 #include "glm.h"
-#include "obj_renderer.h"
-#include "plane_renderer.h"
-#include "point_cloud_renderer.h"
-#include "texture.h"
 #include "util.h"
-#include "astar_pathfinding.h"
+
+#include "renderer/texture.h"
+#include "renderer/obj_renderer.h"
+#include "renderer/plane_renderer.h"
+#include "renderer/background_renderer.h"
+
 #include "path_navigator.h"
+#include "astar_pathfinding.h"
 #include "direction_helper.h"
 
 namespace hello_ar {
@@ -119,8 +122,6 @@ class HelloArApplication {
   std::vector<ColoredAnchor> carArrow_anchors_;
   ColoredAnchor location_pin_anchor_;
 
-
-  PointCloudRenderer point_cloud_renderer_;
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
   ObjRenderer location_pin_renderer_;
