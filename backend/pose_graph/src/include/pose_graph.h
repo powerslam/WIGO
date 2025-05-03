@@ -262,3 +262,114 @@ struct FourDOFWeightError
 	double weight;
 
 };
+
+class FourDOFAnalyticError : public ceres::SizedCostFunction<4, 1, 3, 1, 3>
+{
+public:
+  FourDOFAnalyticError(double t_x, double t_y, double t_z,
+                       double relative_yaw, double pitch_i, double roll_i)
+      : t_x_(t_x), t_y_(t_y), t_z_(t_z),
+        relative_yaw_(relative_yaw),
+        pitch_i_(pitch_i), roll_i_(roll_i) {}
+
+  virtual ~FourDOFAnalyticError() {}
+
+  virtual bool Evaluate(double const* const* parameters,
+                        double* residuals,
+                        double** jacobians) const override {
+
+    const double yaw_i = parameters[0][0];
+    const double* t_i = parameters[1];
+    const double yaw_j = parameters[2][0];
+    const double* t_j = parameters[3];
+
+    double t_w_ij[3] = {
+		t_j[0] - t_i[0],
+		t_j[1] - t_i[1],
+		t_j[2] - t_i[2]
+    };
+
+    double w_R_i[9];
+    YawPitchRollToRotationMatrix(yaw_i, pitch_i_, roll_i_, w_R_i);
+
+    double i_R_w[9];
+    RotationMatrixTranspose(w_R_i, i_R_w);
+
+    double t_i_ij[3];
+    RotationMatrixRotatePoint(i_R_w, t_w_ij, t_i_ij);
+
+    residuals[0] = t_i_ij[0] - t_x_;
+    residuals[1] = t_i_ij[1] - t_y_;
+    residuals[2] = t_i_ij[2] - t_z_;
+    residuals[3] = NormalizeAngle(yaw_j - yaw_i - relative_yaw_);
+    const double deg_to_rad = M_PI / 180.0;
+
+    if (jacobians) {
+      // dR_dyaw_i
+      double y = yaw_i / 180.0 * M_PI;
+      double p = pitch_i_ / 180.0 * M_PI;
+      double r = roll_i_ / 180.0 * M_PI;
+
+      double cy = cos(y), sy = sin(y);
+      double cp = cos(p), sp = sin(p);
+      double cr = cos(r), sr = sin(r);
+
+      double dR_dy[9] = {
+        -sy*cp*deg_to_rad,   (-sy*sp*sr - cy*cr)*deg_to_rad,   (-sy*sp*cr + cy*sr)*deg_to_rad,
+         cy*cp*deg_to_rad,    (cy*sp*sr - sy*cr)*deg_to_rad,    (cy*sp*cr + sy*sr)*deg_to_rad,
+         0,        0,                  0
+      };
+
+      // diRw_dyaw = (dR_dyaw)^T
+      double diRw_dyaw[9];
+      RotationMatrixTranspose(dR_dy, diRw_dyaw);
+
+      if (jacobians[0]) {
+        double* J_yaw_i = jacobians[0];
+        for (int k = 0; k < 3; ++k) {
+          J_yaw_i[k] =
+            diRw_dyaw[k * 3 + 0] * t_w_ij[0] +
+            diRw_dyaw[k * 3 + 1] * t_w_ij[1] +
+            diRw_dyaw[k * 3 + 2] * t_w_ij[2];
+        }
+        J_yaw_i[3] = -1.0;  // d(yaw_j - yaw_i - rel_yaw) / dyaw_i
+      }
+
+      if (jacobians[1]) {
+        double* J_ti = jacobians[1];
+        for (int r = 0; r < 3; ++r)
+          for (int c = 0; c < 3; ++c)
+            J_ti[r * 3 + c] = -i_R_w[r * 3 + c];
+        std::fill(J_ti + 9, J_ti + 12, 0.0);  // last row = 0
+      }
+
+      if (jacobians[2]) {
+        double* J_yaw_j = jacobians[2];
+        J_yaw_j[0] = 0.0;
+        J_yaw_j[1] = 0.0;
+        J_yaw_j[2] = 0.0;
+        J_yaw_j[3] = 1.0;
+      }
+
+      if (jacobians[3]) {
+        double* J_tj = jacobians[3];
+        for (int r = 0; r < 3; ++r)
+          for (int c = 0; c < 3; ++c)
+            J_tj[r * 3 + c] = i_R_w[r * 3 + c];
+        std::fill(J_tj + 9, J_tj + 12, 0.0);
+      }
+    }
+
+    return true;
+  }
+
+  static ceres::CostFunction* Create(double t_x, double t_y, double t_z,
+                                     double relative_yaw,
+                                     double pitch_i, double roll_i) {
+    return new FourDOFAnalyticError(t_x, t_y, t_z, relative_yaw, pitch_i, roll_i);
+  }
+
+private:
+  double t_x_, t_y_, t_z_;
+  double relative_yaw_, pitch_i_, roll_i_;
+};
