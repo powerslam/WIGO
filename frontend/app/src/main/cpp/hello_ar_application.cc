@@ -21,10 +21,6 @@
 
 #include <array>
 
-#include "include/arcore/arcore_c_api.h"
-#include "plane_renderer.h"
-#include "util.h"
-
 namespace hello_ar {
     namespace {
         constexpr size_t kMaxNumberOfAndroidsToRender = 20;
@@ -128,9 +124,7 @@ namespace hello_ar {
         LOGI("OnSurfaceCreated()");
 
         depth_texture_.CreateOnGlThread();
-        background_renderer_.InitializeGlContent(asset_manager_,
-                                                 depth_texture_.GetTextureId());
-        point_cloud_renderer_.InitializeGlContent(asset_manager_);
+        background_renderer_.InitializeGlContent(asset_manager_, depth_texture_.GetTextureId());
         location_pin_renderer_.InitializeGlContent(asset_manager_, "models/location_pin.obj", "models/location_pin.png");
         plane_renderer_.InitializeGlContent(asset_manager_);
         car_arrow_renderer_.InitializeGlContent(asset_manager_, "models/carArrow.obj", "models/carArrow.png");
@@ -413,16 +407,6 @@ namespace hello_ar {
             }
             util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
             location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
-        }
-
-        // Update and render point cloud.
-        ArPointCloud* ar_point_cloud = nullptr;
-        ArStatus point_cloud_status =
-                ArFrame_acquirePointCloud(ar_session_, ar_frame_, &ar_point_cloud);
-        if (point_cloud_status == AR_SUCCESS) {
-            point_cloud_renderer_.Draw(projection_mat * view_mat, ar_session_,
-                                       ar_point_cloud);
-            ArPointCloud_release(ar_point_cloud);
         }
     }
 
