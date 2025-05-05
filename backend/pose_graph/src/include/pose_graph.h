@@ -37,7 +37,7 @@ public:
 		const std::string& brief_pattern_file,
 		const std::string& vocabulary_file, 
 		const bool load_previous_pose_graph,
-		int skip_dis, int row, int col
+		double skip_dis, int row, int col
 	);
 
 	~PoseGraph();
@@ -53,16 +53,14 @@ public:
 
 	const std::string VOCABULARY_FILE;
 	const bool LOAD_PREVIOUS_POSE_GRAPH;
-	const int SKIP_DIS;
+	const double SKIP_DIS;
 
 	int skip_first_cnt = 0;
 
 	Eigen::Vector3d t_drift;
 	double yaw_drift;
 	Eigen::Matrix3d r_drift;
-	// world frame( base sequence or first sequence)<----> cur sequence frame  
-	Eigen::Vector3d w_t_vio;
-	Eigen::Matrix3d w_r_vio;
+	
 	Eigen::Vector3d last_t = Eigen::Vector3d(-100, -100, -100);
 
 public:

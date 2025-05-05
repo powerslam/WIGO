@@ -50,7 +50,7 @@
      }  // namespace
  
      HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path)
-             : pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 2, 640, 480), asset_manager_(asset_manager) {
+             : pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480), asset_manager_(asset_manager) {
             
             LOGI("external_path: %s", external_path.c_str());
             pose_graph.loadVocabulary(asset_manager_);
@@ -70,7 +70,6 @@
          }
          return nullptr;
      }
- 
  
      void HelloArApplication::TryGeneratePathIfNeeded(float cam_x, float cam_z) {
          if (path_generated_ || plane_count_ <= 0) return;
@@ -104,7 +103,6 @@
              LOGI("❌ 경로 탐색 실패: 도달 불가능");
          }
      }
- 
  
      void HelloArApplication::CheckCameraFollowingPath(float cam_x, float cam_z) {
          if (current_path_index >= path.size()) {
@@ -218,10 +216,16 @@
              CHECKANDTHROW(ArSession_create(env, context, &ar_session_) == AR_SUCCESS,
                            env, "Failed to create AR session.");
  
-             ConfigureSession();
-             ArFrame_create(ar_session_, &ar_frame_);
- 
-             ArSession_setDisplayGeometry(ar_session_, display_rotation_, width_,
+            //  ConfigureSession();
+            
+            ArConfig* ar_config = nullptr;
+            ArConfig_create(ar_session_, &ar_config);
+            ArConfig_setDepthMode(ar_session_, ar_config, AR_DEPTH_MODE_AUTOMATIC);
+            CHECK(ArSession_configure(ar_session_, ar_config) == AR_SUCCESS);
+            ArConfig_destroy(ar_config);
+
+            ArFrame_create(ar_session_, &ar_frame_);
+            ArSession_setDisplayGeometry(ar_session_, display_rotation_, width_,
                                           height_);
          }
  
@@ -305,30 +309,10 @@
          float cam_x = pose_raw[4];
          float cam_z = pose_raw[6];
  
-         // 5. 경로 생성 시도
-         TryGeneratePathIfNeeded(cam_x, cam_z);
- 
-         // 6. 경로 따라가기
-         if (!path.empty()) {
-             CheckCameraFollowingPath(cam_x, cam_z);
-         }
- 
          // [추가] Java로 pose 값을 전달
          JavaVM* java_vm;
          JNIEnv* env = nullptr;
  
-         if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
-             jfloatArray pose_array = env->NewFloatArray(7);
-             env->SetFloatArrayRegion(pose_array, 0, 7, pose_raw);
- 
-             jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
-             jmethodID method = env->GetStaticMethodID(clazz, "updatePoseFromNative", "([F)V");
- 
-             if (clazz != nullptr && method != nullptr) {
-                 env->CallStaticVoidMethod(clazz, method, pose_array);
-             }
-         }
-
          if(this->intrinsic_param.fx == 0.0){
              ArCameraIntrinsics* intrinsics = nullptr;
              ArCameraIntrinsics_create(ar_session_, &intrinsics);
@@ -356,64 +340,63 @@
          glm::mat4 projection_mat;
          ArCamera_getViewMatrix(ar_session_, ar_camera, glm::value_ptr(view_mat));
          ArCamera_getProjectionMatrix(ar_session_, ar_camera,
-                 /*near=*/0.1f, /*far=*/100.f,
-                                      glm::value_ptr(projection_mat));
- 
-         const float* point_cloud_data;
-         const int* point_cloud_ids;
-         ArPointCloud* ar_point_cloud = nullptr;
-         ArStatus point_cloud_status =
-                 ArFrame_acquirePointCloud(ar_session_, ar_frame_, &ar_point_cloud);
- 
-         if (point_cloud_status == AR_SUCCESS) {
-           point_cloud_renderer_.Draw(projection_mat * view_mat, ar_session_,
-                                      ar_point_cloud);
-           ArPointCloud_getData(ar_session_, ar_point_cloud, &point_cloud_data);
-           ArPointCloud_getPointIds(ar_session_, ar_point_cloud, &point_cloud_ids);
-           ArPointCloud_release(ar_point_cloud);
-         }
- 
-         ArImage* image = nullptr;
-         if(ArFrame_acquireCameraImage(ar_session_, ar_frame_, &image) == AR_SUCCESS) {
-           const uint8_t *y_plane = nullptr;
-           int y_row_stride = 0;
-           int width = 0;
-           int height = 0;
-           int data_length = 0;
- 
-           ArImage_getWidth(ar_session_, image, &width);
-           ArImage_getHeight(ar_session_, image, &height);
-           ArImage_getPlaneData(ar_session_, image, 0, &y_plane, &data_length);  // 0 = Y 채널
-           ArImage_getPlaneRowStride(ar_session_, image, 0, &y_row_stride);
- 
-           cv::Mat gray_image = cv::Mat(height, width, CV_8UC1, const_cast<uint8_t *>(y_plane),
-                                        y_row_stride);
- 
-           KeyFramePtr keyframe = std::make_shared<KeyFrame>(0, 0, _vio_T_w_i, _vio_R_w_i, gray_image, 0);
-           keyframe->computeBRIEFPoint(asset_manager_, intrinsic_param);
-           pose_graph.addKeyFrameBuf(keyframe);
-           LOGI("frame buf size : %d", pose_graph.keyframe_buf.size());
+                 /*near=*/0.1f, /*far=*/100.f, glm::value_ptr(projection_mat));
+    
+        ArImage* depth_image = nullptr;
+        ArImage* image = nullptr;
+        if(ArFrame_acquireCameraImage(ar_session_, ar_frame_, &image) == AR_SUCCESS) {
+            auto depth_status = ArFrame_acquireDepthImage16Bits(ar_session_, ar_frame_, &depth_image);
+//            LOGI("status : %d", depth_status);
+            if (depth_status == AR_SUCCESS) {
+                const uint8_t *image_data = nullptr;
+                const uint8_t *depth_data = nullptr;
+                
+                int image_width, image_height, image_pixel_stride, image_data_length, image_row_stride;
+                int depth_width, depth_height, depth_pixel_stride, depth_data_length, depth_row_stride;
 
-           JNIEnv* env = nullptr;
-           if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
-               // 전달할 정수값
-               jint index_value = pose_graph.keyframelist.size();  // 전달할 int 값을 이 변수에 담아라
+                ArImage_getWidth(ar_session_, image, &image_width);
+                ArImage_getHeight(ar_session_, image, &image_height);
+                ArImage_getPlaneRowStride(ar_session_, image, 0, &image_row_stride);
+                ArImage_getPlanePixelStride(ar_session_, image, 0, &image_pixel_stride);
+                ArImage_getPlaneData(ar_session_, image, 0, &image_data, &image_data_length);
 
-               // Java 클래스 및 메서드 찾기
-               jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
-               jmethodID method = env->GetStaticMethodID(clazz, "updateSizeFromNative", "(I)V");
+                ArImage_getWidth(ar_session_, depth_image, &depth_width);
+                ArImage_getHeight(ar_session_, depth_image, &depth_height);
+                ArImage_getPlaneRowStride(ar_session_, depth_image, 0, &depth_row_stride);
+                ArImage_getPlanePixelStride(ar_session_, depth_image, 0, &depth_pixel_stride);
+                ArImage_getPlaneData(ar_session_, depth_image, 0, &depth_data, &depth_data_length);
+                
+                cv::Mat image_mat = cv::Mat(image_height, image_width, CV_8UC1, const_cast<uint8_t *>(image_data), image_row_stride);
+                
+                depth_row_stride /= 2;
+                cv::Mat depth_mat = cv::Mat(depth_height, depth_width, CV_16UC1, const_cast<uint8_t *>(depth_data), depth_row_stride);
+                cv::resize(depth_mat, depth_mat, image_mat.size());
 
-               // 클래스와 메서드가 유효한 경우 호출
-               if (clazz != nullptr && method != nullptr) {
-                   env->CallStaticVoidMethod(clazz, method, index_value);
-               }
-           }
-         }
+                KeyFramePtr keyframe = std::make_shared<KeyFrame>(0, _vio_T_w_i, _vio_R_w_i, image_mat, 0);
+                keyframe->computeBRIEFPoint(asset_manager_, intrinsic_param, depth_mat);
+                pose_graph.addKeyFrameBuf(keyframe);
+
+                JNIEnv* env = nullptr;
+                if (java_vm_ && java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+                    // 전달할 정수값
+                    jint index_value = pose_graph.keyframelist.size();  // 전달할 int 값을 이 변수에 담아라
+
+                    // Java 클래스 및 메서드 찾기
+                    jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+                    jmethodID method = env->GetStaticMethodID(clazz, "updateSizeFromNative", "(I)V");
+
+                    // 클래스와 메서드가 유효한 경우 호출
+                    if (clazz != nullptr && method != nullptr) {
+                        env->CallStaticVoidMethod(clazz, method, index_value);
+                    }
+                }
+            }
+        }
  
          // 6. Pose 객체 해제
          ArImage_release(image);
+         ArImage_release(depth_image);
          ArPose_destroy(camera_pose);
-         ArCamera_release(ar_camera);
  
          int32_t geometry_changed = 0;
          ArFrame_getDisplayGeometryChanged(ar_session_, ar_frame_, &geometry_changed);
@@ -426,23 +409,10 @@
              glm::mat3 transform = GetTextureTransformMatrix(ar_session_, ar_frame_);
              andy_renderer_.SetUvTransformMatrix(transform);
          }
- 
- 
+  
          background_renderer_.Draw(ar_session_, ar_frame_,
                                    depthColorVisualizationEnabled);
- 
-         // line
-         if (!path.empty()) {
-             std::vector<glm::vec3> line_points;
-             for (const auto& p : path) {
-                 line_points.emplace_back(p.x, stored_plane_y_, p.z);
-             }
- 
-             line_renderer_.Draw(line_points, projection_mat, view_mat);
-         }
- 
- 
- 
+
          //ArTrackingState camera_tracking_state;
          ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
  
@@ -450,13 +420,6 @@
          if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
              LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 생성 불가");
              return;
-         }
- 
-         int32_t is_depth_supported = 0;
-         ArSession_isDepthModeSupported(ar_session_, AR_DEPTH_MODE_AUTOMATIC,
-                                        &is_depth_supported);
-         if (is_depth_supported) {
-             depth_texture_.UpdateWithDepthImageOnGlThread(*ar_session_, *ar_frame_);
          }
  
          // Get light estimation value.
@@ -491,58 +454,7 @@
          int32_t plane_list_size = 0;
          ArTrackableList_getSize(ar_session_, plane_list, &plane_list_size);
          plane_count_ = plane_list_size;
- 
-         if (path_ready_to_render_ && plane_count_ > 0) {
- 
-             for (auto& anchor : anchors_) {
-                 if (anchor.anchor != nullptr) ArAnchor_release(anchor.anchor);
-                 if (anchor.trackable != nullptr) ArTrackable_release(anchor.trackable);
-             }
-             anchors_.clear();
- 
-             
-             // 감지된 첫 번째 평면의 높이 추출
-             ArTrackable* first_trackable = nullptr;
-             ArTrackableList_acquireItem(ar_session_, plane_list, 0, &first_trackable);
-             ArPlane* first_plane = ArAsPlane(first_trackable);
-             ArPose* plane_pose = nullptr;
-             ArPose_create(ar_session_, nullptr, &plane_pose);
-             ArPlane_getCenterPose(ar_session_, first_plane, plane_pose);
- 
-             float center_pose_raw[7];
-             ArPose_getPoseRaw(ar_session_, plane_pose, center_pose_raw);
-             stored_plane_y_ = center_pose_raw[5];  // 평면의 y값 저장
- 
-             ArTrackable_release(first_trackable);
-             ArPose_destroy(plane_pose);
- 
-             LOGI("📐 평면 감지됨, 높이: %.2f", stored_plane_y_);
- 
-             const auto& p = path.back();
-             float anchor_pose[7] = {0};
-             anchor_pose[4] = p.x;
-             anchor_pose[5] = stored_plane_y_ + 2.3f;  // 평면 높이 사용
-             anchor_pose[6] = p.z;
- 
-             ArPose* pose = nullptr;
-             ArPose_create(ar_session_, anchor_pose, &pose);
- 
-             ArAnchor* anchor = nullptr;
-             if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
-                 ColoredAnchor colored_anchor;
-                 colored_anchor.anchor = anchor;
-                 colored_anchor.trackable = nullptr;
-                 SetColor(255, 0, 0, 255, colored_anchor.color);
-                 anchors_.push_back(colored_anchor);
-                 LOGI("✅ 앵커 생성: x=%.2f, z=%.2f", p.x, p.z);
-             }
- 
-             ArPose_destroy(pose);
- 
-             path_ready_to_render_ = false;  // 앵커 생성 완료
-         }
- 
- 
+
          for (int i = 0; i < plane_list_size; ++i) {
              ArTrackable* ar_trackable = nullptr;
              ArTrackableList_acquireItem(ar_session_, plane_list, i, &ar_trackable);
@@ -587,10 +499,8 @@
              location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
                                  colored_anchor.color);
          }
- 
- 
-         // Update and render point cloud.
- 
+        
+         ArCamera_release(ar_camera);
      }
 
      void HelloArApplication::SavePoseGraph() {
