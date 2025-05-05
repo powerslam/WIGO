@@ -33,9 +33,15 @@ import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-
 import okio.BufferedSink;
 import okio.Okio;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,9 +122,10 @@ public class MainActivity extends AppCompatActivity {
                         // 예: "미래관 445호" → "미래관"
                         String buildingName = selected.split(" ")[0];
                         String fileName = buildingName + ".zip";
+                        String unzipFolder = buildingName;
                         String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
 
-                        downloadFile(MainActivity.this, url, fileName);
+                        downloadAndUnzipFile(MainActivity.this, url, fileName, unzipFolder);
                     }));
                 } else {
                     recyclerView.setVisibility(View.GONE);
@@ -198,17 +205,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void downloadFile(Context context, String url, String fileName) {
-        File file = new File(context.getFilesDir(), fileName);
+    private void downloadAndUnzipFile(Context context, String url, String zipFileName, String extractFolderName) {
+        File zipFile = new File(context.getFilesDir(), zipFileName);
+        File extractDir = new File(context.getFilesDir(), extractFolderName);
 
-        if (file.exists()) {
-            runOnUiThread(() -> Toast.makeText(context, "이미 다운로드된 파일입니다.", Toast.LENGTH_SHORT).show());
+        if (extractDir.exists()) {
+            String msg = "이미 압축 풀린 폴더: " + extractDir.getAbsolutePath();
+            Log.d("ZIP", msg);
+            runOnUiThread(() -> Toast.makeText(context, "이미 다운로드 및 압축 해제됨", Toast.LENGTH_SHORT).show());
             return;
         }
 
         OkHttpClient client = new OkHttpClient();
-
         Request request = new Request.Builder().url(url).build();
+
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -222,13 +232,57 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                File file = new File(context.getFilesDir(), fileName);
-                BufferedSink sink = Okio.buffer(Okio.sink(file));
+                BufferedSink sink = Okio.buffer(Okio.sink(zipFile));
                 sink.writeAll(response.body().source());
                 sink.close();
 
-                runOnUiThread(() -> Toast.makeText(context, "다운 완료: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+                Log.d("ZIP", "ZIP 저장 경로: " + zipFile.getAbsolutePath());
+                runOnUiThread(() -> Toast.makeText(context, "ZIP 저장: " + zipFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+
+                try {
+                    unzip(zipFile, extractDir);
+                    runOnUiThread(() -> Toast.makeText(context, "압축 해제 완료: " + extractDir.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+                } catch (Exception e) {
+                    runOnUiThread(() -> Toast.makeText(context, "압축 해제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                }
             }
         });
+    }
+
+    private void unzip(File zipFile, File targetDir) throws IOException {
+        if (!targetDir.exists()) {
+            targetDir.mkdirs();
+        }
+
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry entry;
+
+            while ((entry = zis.getNextEntry()) != null) {
+                String entryName = entry.getName();
+
+                // ✅ 최상위 폴더명 제거 (예: "미래관/4층/...")
+                String[] parts = entryName.split("/", 2);
+                if (parts.length < 2) continue; // 파일이 미래관만 있거나 이상할 때 무시
+
+                String relativePath = parts[1]; // "4층/..."만 사용
+
+                File newFile = new File(targetDir, relativePath);
+
+                if (entry.isDirectory()) {
+                    newFile.mkdirs();
+                } else {
+                    new File(newFile.getParent()).mkdirs();
+                    try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+
+                zis.closeEntry();
+            }
+        }
     }
 }
