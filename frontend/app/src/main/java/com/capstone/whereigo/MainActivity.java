@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -22,6 +23,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.capstone.whereigo.databinding.ActivityMainBinding;
 import com.google.android.material.search.SearchBar;
 import com.google.android.material.search.SearchView;
+
+import android.content.Context;
+import java.io.File;
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import okio.BufferedSink;
+import okio.Okio;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +112,14 @@ public class MainActivity extends AppCompatActivity {
                 if (!query.isEmpty()) {
                     recyclerView.setVisibility(View.VISIBLE);
                     recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-                    recyclerView.setAdapter(new SearchResultAdapter(filtered));
+                    recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
+                        // 예: "미래관 445호" → "미래관"
+                        String buildingName = selected.split(" ")[0];
+                        String fileName = buildingName + ".zip";
+                        String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
+
+                        downloadFile(MainActivity.this, url, fileName);
+                    }));
                 } else {
                     recyclerView.setVisibility(View.GONE);
                 }
@@ -175,5 +196,39 @@ public class MainActivity extends AppCompatActivity {
         if (!checkAudioPermission()) {
             requestAudioPermission();
         }
+    }
+
+    private void downloadFile(Context context, String url, String fileName) {
+        File file = new File(context.getFilesDir(), fileName);
+
+        if (file.exists()) {
+            runOnUiThread(() -> Toast.makeText(context, "이미 다운로드된 파일입니다.", Toast.LENGTH_SHORT).show());
+            return;
+        }
+
+        OkHttpClient client = new OkHttpClient();
+
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> Toast.makeText(context, "다운로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    runOnUiThread(() -> Toast.makeText(context, "서버 응답 실패", Toast.LENGTH_SHORT).show());
+                    return;
+                }
+
+                File file = new File(context.getFilesDir(), fileName);
+                BufferedSink sink = Okio.buffer(Okio.sink(file));
+                sink.writeAll(response.body().source());
+                sink.close();
+
+                runOnUiThread(() -> Toast.makeText(context, "다운 완료: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 }

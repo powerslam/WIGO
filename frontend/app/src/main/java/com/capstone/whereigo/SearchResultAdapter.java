@@ -15,9 +15,15 @@ import java.util.List;
 public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.ViewHolder> {
 
     private final List<String> items;
+    private final OnItemClickListener listener;
 
-    public SearchResultAdapter(List<String> items) {
+    public interface OnItemClickListener {
+        void onItemClick(String selectedItem);
+    }
+
+    public SearchResultAdapter(List<String> items, OnItemClickListener listener) {
         this.items = items;
+        this.listener = listener;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -39,7 +45,14 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
     @Override
     public void onBindViewHolder(@NonNull SearchResultAdapter.ViewHolder holder, int position) {
-        holder.textView.setText(items.get(position));
+        String item = items.get(position);
+        holder.textView.setText(item);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(item);
+            }
+        });
     }
 
     @Override
