@@ -22,7 +22,7 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     if (!path_.empty()) {
         path_generated_ = true;
         path_ready_to_render_ = true;
-        arrival_audio_played_ = false;
+        arrival_ = false;
         LOGI("🚀 경로 탐색 성공!");
 
 //        JavaBridge::EnqueueAudio("start.m4a");
@@ -35,10 +35,10 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
 
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
     if (current_path_index_ >= path_.size()) {
-        if (!arrival_audio_played_) {
+        if (!arrival_) {
 //            JavaBridge::EnqueueAudio("arrival.m4a");
             JavaBridge::SpeakText("목적지에 도착하였습니다. 경로 안내를 종료합니다.");
-            arrival_audio_played_ = true;
+            arrival_ = true;
         }
 
         // 상태 업데이트 메시지 전달
@@ -122,7 +122,7 @@ void PathNavigator::Reset() {
     path_.clear();
     path_generated_ = false;
     path_ready_to_render_ = false;
-    arrival_audio_played_ = false;
+    arrival_ = false;
     current_path_index_ = 0;
 }
 

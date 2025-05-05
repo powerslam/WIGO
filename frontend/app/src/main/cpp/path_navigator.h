@@ -22,12 +22,12 @@ public:
     int GetCurrentPathIndex() const;
     void Reset();
 
+    bool arrival_ = false;
+
 private:
     std::vector<Point> path_;
     bool path_generated_ = false;
     bool path_ready_to_render_ = false;
-    bool arrival_audio_played_ = false;
-
     int current_path_index_ = 0;
 
     std::set<Point> obstacles_;  

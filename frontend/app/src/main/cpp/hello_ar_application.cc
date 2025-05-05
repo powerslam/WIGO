@@ -374,11 +374,11 @@ namespace hello_ar {
         
             // 추가로 방향 회전은 여기서 적용
             const auto& path = path_navigator_.GetPath();
-            int idx = path_navigator_.GetCurrentPathIndex() + i;
-            if (idx >= path.size()) continue;
+            int current_index = path_navigator_.GetCurrentPathIndex() + i;
+            if (current_index >= path.size()) continue;
         
-            const Point& from = path[idx];
-            Point to = (idx + 1 < path.size()) ? path[idx + 1] : from;
+            const Point& from = path[current_index];
+            Point to = (current_index + 1 < path.size()) ? path[current_index + 1] : from;
         
             glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
             float length = glm::length(direction);
@@ -398,15 +398,21 @@ namespace hello_ar {
             // 렌더링
             car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, carArrow_anchors_[i].color);
         }
-        
 
-        glm::mat4 model_mat(1.0f);
+
         if (location_pin_anchor_.anchor != nullptr) {
-            if (location_pin_anchor_.trackable != nullptr) {
-                UpdateAnchorColor(&location_pin_anchor_);
+            const auto& path = path_navigator_.GetPath();
+            int path_size = static_cast<int>(path.size());
+            int current_index = path_navigator_.GetCurrentPathIndex();
+
+            if (current_index >= path_size - 5 && !path_navigator_.arrival_) {
+                glm::mat4 model_mat(1.0f);
+                if (location_pin_anchor_.trackable != nullptr) {
+                    UpdateAnchorColor(&location_pin_anchor_);
+                }
+                util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
+                location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
             }
-            util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
-            location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
         }
     }
 
