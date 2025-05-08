@@ -33,26 +33,26 @@ set_target_properties( glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${GLM_INCLUD
 
 # This is the main app library.
 add_library(hello_ar_native SHARED
-           src/main/cpp/background_renderer.cc
-           src/main/cpp/hello_ar_application.cc
-           src/main/cpp/jni_interface.cc
-           src/main/cpp/obj_renderer.cc
-           src/main/cpp/plane_renderer.cc
-           src/main/cpp/point_cloud_renderer.cc
-           src/main/cpp/texture.cc
-           src/main/cpp/util.cc
-           src/main/cpp/astar_pathfinding.cc
-           src/main/cpp/audio_player.cc
-           src/main/cpp/direction_utils.cc
-           src/main/cpp/types.cc
-           src/main/cpp/direction_helper.cc
-           src/main/cpp/path_navigator.cc
-           src/main/cpp/java_bridge.cc
-           src/main/cpp/pose_helper.cc)
+            src/main/cpp/hello_ar_application.cc
+
+            src/main/cpp/renderer/texture.cc
+            src/main/cpp/renderer/obj_renderer.cc
+            src/main/cpp/renderer/plane_renderer.cc
+            src/main/cpp/renderer/background_renderer.cc
+
+            src/main/cpp/path_navigator.cc
+            src/main/cpp/direction_helper.cc
+            src/main/cpp/astar_pathfinding.cc
+            
+            src/main/cpp/util.cc
+            
+            src/main/cpp/jni_interface.cc
+            src/main/cpp/java_bridge.cc)
 
 target_include_directories(hello_ar_native PRIVATE
            src/main/cpp
-           src/main/cpp/include)
+           src/main/cpp/include
+           src/main/cpp/include/renderer)
            
 target_link_libraries(hello_ar_native
                       android

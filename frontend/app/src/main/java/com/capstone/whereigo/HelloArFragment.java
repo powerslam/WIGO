@@ -89,6 +89,8 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     activity = requireActivity();
     surfaceView = view.findViewById(R.id.surfaceview);
 
+    TtsManager.INSTANCE.init(requireContext());
+    AudioManager.getInstance().init(requireContext());
 
     surfaceStatus = view.findViewById(R.id.surface_status_container);
     surfaceStatusText = view.findViewById(R.id.surface_status_text);
@@ -346,66 +348,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     super.onAttach(context);
     instance = this;
   }
-
-  public static void playTTS(String text) {
-    Log.d("TTS", "✅ playTTS 호출됨, text = " + text);
-    String encoded = Uri.encode(text);
-    String url = "http://54.70.209.130:8888/tts?text=" + encoded;
-
-    MediaPlayer mediaPlayer = new MediaPlayer();
-    try {
-      mediaPlayer.setDataSource(url);
-      mediaPlayer.setOnPreparedListener(MediaPlayer::start);
-      mediaPlayer.prepareAsync();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-  public static void playLocalAudio(String filename) {
-    try {
-      AssetFileDescriptor afd = instance.requireActivity().getAssets().openFd("audio/" + filename);
-
-      MediaPlayer mediaPlayer = new MediaPlayer();
-      mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
-      mediaPlayer.prepare();
-      mediaPlayer.start();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  public static void enqueueAudio(String filename) {
-    audioQueue.offer(filename);
-    if (!isPlaying) {
-      playNextAudio();
-    }
-  }
-
-  private static void playNextAudio() {
-    String next = audioQueue.poll();
-    if (next == null) {
-      isPlaying = false;
-      return;
-    }
-
-    isPlaying = true;
-    player = new MediaPlayer();
-    try {
-      AssetManager assetManager = instance.getContext().getAssets();
-      AssetFileDescriptor afd = assetManager.openFd("audio/" + next);
-      player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
-      player.prepare();
-      player.setOnCompletionListener(mp -> {
-        mp.release();
-        playNextAudio();  // 다음 오디오 재생
-      });
-      player.start();
-    } catch (IOException e) {
-      e.printStackTrace();
-      isPlaying = false;
-    }
-  }
-
   public static void setCameraPoseVisibility(boolean visible) {
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
