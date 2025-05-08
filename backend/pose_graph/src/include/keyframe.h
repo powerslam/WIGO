@@ -55,7 +55,7 @@ public:
 class KeyFrame
 {
 public:
-	KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image, int _sequence);
+	KeyFrame(double _time_stamp, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image, int _sequence);
 	// KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image,
 	// vector<cv::Point3f> &_point_3d, vector<double> &_point_id, int _sequence);
 	KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, Vector3d &_T_w_i, Matrix3d &_R_w_i,
@@ -63,7 +63,7 @@ public:
 			 vector<cv::KeyPoint> &_keypoints, vector<cv::KeyPoint> &_keypoints_norm, vector<BRIEF::bitset> &_brief_descriptors);
 	bool findConnection(std::shared_ptr<KeyFrame> old_kf);
 	void computeWindowBRIEFPoint();
-	void computeBRIEFPoint(AAssetManager* asset_manager, const IntrinsicParameter& param);
+	void computeBRIEFPoint(AAssetManager* asset_manager, const IntrinsicParameter& param, const cv::Mat& depth_mat);
 	//void extractBrief();
 	int HammingDis(const BRIEF::bitset &a, const BRIEF::bitset &b);
 	bool searchInAera(const BRIEF::bitset window_descriptor,
@@ -108,6 +108,7 @@ public:
 	Eigen::Matrix3d origin_vio_R;
 
 	cv::Mat image;
+	
 	cv::Mat thumbnail;
 	vector<cv::Point3f> point_3d; 
 	vector<cv::Point2f> point_2d_uv;
@@ -118,7 +119,7 @@ public:
 	vector<cv::KeyPoint> keypoints_norm;
 	vector<cv::KeyPoint> window_keypoints;
 	vector<BRIEF::bitset> brief_descriptors;
-	vector<BRIEF::bitset> window_brief_descriptors;
+	// vector<BRIEF::bitset> window_brief_descriptors;
 	
 	bool has_fast_point;
 	int sequence;
