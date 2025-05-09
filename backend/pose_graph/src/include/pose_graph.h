@@ -15,6 +15,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include "keyframe.h"
+#include "parameters.h"
 #include "../utility/tic_toc.h"
 #include "../utility/utility.h"
 #include "../utility/tic_toc.h"
@@ -32,18 +33,18 @@ class PoseGraph
 {
 public:
 	explicit PoseGraph(
-		const std::string& brief_pattern_file, const std::string& pose_graph_save_path,
-		const std::string& vocabulary_file, const bool load_previous_pose_graph,
-		int skip_cnt, int skip_dis,
-		int row, int col
+		std::string& external_path,
+		const std::string& brief_pattern_file,
+		const std::string& vocabulary_file, 
+		const bool load_previous_pose_graph,
+		double skip_dis, int row, int col
 	);
 
 	~PoseGraph();
 	
 	void addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop);
-	void loadVocabulary(std::string voc_path);
-	void updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info);
+	void loadVocabulary(AAssetManager* asset_manager);
 	
 	KeyFramePtr getKeyFrame(int index);
 	
@@ -52,22 +53,17 @@ public:
 
 	const std::string VOCABULARY_FILE;
 	const bool LOAD_PREVIOUS_POSE_GRAPH;
-	const std::string BRIEF_PATTERN_FILE;
-	const std::string POSE_GRAPH_SAVE_PATH;
-	const int ROW, COL, SKIP_CNT, SKIP_DIS;
+	const double SKIP_DIS;
 
 	int skip_first_cnt = 0;
-	int skip_cnt = 0;
 
 	Eigen::Vector3d t_drift;
 	double yaw_drift;
 	Eigen::Matrix3d r_drift;
-	// world frame( base sequence or first sequence)<----> cur sequence frame  
-	Eigen::Vector3d w_t_vio;
-	Eigen::Matrix3d w_r_vio;
+	
 	Eigen::Vector3d last_t = Eigen::Vector3d(-100, -100, -100);
 
-private:
+public:
 	int detectLoop(KeyFramePtr keyframe, int frame_index);
 	void addKeyFrameIntoVoc(KeyFramePtr keyframe);
 	void addKeyFrameBuf(KeyFramePtr data);
@@ -263,4 +259,115 @@ struct FourDOFWeightError
 	double relative_yaw, pitch_i, roll_i;
 	double weight;
 
+};
+
+class FourDOFAnalyticError : public ceres::SizedCostFunction<4, 1, 3, 1, 3>
+{
+public:
+  FourDOFAnalyticError(double t_x, double t_y, double t_z,
+                       double relative_yaw, double pitch_i, double roll_i)
+      : t_x_(t_x), t_y_(t_y), t_z_(t_z),
+        relative_yaw_(relative_yaw),
+        pitch_i_(pitch_i), roll_i_(roll_i) {}
+
+  virtual ~FourDOFAnalyticError() {}
+
+  virtual bool Evaluate(double const* const* parameters,
+                        double* residuals,
+                        double** jacobians) const override {
+
+    const double yaw_i = parameters[0][0];
+    const double* t_i = parameters[1];
+    const double yaw_j = parameters[2][0];
+    const double* t_j = parameters[3];
+
+    double t_w_ij[3] = {
+		t_j[0] - t_i[0],
+		t_j[1] - t_i[1],
+		t_j[2] - t_i[2]
+    };
+
+    double w_R_i[9];
+    YawPitchRollToRotationMatrix(yaw_i, pitch_i_, roll_i_, w_R_i);
+
+    double i_R_w[9];
+    RotationMatrixTranspose(w_R_i, i_R_w);
+
+    double t_i_ij[3];
+    RotationMatrixRotatePoint(i_R_w, t_w_ij, t_i_ij);
+
+    residuals[0] = t_i_ij[0] - t_x_;
+    residuals[1] = t_i_ij[1] - t_y_;
+    residuals[2] = t_i_ij[2] - t_z_;
+    residuals[3] = NormalizeAngle(yaw_j - yaw_i - relative_yaw_);
+    const double deg_to_rad = M_PI / 180.0;
+
+    if (jacobians) {
+      // dR_dyaw_i
+      double y = yaw_i / 180.0 * M_PI;
+      double p = pitch_i_ / 180.0 * M_PI;
+      double r = roll_i_ / 180.0 * M_PI;
+
+      double cy = cos(y), sy = sin(y);
+      double cp = cos(p), sp = sin(p);
+      double cr = cos(r), sr = sin(r);
+
+      double dR_dy[9] = {
+        -sy*cp*deg_to_rad,   (-sy*sp*sr - cy*cr)*deg_to_rad,   (-sy*sp*cr + cy*sr)*deg_to_rad,
+         cy*cp*deg_to_rad,    (cy*sp*sr - sy*cr)*deg_to_rad,    (cy*sp*cr + sy*sr)*deg_to_rad,
+         0,        0,                  0
+      };
+
+      // diRw_dyaw = (dR_dyaw)^T
+      double diRw_dyaw[9];
+      RotationMatrixTranspose(dR_dy, diRw_dyaw);
+
+      if (jacobians[0]) {
+        double* J_yaw_i = jacobians[0];
+        for (int k = 0; k < 3; ++k) {
+          J_yaw_i[k] =
+            diRw_dyaw[k * 3 + 0] * t_w_ij[0] +
+            diRw_dyaw[k * 3 + 1] * t_w_ij[1] +
+            diRw_dyaw[k * 3 + 2] * t_w_ij[2];
+        }
+        J_yaw_i[3] = -1.0;  // d(yaw_j - yaw_i - rel_yaw) / dyaw_i
+      }
+
+      if (jacobians[1]) {
+        double* J_ti = jacobians[1];
+        for (int r = 0; r < 3; ++r)
+          for (int c = 0; c < 3; ++c)
+            J_ti[r * 3 + c] = -i_R_w[r * 3 + c];
+        std::fill(J_ti + 9, J_ti + 12, 0.0);  // last row = 0
+      }
+
+      if (jacobians[2]) {
+        double* J_yaw_j = jacobians[2];
+        J_yaw_j[0] = 0.0;
+        J_yaw_j[1] = 0.0;
+        J_yaw_j[2] = 0.0;
+        J_yaw_j[3] = 1.0;
+      }
+
+      if (jacobians[3]) {
+        double* J_tj = jacobians[3];
+        for (int r = 0; r < 3; ++r)
+          for (int c = 0; c < 3; ++c)
+            J_tj[r * 3 + c] = i_R_w[r * 3 + c];
+        std::fill(J_tj + 9, J_tj + 12, 0.0);
+      }
+    }
+
+    return true;
+  }
+
+  static ceres::CostFunction* Create(double t_x, double t_y, double t_z,
+                                     double relative_yaw,
+                                     double pitch_i, double roll_i) {
+    return new FourDOFAnalyticError(t_x, t_y, t_z, relative_yaw, pitch_i, roll_i);
+  }
+
+private:
+  double t_x_, t_y_, t_z_;
+  double relative_yaw_, pitch_i_, roll_i_;
 };

@@ -1,36 +1,72 @@
 cmake_minimum_required(VERSION 3.10)
 project(pose_graph)
 
-set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++14")
-#-DEIGEN_USE_MKL_ALL")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(OpenCV)
+# 안드로이드용 컴파일 옵션
+if(ANDROID)
+    message(STATUS "Building for Android")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3 -g")
+endif()
 
-find_package(Ceres REQUIRED)
+# ========== Dependencies ==========
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(Eigen3)
-
-include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
-
-add_library(pose_graph STATIC
-    src/pose_graph.cpp
-    src/keyframe.cpp
-    src/ThirdParty/DBoW/BowVector.cpp
-    src/ThirdParty/DBoW/FBrief.cpp
-    src/ThirdParty/DBoW/FeatureVector.cpp
-    src/ThirdParty/DBoW/QueryResults.cpp
-    src/ThirdParty/DBoW/ScoringObject.cpp
-    src/ThirdParty/DUtils/Random.cpp
-    src/ThirdParty/DUtils/Timestamp.cpp
-    src/ThirdParty/DVision/BRIEF.cpp
-    src/ThirdParty/VocabularyBinary.cpp
+# glog (static lib, imported)
+add_library(glog STATIC IMPORTED)
+set_target_properties(glog PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../backend/third_party/glog/${ANDROID_ABI}/lib/libglog.a
+    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/../../backend/third_party/glog/${ANDROID_ABI}/include
 )
 
-target_link_libraries(pose_graph 
-    ${catkin_LIBRARIES}  
-    ${OpenCV_LIBS} 
-    ${CERES_LIBRARIES}
+find_package(OpenMP REQUIRED)
+
+# ceres (static lib, imported)
+add_library(ceres STATIC IMPORTED)
+set_target_properties(ceres PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../backend/third_party/ceres-solver/${ANDROID_ABI}/lib/libceres.a
+    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/../../backend/third_party/ceres-solver/${ANDROID_ABI}/include
+)
+
+# ========== Boost (added) ==========
+
+set(Boost_NO_SYSTEM_PATHS ON)
+set(Boost_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../../backend/third_party/boost/install/include)
+set(Boost_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/../../backend/third_party/boost/install/lib)
+
+# Boost 라이브러리 경로 및 헤더 파일 경로 지정
+link_directories(${Boost_LIBRARY_DIR})
+include_directories(${Boost_INCLUDE_DIR})
+
+# ========== OpenCV (added) ==========
+
+# Set OpenCV path (adjust as necessary)
+set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/../../backend/third_party/opencv/${ANDROID_ABI}/sdk/native/jni)
+find_package(OpenCV REQUIRED)
+
+# ========== pose_graph lib ==========
+
+file(GLOB_RECURSE SRC_FILES
+    src/*.cpp
+)
+
+add_library(pose_graph SHARED ${SRC_FILES})
+
+target_include_directories(pose_graph PUBLIC
+    ${CMAKE_SOURCE_DIR}/src
+    ${OpenCV_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/../../backend/third_party
+    ${CMAKE_SOURCE_DIR}/../../backend/third_party/eigen3
+)
+
+target_link_libraries(pose_graph
+    ceres
+    glog
+    log        # Android logcat
+    android    # Android native support
+    ${OpenCV_LIBS}
+    OpenMP::OpenMP_CXX
 )

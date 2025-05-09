@@ -55,14 +55,17 @@ jint JNI_OnLoad(JavaVM *vm, void *) {
 }
 
 JNI_METHOD(jlong, createNativeApplication)
-(JNIEnv *env, jclass, jobject j_asset_manager) {
+(JNIEnv *env, jclass, jobject j_asset_manager, jstring j_path) {
   AAssetManager *asset_manager = AAssetManager_fromJava(env, j_asset_manager);
   if (asset_manager == nullptr) {
     LOGE("❌ AssetManager_fromJava failed! AssetManager is null.");
   } else {
     LOGI("✅ AssetManager_fromJava success.");
   }
-  return jptr(new hello_ar::HelloArApplication(asset_manager));
+
+  const char* c_path = env->GetStringUTFChars(j_path, nullptr);  // Java String → C 문자열
+  std::string path(c_path);  // C 문자열 → std::string
+  return jptr(new hello_ar::HelloArApplication(asset_manager, path));
 }
 
 JNI_METHOD(jboolean, isDepthSupported)
@@ -130,6 +133,12 @@ JNI_METHOD(jboolean, hasDetectedPlanes)
 (JNIEnv *, jclass, jlong native_application) {
   return static_cast<jboolean>(
       native(native_application)->HasDetectedPlanes() ? JNI_TRUE : JNI_FALSE);
+}
+
+
+JNI_METHOD(void, savePoseGraph)
+(JNIEnv *, jclass, jlong native_application) {
+  native(native_application)->SavePoseGraph();
 }
 
 JNIEnv *GetJniEnv() {
