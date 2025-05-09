@@ -1,9 +1,17 @@
 <PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory
-        app:title="@string/header_map"
-        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            app:key="vibration"
+            app:title="@string/title_viberation"
+            app:summaryOff="@string/summary_on_viberation"
+            app:summaryOn="@string/summary_off_viberation"
+            app:icon="@drawable/ic_vibration"
+            app:allowDividerBelow="true" />
+
+        <Preference
+            app:layout="@layout/add_board_down"/>
 
         <SwitchPreferenceCompat
             app:key="vibration"
@@ -24,6 +32,15 @@
             android:onClick="onMapItemClick"
             android:defaultValue="false"/>
 
-    </PreferenceCategory>
+        <Preference
+            app:layout="@layout/add_board_down"/>
+
+        <Preference
+            android:key="map_download"
+            android:title="건물 지도 만들기"
+            android:summary="해당 건물에 대한 지도를 작성 합니다."
+            android:icon="@drawable/baseline_add_box_24"
+            android:onClick="onMapItemClick"
+            android:defaultValue="false"/>
 
 </PreferenceScreen>

@@ -4,20 +4,17 @@ public class MapData {
     private String fileName;
     private String fileSize;
     private String saveDate;
-    private boolean isFavorite;
 
     public MapData(String fileName, String fileSize, String saveDate) {
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.saveDate = saveDate;
-        this.isFavorite = false; // 기본값
     }
 
     public MapData(String fileName, String fileSize, String saveDate, boolean isFavorite) {
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.saveDate = saveDate;
-        this.isFavorite = isFavorite;
     }
 
     // Getter & Setter
@@ -45,11 +42,4 @@ public class MapData {
         this.saveDate = saveDate;
     }
 
-    public boolean isFavorite() {
-        return isFavorite;
-    }
-
-    public void setFavorite(boolean favorite) {
-        isFavorite = favorite;
-    }
 }

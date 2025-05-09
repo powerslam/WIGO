@@ -103,10 +103,10 @@ public class MainActivity extends AppCompatActivity {
                         // 예: "미래관 445호" → "미래관"
                         String buildingName = selected.split(" ")[0];
                         String fileName = buildingName + ".zip";
-                        String unzipFolder = buildingName;
-                        String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
 
-                        FileDownloader.downloadAndUnzipFile(MainActivity.this, url, fileName, unzipFolder);
+                        String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
+                        Log.d("filename", url);
+                        FileDownloader.downloadAndUnzipFile(MainActivity.this, url, fileName, buildingName);
                     }));
                 } else {
                     recyclerView.setVisibility(View.GONE);

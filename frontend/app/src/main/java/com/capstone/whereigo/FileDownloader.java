@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -26,8 +27,8 @@ import okio.Okio;
 public class FileDownloader {
 
     public static void downloadAndUnzipFile(Context context, String url, String zipFileName, String extractFolderName) {
-        File zipFile = new File(context.getFilesDir(), zipFileName);
-        File extractDir = new File(context.getFilesDir(), extractFolderName);
+        File zipFile = new File(context.getFilesDir() + "/Maps", zipFileName);
+        File extractDir = new File(context.getFilesDir() + "/Maps", extractFolderName);
 
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -42,6 +43,7 @@ public class FileDownloader {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.d("DownloadFailure", Objects.requireNonNull(e.getMessage()));
                 handler.post(() -> Toast.makeText(context, "다운로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
 
