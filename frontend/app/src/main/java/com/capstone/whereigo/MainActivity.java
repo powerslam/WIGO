@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -98,7 +99,15 @@ public class MainActivity extends AppCompatActivity {
                 if (!query.isEmpty()) {
                     recyclerView.setVisibility(View.VISIBLE);
                     recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-                    recyclerView.setAdapter(new SearchResultAdapter(filtered));
+                    recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
+                        // 예: "미래관 445호" → "미래관"
+                        String buildingName = selected.split(" ")[0];
+                        String fileName = buildingName + ".zip";
+
+                        String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
+                        Log.d("filename", url);
+                        FileDownloader.downloadAndUnzipFile(MainActivity.this, url, fileName, buildingName);
+                    }));
                 } else {
                     recyclerView.setVisibility(View.GONE);
                 }

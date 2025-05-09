@@ -92,6 +92,7 @@ dependencies {
     runtimeOnly("io.ktor:ktor-client-okhttp")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // json 형식 의존성
 
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 }
 
 val extractNativeLibraries by tasks.registering(Copy::class) {

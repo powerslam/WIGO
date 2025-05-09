@@ -38,19 +38,12 @@ public class SettingsFragment extends Fragment {
         });
 
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
-        transaction.replace(R.id.settings1, new SetSoundPreference());
-        transaction.replace(R.id.settings2, new SetDownloadPreference());
+        transaction.replace(R.id.settings1, new SetDownloadPreference());
         transaction.commit();
 
         return view;
     }
 
-    public static class SetSoundPreference extends PreferenceFragmentCompat {
-        @Override
-        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-            setPreferencesFromResource(R.xml.sound_preference, rootKey);
-        }
-    }
 
     public static class SetDownloadPreference extends PreferenceFragmentCompat {
         @Override
@@ -61,7 +54,7 @@ public class SettingsFragment extends Fragment {
             if (mapItemPreference != null) {
                 mapItemPreference.setOnPreferenceClickListener(preference -> {
                     Fragment parent = getParentFragment();
-                    if (parent != null && parent.getParentFragmentManager() != null) {
+                    if (parent != null) {
                         parent.getParentFragmentManager().beginTransaction()
                                 .replace(R.id.fragment_setting, new DownloadFragment()) // ⚠️ container ID 확인 필요
                                 .addToBackStack(null)
