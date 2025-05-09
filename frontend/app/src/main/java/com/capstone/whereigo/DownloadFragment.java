@@ -17,9 +17,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.capstone.whereigo.databinding.FragmentDownloadBinding;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DownloadFragment extends Fragment {
     private FragmentDownloadBinding binding;
@@ -42,30 +44,16 @@ public class DownloadFragment extends Fragment {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        List<MapData> sampleData = new ArrayList<>();
-        sampleData.add(new MapData("미래관", "15MB", "2024-03-02"));
-        sampleData.add(new MapData("복지관", "20MB", "2024-03-01"));
-        sampleData.add(new MapData("본부관", "12MB", "2024-02-28"));
-        sampleData.add(new MapData("도서관", "18MB", "2024-02-27"));
-        sampleData.add(new MapData("학생회관", "22MB", "2024-02-26"));
-        sampleData.add(new MapData("체육관", "25MB", "2024-02-25"));
-        sampleData.add(new MapData("연구동", "30MB", "2024-02-24"));
-        sampleData.add(new MapData("강의동A", "10MB", "2024-02-23"));
-        sampleData.add(new MapData("강의동B", "12MB", "2024-02-22"));
-        sampleData.add(new MapData("행정관", "28MB", "2024-02-21"));
-        sampleData.add(new MapData("기숙사1동", "35MB", "2024-02-20"));
-        sampleData.add(new MapData("기숙사2동", "32MB", "2024-02-19"));
-        sampleData.add(new MapData("학생식당", "40MB", "2024-02-18"));
-        sampleData.add(new MapData("대운동장", "50MB", "2024-02-17"));
-        sampleData.add(new MapData("연구센터", "45MB", "2024-02-16"));
+        // ✅ Maps 폴더에서 하위 폴더(맵들) 가져오기
+        List<MapData> mapDataList = listMapFolders();
 
-        recyclerView.setAdapter(new MapDataAdapter(requireContext(), sampleData));
+        recyclerView.setAdapter(new MapDataAdapter(requireContext(), mapDataList));
 
         int spacing = 16;
         recyclerView.addItemDecoration(new ItemSpacingDecoration(spacing));
         recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL));
 
-        toolbar.setNavigationOnClickListener(v -> requireParentFragment().getParentFragmentManager().popBackStack());
+        toolbar.setNavigationOnClickListener(v -> requireActivity().getSupportFragmentManager().popBackStack());
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -74,48 +62,43 @@ public class DownloadFragment extends Fragment {
         });
     }
 
-    private void createAppFolder() {
-        File folder = new File(requireContext().getFilesDir(), "Maps");
-        if (!folder.exists()) {
-            boolean success = folder.mkdir();
-            if (success) {
-                Log.d("Storage", "폴더 생성 성공: " + folder.getAbsolutePath());
-            } else {
-                Log.d("Storage", "폴더 생성 실패");
+    private List<MapData> listMapFolders() {
+        List<MapData> result = new ArrayList<>();
+
+        File mapsFolder = new File(requireContext().getFilesDir(), "Maps");
+        File[] folders = mapsFolder.listFiles();
+
+        if (folders != null) {
+            for (File folder : folders) {
+                if (folder.isDirectory()) {
+                    long folderSize = calculateFolderSize(folder);
+                    String sizeString = (folderSize / (1024 * 1024)) + "MB";
+
+                    String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            .format(new Date(folder.lastModified()));
+
+                    result.add(new MapData(folder.getName(), sizeString, dateString));
+                }
             }
         }
+
+        return result;
     }
 
-    private void saveMapFile(String fileName, String data) {
-        File folder = new File(requireContext().getFilesDir(), "Maps");
-        if (!folder.exists()) folder.mkdir();
-        File file = new File(folder, fileName);
-        try {
-            java.nio.file.Files.write(file.toPath(), data.getBytes());
-        } catch (Exception e) {
-            Log.e("Storage", "파일 쓰기 실패", e);
-        }
-    }
-
-    private String readMapFile(String fileName) {
-        File folder = new File(requireContext().getFilesDir(), "Maps");
-        File file = new File(folder, fileName);
-        if (file.exists()) {
-            try {
-                return new String(java.nio.file.Files.readAllBytes(file.toPath()));
-            } catch (Exception e) {
-                Log.e("Storage", "파일 읽기 실패", e);
-                return "파일 읽기 중 오류 발생";
+    // 폴더 크기 계산 (재귀)
+    private long calculateFolderSize(File folder) {
+        long length = 0;
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    length += file.length();
+                } else {
+                    length += calculateFolderSize(file);
+                }
             }
-        } else {
-            return "파일이 존재하지 않습니다.";
         }
-    }
-
-    private List<String> listMapFiles() {
-        File folder = new File(requireContext().getFilesDir(), "Maps");
-        String[] files = folder.list();
-        return files != null ? Arrays.asList(files) : new ArrayList<>();
+        return length;
     }
 
     @Override

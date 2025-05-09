@@ -10,25 +10,18 @@ import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.*
-import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
-import com.aallam.openai.api.audio.SpeechRequest
-import com.aallam.openai.api.audio.Voice
 import com.aallam.openai.api.chat.ChatCompletion
-import com.aallam.openai.api.chat.ChatCompletionChunk
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.chat.Content
-import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
 import com.capstone.whereigo.databinding.DialogVoiceRecordBinding
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.util.*
-import kotlin.time.Duration.Companion.seconds
 
 class VoiceRecordDialog : DialogFragment() {
     private var _binding: DialogVoiceRecordBinding? = null
@@ -102,7 +95,16 @@ class VoiceRecordDialog : DialogFragment() {
                             messages = listOf(
                                 ChatMessage(
                                     role = ChatRole.System,
-                                    content = "다음 질문에 대해 짧고 간결하게 답변 해, 답변의 형식은 JSON으로"
+                                    content = """
+                                        너는 사회적 약자를 위한 실내 네비게이션 앱 'wigo'야
+                                        질문에 대해 다음 시퀀스를 따라가
+                                        1. 짧고 간결하게 공손하게 답해
+                                        2. 답변의 형식은 { 'command': ~명령~, 'context': ~명령 내용~} 으로 나오게
+                                        3. 길 찾는 것과 관련 된 명령 일 시, 반환은 'navigate', 목적지
+                                        4. 설정 변경에 관련 된 명령 일 시, 반환은 'settings', 설정내용
+                                        5. 그 외 답변 일 시, 반환은 'except', 자율적인 답변
+                                        6. 답변이 이상하면 너가 약간의 추론을 통해서 올바른 답변이 나오게 해
+                                    """.trimIndent()
                                 ),
                                 ChatMessage(
                                     role = ChatRole.User,
@@ -113,10 +115,24 @@ class VoiceRecordDialog : DialogFragment() {
 
                         try {
                             val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest)
-                            Log.d("VoiceDialog", "응답: ${completion.choices.firstOrNull()?.message?.content}")
-                            Toast.makeText(requireContext(), "응답: ${completion.choices.firstOrNull()?.message?.content}", Toast.LENGTH_SHORT).show()
+                            //Log.d("VoiceDialog", completion.choices.firstOrNull()?.message?.content.toString())
+                            val jsonAnswer = JSONObject(completion.choices.firstOrNull()?.message?.content)
+                            val command = jsonAnswer["command"].toString()
+                            val reply = jsonAnswer["context"].toString()
+                            Log.d("VoiceDialog", "응답: ${jsonAnswer}")
+                            //Toast.makeText(requireContext(), "응답: ${completion.choices.firstOrNull()?.message?.content}", Toast.LENGTH_SHORT).show()
+                            if(command == "navigate"){
 
-                            tts.speak("${completion.choices.firstOrNull()?.message?.content}", TextToSpeech.QUEUE_FLUSH, null, null)
+                            }
+                            else if(command == "settings"){
+                                if(reply == "volume"){
+                                    val value = jsonAnswer["value"] as Int
+
+                                }
+                            }
+                            else if(command == "except"){
+                                tts.speak("${reply}", TextToSpeech.QUEUE_FLUSH, null, null)
+                            }
                         } catch (e: Exception) {
                             Log.e("VoiceDialog", "OpenAI 호출 실패: ${e.message}")
                         }

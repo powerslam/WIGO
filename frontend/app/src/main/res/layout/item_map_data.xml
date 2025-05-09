@@ -20,7 +20,7 @@
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btnFavorite"/>
+        app:layout_constraintEnd_toStartOf="@id/btnDelete"/>
 
     <!-- 파일 크기 (아이콘 + 텍스트) -->
     <LinearLayout
@@ -74,17 +74,6 @@
             android:text="2024-03-02"
             android:textSize="14sp" />
     </LinearLayout>
-
-    <!-- 즐겨찾기 버튼 -->
-    <ImageButton
-        android:id="@+id/btnFavorite"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_favorite"
-        app:layout_constraintEnd_toStartOf="@id/btnDelete"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <!-- 삭제 버튼 -->
     <ImageButton
