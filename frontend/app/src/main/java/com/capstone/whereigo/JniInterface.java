@@ -41,6 +41,8 @@ public class JniInterface {
 
   public static native void onResume(long nativeApplication, Context context, Activity activity);
 
+  public static native void setClassLoader(ClassLoader loader);
+
   /** Allocate OpenGL resources for rendering. */
   public static native void onGlSurfaceCreated(long nativeApplication);
 

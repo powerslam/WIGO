@@ -4,11 +4,6 @@
 #include <memory>
 #include <queue>
 
-bool Point::operator<(const Point& other) const {
-    if (std::abs(x - other.x) > 1e-4) return x < other.x;
-    return z < other.z;
-}
-
 float heuristic(const Point& a, const Point& b) {
     return std::hypot(a.x - b.x, a.z - b.z);
 }

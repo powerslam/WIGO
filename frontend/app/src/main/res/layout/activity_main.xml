@@ -41,22 +41,6 @@
             android:adjustViewBounds="true"
             android:padding="4dp" />
 
-        <!-- 햄버거 버튼 (메뉴) -->
-        <ImageButton
-            android:id="@+id/menu_button"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_gravity="top|start"
-            android:layout_marginTop="29dp"
-            android:layout_marginStart="7dp"
-            android:src="@drawable/ic_menu"
-            android:background="@android:color/transparent"
-            android:scaleType="fitCenter"
-            android:adjustViewBounds="true"
-            android:padding="4dp" />
-
-
-
         <!-- 검색창 컨테이너 -->
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
@@ -67,12 +51,13 @@
             <com.google.android.material.search.SearchBar
                 android:id="@+id/search_bar"
                 style="@style/Widget.Material3.SearchBar"
-                android:layout_width="265dp"
+                android:layout_width="310dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="30dp"
+                android:layout_marginStart="16dp"
                 android:layout_marginEnd="60dp"
                 android:hint="@string/searchbar_hint"
-                android:layout_gravity="top|end" />
+                android:layout_gravity="top" />
 
 
             <com.google.android.material.search.SearchView
@@ -97,6 +82,7 @@
 
 
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
 
     </FrameLayout>
 

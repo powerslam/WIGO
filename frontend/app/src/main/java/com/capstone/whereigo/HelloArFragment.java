@@ -1,9 +1,7 @@
 package com.capstone.whereigo;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.hardware.display.DisplayManager;
@@ -19,7 +17,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -27,13 +24,24 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.snackbar.Snackbar;
+import com.capstone.whereigo.ui.DirectionCompassView;
 import java.util.Locale;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.content.res.AssetFileDescriptor;
+import java.io.IOException;
+import android.content.Context;
+import java.util.Queue;
+import java.util.LinkedList;
+import android.content.res.AssetManager;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
+import android.os.Build;
+
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
@@ -48,8 +56,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private Runnable planeStatusCheckingRunnable;
   private View surfaceStatus;
   private TextView surfaceStatusText;
-
-  private static TextView keyframelistSizeTextView;
+  private DirectionCompassView compassView;
 
   private static TextView cameraPoseTextView;
   private static TextView pathStatusTextView;
@@ -65,6 +72,12 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private Activity activity;
 
+  private static HelloArFragment instance;
+
+  private static MediaPlayer player = null;
+
+  private static Queue<String> audioQueue = new LinkedList<>();
+  private static boolean isPlaying = false;
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -76,10 +89,13 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     activity = requireActivity();
     surfaceView = view.findViewById(R.id.surfaceview);
 
+    TtsManager.INSTANCE.init(requireContext());
+    AudioManager.getInstance().init(requireContext());
 
     surfaceStatus = view.findViewById(R.id.surface_status_container);
     surfaceStatusText = view.findViewById(R.id.surface_status_text);
 
+    JniInterface.setClassLoader(this.getClass().getClassLoader());
 
     gestureDetector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
       @Override
@@ -112,23 +128,17 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT));
 
-    keyframelistSizeTextView = view.findViewById(R.id.keyframe_list_size);
     pathStatusTextView = view.findViewById(R.id.pathStatusTextView);
 
-    //save posegraph
-    Button savePoseGraphButton = view.findViewById(R.id.button_save_posegraph);
-    savePoseGraphButton.setOnClickListener(v -> {
-      JniInterface.savePoseGraph(nativeApplication);
-      Toast.makeText(activity, "PoseGraph saved!", Toast.LENGTH_SHORT).show();
-    });
-
     JniInterface.assetManager = activity.getAssets();
-    nativeApplication = JniInterface.createNativeApplication(activity.getAssets(), this.getContext().getExternalFilesDir("pose_graph").getAbsolutePath());
+    nativeApplication = JniInterface.createNativeApplication(activity.getAssets());
 
     planeStatusCheckingHandler = new Handler();
 
     depthSettings.onCreate(activity);
     instantPlacementSettings.onCreate(activity);
+
+    compassView = view.findViewById(R.id.compassView);
 
     //ImageButton settingsButton = view.findViewById(R.id.settings_button);
     //settingsButton.setOnClickListener(v -> {
@@ -157,7 +167,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       CameraPermissionHelper.requestCameraPermission(activity);
       return;
     }
-    
+
     try {
       JniInterface.onSettingsChange(
               nativeApplication, instantPlacementSettings.isInstantPlacementEnabled());
@@ -170,26 +180,26 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       return;
     }
 
-    surfaceStatus.setVisibility(View.VISIBLE);
-    surfaceStatusText.setText("Searching for surfaces...");
+    surfaceStatus.setVisibility(View.GONE);
+//    surfaceStatusText.setText("Searching for surfaces...");
 
-    pathStatusTextView.setVisibility(View.GONE);
+    pathStatusTextView.setVisibility(View.VISIBLE);
 
-    planeStatusCheckingHandler = new Handler();
-
-    planeStatusCheckingRunnable = () -> {
-      try {
-        if (JniInterface.hasDetectedPlanes(nativeApplication)) {
-          surfaceStatus.setVisibility(View.GONE);
-          pathStatusTextView.setVisibility(View.VISIBLE);
-        } else {
-          planeStatusCheckingHandler.postDelayed(planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
-        }
-      } catch (Exception e) {
-        Log.e(TAG, e.getMessage());
-      }
-    };
-    planeStatusCheckingHandler.post(planeStatusCheckingRunnable);
+//    planeStatusCheckingHandler = new Handler();
+//
+//    planeStatusCheckingRunnable = () -> {
+//      try {
+//        if (JniInterface.hasDetectedPlanes(nativeApplication)) {
+//          surfaceStatus.setVisibility(View.GONE);
+//          pathStatusTextView.setVisibility(View.VISIBLE);
+//        } else {
+//          planeStatusCheckingHandler.postDelayed(planeStatusCheckingRunnable, SNACKBAR_UPDATE_INTERVAL_MILLIS);
+//        }
+//      } catch (Exception e) {
+//        Log.e(TAG, e.getMessage());
+//      }
+//    };
+//    planeStatusCheckingHandler.post(planeStatusCheckingRunnable);
 
     activity.getSystemService(DisplayManager.class).registerDisplayListener(this, null);
   }
@@ -311,6 +321,13 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     viewportChanged = true;
   }
 
+  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
+    if (instance != null && instance.compassView != null) {
+      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
+      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
+    }
+  }
+
   public static void updatePoseFromNative(float[] pose) {
     String poseText = String.format(Locale.US,
             "Camera Pos: x=%.2f, y=%.2f, z=%.2f\nRot: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
@@ -320,21 +337,30 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
-  public static void updateSizeFromNative(int size) {
-    String sizeText = String.format(Locale.US, "keyframelist size: %d", size);
-    if (keyframelistSizeTextView != null) {
-      keyframelistSizeTextView.post(() -> keyframelistSizeTextView.setText(sizeText));
-    }
-  }
-
   public static void updatePathStatusFromNative(String status) {
     if (pathStatusTextView != null) {
       pathStatusTextView.post(() -> pathStatusTextView.setText(status));
     }
+
+  }
+
+  public void onAttach(@NonNull Context context) {
+    super.onAttach(context);
+    instance = this;
   }
   public static void setCameraPoseVisibility(boolean visible) {
     if (cameraPoseTextView != null) {
       cameraPoseTextView.post(() -> cameraPoseTextView.setVisibility(visible ? View.VISIBLE : View.GONE));
     }
   }
+  public static void vibrateOnce() {
+    Vibrator vibrator = (Vibrator) instance.requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+    if (vibrator != null && vibrator.hasVibrator()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            vibrator.vibrate(300); // deprecated but for older versions
+        }
+    }
+}
 }

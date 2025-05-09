@@ -20,29 +20,27 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <android/asset_manager.h>
+
 #include <jni.h>
 
-#include <memory>
 #include <set>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
-#include "pose_graph.h"
-#include "keyframe.h"
-
 #include "include/arcore/arcore_c_api.h"
-#include "background_renderer.h"
-#include "glm.h"
-#include "obj_renderer.h"
-#include "plane_renderer.h"
-#include "point_cloud_renderer.h"
-#include "texture.h"
-#include "util.h"
-#include "line_renderer.h"
-#include "astar_pathfinding.h"
 
-#include <queue>            // ✅ A*에 필요
-#include <cmath>            // ✅ 유클리드 거리 계산
+#include "glm.h"
+#include "util.h"
+
+#include "renderer/texture.h"
+#include "renderer/obj_renderer.h"
+#include "renderer/plane_renderer.h"
+#include "renderer/background_renderer.h"
+
+#include "path_navigator.h"
+#include "astar_pathfinding.h"
+#include "direction_helper.h"
 
 namespace hello_ar {
 
@@ -50,14 +48,9 @@ namespace hello_ar {
 class HelloArApplication {
  public:
   // Constructor and deconstructor.
-  explicit HelloArApplication(AAssetManager* asset_manager, std::string& external_path);
-  ~HelloArApplication();
-
-  // save pose graph
-  void SavePoseGraph();
-  void TryGeneratePathIfNeeded(float cam_x, float cam_z);
-  void CheckCameraFollowingPath(float cam_x, float cam_z);
-  // OnPause is called on the UI thread from the Activity's onPause method.
+  explicit HelloArApplication(AAssetManager* asset_manager);
+  ~HelloArApplication();  // OnPause is called on the UI thread from the Activity's onPause method.
+  
   void OnPause();
 
   // OnResume is called on the UI thread from the Activity's onResume method.
@@ -95,12 +88,9 @@ class HelloArApplication {
 
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session,
-                                      const ArFrame* frame);
+  const ArFrame* frame);
   ArSession* ar_session_ = nullptr;
   ArFrame* ar_frame_ = nullptr;
-
-  PoseGraph pose_graph;
-  IntrinsicParameter intrinsic_param;
 
   JavaVM* java_vm_ = nullptr;
 
@@ -109,26 +99,15 @@ class HelloArApplication {
   int width_ = 1;
   int height_ = 1;
   int display_rotation_ = 0;
-  int current_path_index = 0;
   bool is_instant_placement_enabled_ = true;
 
-  bool path_generated_ = false;
-  bool path_ready_to_render_ = false;
-
-  float stored_plane_y_ = 0.0f;
-
-
-  LineRenderer line_renderer_;
+  float plane_y_ = -1.6f;
 
   AAssetManager* const asset_manager_;
 
-  std::vector<Point> path;
-  float threshold = 0.8f; // 거리 허용 오차
-
+  PathNavigator path_navigator_;
   JNIEnv* GetJniEnv();
-
-  // class 멤버로 현재 도달해야 하는 경로 인덱스
-  int current_path_indefx = 0;
+  DirectionHelper direction_helper_;
 
   // The anchors at which we are drawing android models using given colors.
   struct ColoredAnchor {
@@ -138,12 +117,13 @@ class HelloArApplication {
   };
 
   std::vector<ColoredAnchor> anchors_;
+  std::vector<ColoredAnchor> carArrow_anchors_;
+  ColoredAnchor location_pin_anchor_;
 
-  PointCloudRenderer point_cloud_renderer_;
   BackgroundRenderer background_renderer_;
   PlaneRenderer plane_renderer_;
-  ObjRenderer andy_renderer_;
   ObjRenderer location_pin_renderer_;
+  ObjRenderer car_arrow_renderer_;
   Texture depth_texture_;
 
   int32_t plane_count_ = 0;
