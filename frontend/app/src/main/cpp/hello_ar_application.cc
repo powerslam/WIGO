@@ -44,11 +44,13 @@ namespace hello_ar {
         }
 
     }  // namespace
-
-    HelloArApplication::HelloArApplication(AAssetManager* asset_manager)
-            : asset_manager_(asset_manager),
-              location_pin_anchor_{nullptr, nullptr}
-        {}
+    HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path)
+        : // pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480),
+        asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr} {
+    
+        LOGI("external_path: %s", external_path.c_str());
+        // pose_graph.loadVocabulary(asset_manager_);
+    }
 
     HelloArApplication::~HelloArApplication() {
         if (ar_session_ != nullptr) {
@@ -414,6 +416,10 @@ namespace hello_ar {
                 location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
             }
         }
+    }
+
+    void HelloArApplication::SavePoseGraph() {
+//        pose_graph.command();
     }
 
     bool HelloArApplication::IsDepthSupported() {

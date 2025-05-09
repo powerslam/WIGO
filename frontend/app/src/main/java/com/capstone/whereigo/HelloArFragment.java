@@ -131,7 +131,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     pathStatusTextView = view.findViewById(R.id.pathStatusTextView);
 
     JniInterface.assetManager = activity.getAssets();
-    nativeApplication = JniInterface.createNativeApplication(activity.getAssets());
+    nativeApplication = JniInterface.createNativeApplication(activity.getAssets(), this.getContext().getExternalFilesDir("pose_graph").getAbsolutePath());
 
     planeStatusCheckingHandler = new Handler();
 

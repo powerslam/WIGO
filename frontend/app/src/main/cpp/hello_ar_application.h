@@ -48,7 +48,7 @@ namespace hello_ar {
 class HelloArApplication {
  public:
   // Constructor and deconstructor.
-  explicit HelloArApplication(AAssetManager* asset_manager);
+  explicit HelloArApplication(AAssetManager* asset_manager, std::string& external_path);
   ~HelloArApplication();  // OnPause is called on the UI thread from the Activity's onPause method.
   
   void OnPause();
@@ -56,6 +56,8 @@ class HelloArApplication {
   // OnResume is called on the UI thread from the Activity's onResume method.
   void OnResume(JNIEnv* env, void* context, void* activity);
 
+  void SavePoseGraph();
+  
   // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
   // is created.
   void OnSurfaceCreated();
