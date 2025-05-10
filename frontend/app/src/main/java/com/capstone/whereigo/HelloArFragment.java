@@ -102,7 +102,7 @@ public class HelloArFragment extends Fragment {
     ImageButton settingsButton = binding.settingsButton;
     settingsButton.setOnClickListener(v -> activity.getSupportFragmentManager()
             .beginTransaction()
-            .replace(R.id.fragment_setting, new SettingsFragment())
+            .replace(R.id.fragment_container, new SettingsFragment())
             .addToBackStack(null)
             .commit());
 
@@ -187,9 +187,15 @@ public class HelloArFragment extends Fragment {
 
   public static void updateYawFromNative(float cameraYaw, float pathYaw) {
     if (instance != null && instance.compassView != null) {
-      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
+//      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
       instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
     }
+  }
+
+  @Override
+  public void onDestroyView() {
+    super.onDestroyView();
+    binding = null;
   }
 
   public void onAttach(@NonNull Context context) {
