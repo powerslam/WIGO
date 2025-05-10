@@ -1,12 +1,19 @@
 package com.capstone.whereigo;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.hardware.display.DisplayManager;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Handler;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -14,6 +21,7 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -27,162 +35,133 @@ import com.google.android.material.search.SearchView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+public class MainActivity extends AppCompatActivity implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
+    private static final String TAG = "MainActivity";
 
     private ActivityMainBinding binding;
-    private final int RECORD_AUDIO_REQUEST_CODE = 100;
-    private long backPressedTime = 0;
-    private final long backPressInterval = 1000;
+
+    private GLSurfaceView surfaceView;
+
+    private long nativeApplication;
+
+    private int viewportWidth;
+    private int viewportHeight;
+    private boolean viewportChanged = false;
+
+    private Handler planeStatusCheckingHandler;
+    private Runnable planeStatusCheckingRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        SearchBar searchBar = binding.searchBar;
-        SearchView searchView = binding.searchView;
-        searchView.setupWithSearchBar(searchBar);
+        surfaceView = binding.surfaceview;
+        surfaceView.setPreserveEGLContextOnPause(true);
+        surfaceView.setEGLContextClientVersion(2);
+        surfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        surfaceView.setRenderer(this);
+        surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        surfaceView.setWillNotDraw(false);
 
-        int searchMenu = R.menu.search_menu;
-        searchBar.inflateMenu(searchMenu);
+        JniInterface.setClassLoader(this.getClass().getClassLoader());
+        JniInterface.assetManager = getAssets();
+        nativeApplication = JniInterface.createNativeApplication(getAssets(), getExternalFilesDir("pose_graph").getAbsolutePath());
 
-        ImageButton settingsButton = findViewById(R.id.settings_button);
-        settingsButton.setOnClickListener(v -> getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment_setting, new SettingsFragment())
-                .addToBackStack(null)
-                .commit());
-
-        searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
-            if (checkAudioPermission()) {
-                if (SpeechRecognizer.isRecognitionAvailable(this)) {
-                    VoiceRecordDialog dialog = new VoiceRecordDialog();
-                    dialog.show(getSupportFragmentManager(), "VoiceRecordDialog");
-                } else {
-                    Toast.makeText(this, "음성 인식을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                requestAudioPermission();
-            }
-            return true;
-        });
-
-        RecyclerView recyclerView = searchView.findViewById(R.id.search_result);
-
-        List<String> allResults = new ArrayList<>();
-        allResults.add("미래관 445호");
-        allResults.add("미래관 447호");
-        allResults.add("미래관 449호");
-        allResults.add("미래관 444호");
-        allResults.add("미래관 425호");
-        allResults.add("미래관 415호");
-        allResults.add("미래관 405호");
-
-        searchView.getEditText().addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // 필요 없다면 비워둠
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String query = s.toString().trim();
-                List<String> filtered = new ArrayList<>();
-                for (String item : allResults) {
-                    if (item.toLowerCase().contains(query.toLowerCase())) {
-                        filtered.add(item);
-                    }
-                }
-
-                if (!query.isEmpty()) {
-                    recyclerView.setVisibility(View.VISIBLE);
-                    recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-                    recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
-                        // 예: "미래관 445호" → "미래관"
-                        String buildingName = selected.split(" ")[0];
-                        String fileName = buildingName + ".zip";
-
-                        String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
-                        Log.d("filename", url);
-                        FileDownloader.downloadAndUnzipFile(MainActivity.this, url, fileName, buildingName);
-                    }));
-                } else {
-                    recyclerView.setVisibility(View.GONE);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                // 필요 없다면 비워둠
-            }
-        });
-
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (searchView.isShowing()) {
-                    searchView.hide();
-                } else {
-                    long currentTime = System.currentTimeMillis();
-                    if (currentTime - backPressedTime < backPressInterval) {
-                        setEnabled(false);
-                        getOnBackPressedDispatcher().onBackPressed();
-                    } else {
-                        backPressedTime = currentTime;
-                    }
-                }
-            }
-        });
+//        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+//            @Override
+//            public void handleOnBackPressed() {
+//                if (searchView.isShowing()) {
+//                    searchView.hide();
+//                } else {
+//                    long currentTime = System.currentTimeMillis();
+//                    if (currentTime - backPressedTime < backPressInterval) {
+//                        setEnabled(false);
+//                        getOnBackPressedDispatcher().onBackPressed();
+//                    } else {
+//                        backPressedTime = currentTime;
+//                    }
+//                }
+//            }
+//        });
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, new HelloArFragment())
                     .commit();
         }
-
-        searchView.addTransitionListener((view, previousState, newState) ->
-                HelloArFragment.setCameraPoseVisibility(
-                        newState != com.google.android.material.search.SearchView.TransitionState.SHOWN)
-        );
-
-        setupWakeWordListener();
-    }
-
-    private boolean checkAudioPermission() {
-        return ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestAudioPermission() {
-        ActivityCompat.requestPermissions(
-                this,
-                new String[]{Manifest.permission.RECORD_AUDIO},
-                RECORD_AUDIO_REQUEST_CODE
-        );
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    public void onResume() {
+        super.onResume();
+        if (!CameraPermissionHelper.hasCameraPermission(this)) {
+            CameraPermissionHelper.requestCameraPermission(this);
+            return;
+        }
 
-        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "음성 권한이 허용되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
+        try {
+            JniInterface.onResume(nativeApplication, getApplicationContext(), this);
+            surfaceView.onResume();
+        } catch (Exception e) {
+            Log.e(TAG, "Exception creating session", e);
+            return;
+        }
+
+        getSystemService(DisplayManager.class).registerDisplayListener(this, null);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        surfaceView.onPause();
+        JniInterface.onPause(nativeApplication);
+        getSystemService(DisplayManager.class).unregisterDisplayListener(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        synchronized (this) {
+            JniInterface.destroyNativeApplication(nativeApplication);
+            nativeApplication = 0;
+        }
+    }
+
+    @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        JniInterface.onGlSurfaceCreated(nativeApplication);
+    }
+
+    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+        viewportWidth = width;
+        viewportHeight = height;
+        viewportChanged = true;
+    }
+
+    @Override public void onDrawFrame(GL10 gl) {
+        synchronized (this) {
+            if (nativeApplication == 0) return;
+            if (viewportChanged) {
+                int displayRotation = getWindowManager().getDefaultDisplay().getRotation();
+                JniInterface.onDisplayGeometryChanged(nativeApplication, displayRotation, viewportWidth, viewportHeight);
+                viewportChanged = false;
             }
+
+            JniInterface.onGlSurfaceDrawFrame(nativeApplication, false, false);
         }
     }
 
-    private void setupWakeWordListener() {
-        if (!checkAudioPermission()) {
-            requestAudioPermission();
-        }
+    @Override public void onDisplayAdded(int displayId) {}
+    @Override public void onDisplayRemoved(int displayId) {}
+    @Override public void onDisplayChanged(int displayId) {
+        viewportChanged = true;
     }
+
 }
