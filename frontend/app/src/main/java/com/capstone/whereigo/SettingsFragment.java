@@ -18,7 +18,6 @@ import androidx.core.graphics.Insets;
 
 
 public class SettingsFragment extends Fragment {
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -38,7 +37,7 @@ public class SettingsFragment extends Fragment {
         });
 
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
-        transaction.replace(R.id.settings1, new SetDownloadPreference());
+        transaction.replace(R.id.setting_list, new SetDownloadPreference());
         transaction.commit();
 
         return view;
@@ -50,13 +49,27 @@ public class SettingsFragment extends Fragment {
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.download_preference, rootKey);
 
-            Preference mapItemPreference = findPreference("map_download");
+            Preference mapItemPreference = findPreference("download_map");
             if (mapItemPreference != null) {
                 mapItemPreference.setOnPreferenceClickListener(preference -> {
                     Fragment parent = getParentFragment();
                     if (parent != null) {
+                        requireActivity().getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new DownloadFragment())
+                                .addToBackStack(null)
+                                .commit();
+                    }
+                    return true;
+                });
+            }
+
+            Preference makeMapPreference = findPreference("make_map");
+            if (makeMapPreference != null) {
+                makeMapPreference.setOnPreferenceClickListener(preference -> {
+                    Fragment parent = getParentFragment();
+                    if (parent != null) {
                         parent.getParentFragmentManager().beginTransaction()
-                                .replace(R.id.fragment_setting, new DownloadFragment()) // ⚠️ container ID 확인 필요
+                                .replace(R.id.fragment_container, new MappingFragment())
                                 .addToBackStack(null)
                                 .commit();
                     }
