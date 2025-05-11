@@ -9,6 +9,7 @@
 #include <cmath>
 #include <android/log.h>
 #include <glm/glm.hpp>
+#include <unordered_set>
 
 class PathNavigator {
 public:
@@ -35,6 +36,8 @@ private:
     int current_path_index_ = 0;
 
     bool goal_set_ = false;
+
+    std::unordered_set<int> notified_turn_indices_;
 
     std::set<Point> obstacles_;  
 
