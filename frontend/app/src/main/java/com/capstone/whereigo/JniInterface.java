@@ -65,6 +65,12 @@ public class JniInterface {
 
   public static native boolean isDepthSupported(long nativeApplication);
 
+  public static native void changeStatus(long nativeApplication);
+
+  public static native void getPoseStamp(long nativeApplication);
+  public static native float getX();
+  public static native float getZ();
+
   public static native void onSettingsChange(
       long nativeApplication, boolean isInstantPlacementEnabled);
 
