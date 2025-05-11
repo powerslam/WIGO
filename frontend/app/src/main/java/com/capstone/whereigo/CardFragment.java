@@ -5,19 +5,24 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.capstone.whereigo.databinding.CardNodeLabelingBinding;
 
 public class CardFragment extends Fragment {
 
     private static final String ARG_LABEL = "label";
     private static final String ARG_POSITION = "position";
     private static final String ARG_IMAGE_RES_ID = "image_res_id";
+
+    private CardNodeLabelingBinding binding;
 
     public static CardFragment newInstance(NodeLabelData nodeData) {
         CardFragment fragment = new CardFragment();
@@ -32,7 +37,8 @@ public class CardFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.card_node_labeling, container, false);
+
+        binding = CardNodeLabelingBinding.inflate(inflater, container, false);
 
         // 데이터 받기
         assert getArguments() != null;
@@ -40,15 +46,15 @@ public class CardFragment extends Fragment {
         String position = getArguments().getString(ARG_POSITION);
         int imageResId = getArguments().getInt(ARG_IMAGE_RES_ID);
 
-        ImageView thumbnail = rootView.findViewById(R.id.thumbnail);
-        TextView positionText = rootView.findViewById(R.id.pose_stamp);
-        EditText editLabel = rootView.findViewById(R.id.edit_stamp);
+        ImageView thumbnail = binding.thumbnail;
+        TextView positionText = binding.poseStamp;
+        EditText editLabel = binding.editStamp;
 
         // 데이터 설정
         thumbnail.setImageResource(imageResId);
         positionText.setText("위치 : " + position);
         editLabel.setText(label);
 
-        return rootView;
+        return binding.getRoot();
     }
 }
