@@ -1,14 +1,6 @@
 #!/bin/bash
 
 mkdir -p third_party
-cd third_party
-
-rm -rf eigen3
-rm -rf glog
-rm -rf ceres-solver
-rm -rf boost
-rm -rf opencv
-rm -rf opencv_contrib
 
 # Set up variables
 NDK_PATH=$ANDROID_NDK_HOME
@@ -16,10 +8,13 @@ ANDROID_PLATFORMS="android-24"
 ARCHS=("arm64-v8a" "armeabi-v7a" "x86")
 
 # # 1. Clone Eigen
+cd third_party
 git clone --branch 3.3.9 https://gitlab.com/libeigen/eigen.git eigen3
+cd ..
 
 # # 2. Clone Glog
 git clone --branch v0.5.0 https://github.com/google/glog.git
+mkdir -p third_party/glog
 
 for ARCH in "${ARCHS[@]}"; do
     mkdir -p glog/build_$ARCH && cd glog/build_$ARCH
@@ -30,25 +25,28 @@ for ARCH in "${ARCHS[@]}"; do
       -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
       -DBUILD_TESTING=OFF \
-      -DCMAKE_INSTALL_PREFIX=$(pwd)/../$ARCH
+      -DCMAKE_INSTALL_PREFIX=$(pwd)/../../third_party/glog/$ARCH
     cmake --build . --target install -- -j$(nproc)
     cd ../../
+    echo $(pwd)
 done
+rm -rf glog
 
-# 3. Clone Ceres
+3. Clone Ceres
 git clone --branch 1.14.0 https://ceres-solver.googlesource.com/ceres-solver ceres-solver
+mkdir -p third_party/ceres-solver
 
 for ARCH in "${ARCHS[@]}"; do
     mkdir -p ceres-solver/build_$ARCH && cd ceres-solver/build_$ARCH
     cmake .. \
       -DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake \
-      -DEIGEN_INCLUDE_DIR=$(pwd)/../../eigen3 \
+      -DEIGEN_INCLUDE_DIR=$(pwd)/../../third_party/eigen3 \
       -DANDROID_ABI=$ARCH \
       -DANDROID_NATIVE_API_LEVEL=$ANDROID_PLATFORMS \
       -DBUILD_SHARED_LIBS=OFF \
-      -DCMAKE_INSTALL_PREFIX=$(pwd)/../$ARCH \
-      -DGLOG_INCLUDE_DIR=$(pwd)/../../glog/$ARCH/include \
-      -DGLOG_LIBRARY=$(pwd)/../../glog/$ARCH/lib/libglog.a \
+      -DCMAKE_INSTALL_PREFIX=$(pwd)/../../third_party/ceres-solver/$ARCH \
+      -DGLOG_INCLUDE_DIR=$(pwd)/../../third_party/glog/$ARCH/include \
+      -DGLOG_LIBRARY=$(pwd)/../../third_party/glog/$ARCH/lib/libglog.a \
       -DCMAKE_CXX_FLAGS="-fopenmp" \
       -DCMAKE_C_FLAGS="-fopenmp" \
       -DOpenMP_CXX_FLAGS="-fopenmp" \
@@ -58,6 +56,7 @@ for ARCH in "${ARCHS[@]}"; do
     cmake --build . --target install -- -j$(nproc)
     cd ../../
 done
+rm -rf ceres-solver
 
 # 4. Download and install Boost 1.58
 BOOST_VERSION="1.58.0"
@@ -68,15 +67,19 @@ tar -xvzf $BOOST_TAR
 mv boost_${BOOST_VERSION//./_} boost
 cd boost
 
+mkdir -p third_party/boost
+
 # 5. Build and Install Boost
 ./bootstrap.sh --with-libraries=filesystem,system,thread
-./b2 install --prefix=$(pwd)/install --toolset=gcc --with-filesystem --with-system --with-thread
+./b2 install --prefix=$(pwd)/../third_party/boost/install --toolset=gcc --with-filesystem --with-system --with-thread
 
 cd ..
+rm -rf boost*
 
 # 6. Clone OpenCV
 git clone --branch 4.2.0 https://github.com/opencv/opencv.git
 git clone --branch 4.2.0 https://github.com/opencv/opencv_contrib.git
+mkdir -p third_party/opencv
 
 for ARCH in "${ARCHS[@]}"; do
     mkdir -p opencv/build_$ARCH && cd opencv/build_$ARCH
@@ -86,15 +89,16 @@ for ARCH in "${ARCHS[@]}"; do
       -DANDROID_PLATFORM="$ANDROID_PLATFORMS" \
       -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-      -DCMAKE_INSTALL_PREFIX=$(pwd)/../$ARCH \
-      -DGLOG_INCLUDE_DIR=$(pwd)/../../glog/$ARCH/include \
-      -DGLOG_LIBRARY=$(pwd)/../../glog/$ARCH/lib/libglog.a \
+      -DCMAKE_INSTALL_PREFIX=$(pwd)/../../third_party/opencv/$ARCH \
+      -DGLOG_INCLUDE_DIR=$(pwd)/../../third_party/glog/$ARCH/include \
+      -DGLOG_LIBRARY=$(pwd)/../../third_party/glog/$ARCH/lib/libglog.a \
       -DBUILD_TESTS=OFF \
       -DBUILD_EXAMPLES=OFF \
       -DBUILD_ANDROID_PROJECTS=OFF \
       -DOPENCV_ENABLE_NONFREE=ON \
-      -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+      -DOPENCV_EXTRA_MODULES_PATH=$(pwd)/../../opencv_contrib/modules \
       -DANDROID_SDK_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools/19.0
     cmake --build . --target install -- -j$(nproc)
     cd ../../
 done
+rm -rf opencv*
