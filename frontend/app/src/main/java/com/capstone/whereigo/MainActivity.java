@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements GLSurfaceView.Ren
 
     private GLSurfaceView surfaceView;
 
-    private long nativeApplication;
+    private NativeHolderViewModel viewModel;
 
     private int viewportWidth;
     private int viewportHeight;
@@ -72,7 +73,14 @@ public class MainActivity extends AppCompatActivity implements GLSurfaceView.Ren
 
         JniInterface.setClassLoader(this.getClass().getClassLoader());
         JniInterface.assetManager = getAssets();
-        nativeApplication = JniInterface.createNativeApplication(getAssets(), getExternalFilesDir("pose_graph").getAbsolutePath());
+
+        viewModel = new ViewModelProvider(this).get(NativeHolderViewModel.class);
+        viewModel.initNativePtr(
+                JniInterface.createNativeApplication(
+                        getAssets(),
+                        getExternalFilesDir("pose_graph").getAbsolutePath()
+                )
+        );
 
 //        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
 //            @Override
@@ -107,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements GLSurfaceView.Ren
         }
 
         try {
-            JniInterface.onResume(nativeApplication, getApplicationContext(), this);
+            JniInterface.onResume(viewModel.getNativePtr(), getApplicationContext(), this);
             surfaceView.onResume();
         } catch (Exception e) {
             Log.e(TAG, "Exception creating session", e);
@@ -121,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements GLSurfaceView.Ren
     public void onPause() {
         super.onPause();
         surfaceView.onPause();
-        JniInterface.onPause(nativeApplication);
+        JniInterface.onPause(viewModel.getNativePtr());
         getSystemService(DisplayManager.class).unregisterDisplayListener(this);
     }
 
@@ -129,14 +137,15 @@ public class MainActivity extends AppCompatActivity implements GLSurfaceView.Ren
     public void onDestroy() {
         super.onDestroy();
         synchronized (this) {
-            JniInterface.destroyNativeApplication(nativeApplication);
-            nativeApplication = 0;
+            JniInterface.destroyNativeApplication(viewModel.getNativePtr());
+            viewModel = new ViewModelProvider(this).get(NativeHolderViewModel.class);
+            viewModel.initNativePtr(0);
         }
     }
 
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        JniInterface.onGlSurfaceCreated(nativeApplication);
+        JniInterface.onGlSurfaceCreated(viewModel.getNativePtr());
     }
 
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
@@ -147,14 +156,14 @@ public class MainActivity extends AppCompatActivity implements GLSurfaceView.Ren
 
     @Override public void onDrawFrame(GL10 gl) {
         synchronized (this) {
-            if (nativeApplication == 0) return;
+            if (viewModel.getNativePtr() == 0) return;
             if (viewportChanged) {
                 int displayRotation = getWindowManager().getDefaultDisplay().getRotation();
-                JniInterface.onDisplayGeometryChanged(nativeApplication, displayRotation, viewportWidth, viewportHeight);
+                JniInterface.onDisplayGeometryChanged(viewModel.getNativePtr(), displayRotation, viewportWidth, viewportHeight);
                 viewportChanged = false;
             }
 
-            JniInterface.onGlSurfaceDrawFrame(nativeApplication, false, false);
+            JniInterface.onGlSurfaceDrawFrame(viewModel.getNativePtr(), false, false);
         }
     }
 
