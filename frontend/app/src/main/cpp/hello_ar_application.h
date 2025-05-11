@@ -28,10 +28,15 @@
 #include <string>
 #include <unordered_map>
 
+#include "pose_graph.h"
+#include "keyframe.h"
+
 #include "include/arcore/arcore_c_api.h"
 
 #include "glm.h"
 #include "util.h"
+
+#include <mutex>
 
 #include "renderer/texture.h"
 #include "renderer/obj_renderer.h"
@@ -70,6 +75,8 @@ class HelloArApplication {
   // @param height: height of the changed surface view.
   void OnDisplayGeometryChanged(int display_rotation, int width, int height);
 
+  void ChangeStatus();
+
   // OnDrawFrame is called on the OpenGL thread to render the next frame.
   void OnDrawFrame(bool depthColorVisualizationEnabled,
                    bool useDepthForOcclusion);
@@ -88,12 +95,16 @@ class HelloArApplication {
 
   void OnSettingsChange(bool is_instant_placement_enabled);
 
+    jobject g_mappingFragment;
+    jmethodID method_id;
+    PoseGraph pose_graph;
+
  private:
-  glm::mat3 GetTextureTransformMatrix(const ArSession* session,
-  const ArFrame* frame);
+  glm::mat3 GetTextureTransformMatrix(const ArSession* session, const ArFrame* frame);
   ArSession* ar_session_ = nullptr;
   ArFrame* ar_frame_ = nullptr;
 
+  IntrinsicParameter intrinsic_param;
   JavaVM* java_vm_ = nullptr;
 
   bool install_requested_ = false;
@@ -102,13 +113,17 @@ class HelloArApplication {
   int height_ = 1;
   int display_rotation_ = 0;
   bool is_instant_placement_enabled_ = true;
+  bool dev_flag = false;
 
   float plane_y_ = -1.6f;
 
+  std::mutex m_dev_flag;
+
   AAssetManager* const asset_manager_;
 
-  PathNavigator path_navigator_;
   JNIEnv* GetJniEnv();
+  
+  PathNavigator path_navigator_;
   DirectionHelper direction_helper_;
 
   // The anchors at which we are drawing android models using given colors.

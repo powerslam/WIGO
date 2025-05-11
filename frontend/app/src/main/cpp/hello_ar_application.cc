@@ -45,11 +45,14 @@ namespace hello_ar {
 
     }  // namespace
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path)
-        : // pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480),
+        : pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480),
         asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr} {
-    
+
+        g_mappingFragment = nullptr;
+        method_id = nullptr;
+
         LOGI("external_path: %s", external_path.c_str());
-        // pose_graph.loadVocabulary(asset_manager_);
+        pose_graph.loadVocabulary(asset_manager_);
     }
 
     HelloArApplication::~HelloArApplication() {
@@ -111,9 +114,13 @@ namespace hello_ar {
             CHECKANDTHROW(ArSession_create(env, context, &ar_session_) == AR_SUCCESS,
                           env, "Failed to create AR session.");
 
-            ConfigureSession();
-            ArFrame_create(ar_session_, &ar_frame_);
+            ArConfig* ar_config = nullptr;
+            ArConfig_create(ar_session_, &ar_config);
+            ArConfig_setDepthMode(ar_session_, ar_config, AR_DEPTH_MODE_AUTOMATIC);
+            CHECK(ArSession_configure(ar_session_, ar_config) == AR_SUCCESS);
+            ArConfig_destroy(ar_config);
 
+            ArFrame_create(ar_session_, &ar_frame_);
             ArSession_setDisplayGeometry(ar_session_, display_rotation_, width_,
                                          height_);
         }
@@ -144,6 +151,12 @@ namespace hello_ar {
         }
     }
 
+    void HelloArApplication::ChangeStatus() {
+        m_dev_flag.lock();
+        dev_flag = !dev_flag;
+        m_dev_flag.unlock();
+    }
+
     void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
                                          bool useDepthForOcclusion) {
         // Render the scene.
@@ -172,6 +185,7 @@ namespace hello_ar {
 
         if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
             LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 및 경로 생성 생략");
+            return;
         }
 
         // camera pose raw 가져옴
@@ -194,6 +208,22 @@ namespace hello_ar {
         // 경로 따라가기
         path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);
 
+        if(this->intrinsic_param.fx == 0.0){
+            ArCameraIntrinsics* intrinsics = nullptr;
+            ArCameraIntrinsics_create(ar_session_, &intrinsics);
+
+            ArCamera_getImageIntrinsics(ar_session_, ar_camera, intrinsics);
+
+            float fx, fy, cx, cy;
+            ArCameraIntrinsics_getFocalLength(ar_session_, intrinsics, &fx, &fy);
+            ArCameraIntrinsics_getPrincipalPoint(ar_session_, intrinsics, &cx, &cy);
+            LOGI("focal length : %f, %f | principal point : %f, %f", fx, fy, cx, cy);
+
+            this->intrinsic_param.update_parameter(fx, fy, cx, cy);
+
+            ArCameraIntrinsics_destroy(intrinsics);
+        }
+
         JNIEnv* env = GetJniEnv(); 
 
         if (env) {
@@ -209,11 +239,6 @@ namespace hello_ar {
             }
         }
 
-        // 카메라 해제
-        ArPose_destroy(camera_pose);
-        ArCamera_release(ar_camera);
-
-
         glm::mat4 view_mat;
         glm::mat4 projection_mat;
         ArCamera_getViewMatrix(ar_session_, ar_camera, glm::value_ptr(view_mat));
@@ -221,26 +246,74 @@ namespace hello_ar {
                 /*near=*/0.1f, /*far=*/100.f,
                                      glm::value_ptr(projection_mat));
 
+        Eigen::Vector3d _vio_T_w_i;
+        Eigen::Matrix3d _vio_R_w_i;
+
+        _vio_T_w_i = Eigen::Vector3d(pose_raw[4], pose_raw[5], pose_raw[6]);
+        Eigen::Quaterniond q(pose_raw[3], pose_raw[0], pose_raw[1], pose_raw[2]);  // w, x, y, z
+        _vio_R_w_i = q.toRotationMatrix();
+
+        if(m_dev_flag.try_lock()) {
+            if(dev_flag) {
+                ArImage *depth_image = nullptr;
+                ArImage *image = nullptr;
+                if (ArFrame_acquireCameraImage(ar_session_, ar_frame_, &image) == AR_SUCCESS) {
+                    auto depth_status = ArFrame_acquireDepthImage16Bits(ar_session_, ar_frame_,
+                                                                        &depth_image);
+                    if (depth_status == AR_SUCCESS) {
+                        const uint8_t *image_data = nullptr;
+                        const uint8_t *depth_data = nullptr;
+
+                        int image_width, image_height, image_pixel_stride, image_data_length, image_row_stride;
+                        int depth_width, depth_height, depth_pixel_stride, depth_data_length, depth_row_stride;
+
+                        ArImage_getWidth(ar_session_, image, &image_width);
+                        ArImage_getHeight(ar_session_, image, &image_height);
+                        ArImage_getPlaneRowStride(ar_session_, image, 0, &image_row_stride);
+                        ArImage_getPlanePixelStride(ar_session_, image, 0, &image_pixel_stride);
+                        ArImage_getPlaneData(ar_session_, image, 0, &image_data,
+                                             &image_data_length);
+
+                        ArImage_getWidth(ar_session_, depth_image, &depth_width);
+                        ArImage_getHeight(ar_session_, depth_image, &depth_height);
+                        ArImage_getPlaneRowStride(ar_session_, depth_image, 0, &depth_row_stride);
+                        ArImage_getPlanePixelStride(ar_session_, depth_image, 0,
+                                                    &depth_pixel_stride);
+                        ArImage_getPlaneData(ar_session_, depth_image, 0, &depth_data,
+                                             &depth_data_length);
+
+                        cv::Mat image_mat = cv::Mat(image_height, image_width, CV_8UC1,
+                                                    const_cast<uint8_t *>(image_data),
+                                                    image_row_stride);
+
+                        depth_row_stride /= 2;
+                        cv::Mat depth_mat = cv::Mat(depth_height, depth_width, CV_16UC1,
+                                                    const_cast<uint8_t *>(depth_data),
+                                                    depth_row_stride);
+                        cv::resize(depth_mat, depth_mat, image_mat.size());
+
+                        KeyFramePtr keyframe = std::make_shared<KeyFrame>(0, _vio_T_w_i, _vio_R_w_i,
+                                                                          image_mat, 0);
+                        keyframe->computeBRIEFPoint(asset_manager_, intrinsic_param, depth_mat);
+                        pose_graph.addKeyFrameBuf(keyframe);
+                    }
+                }
+
+                ArImage_release(image);
+                ArImage_release(depth_image);
+                ArPose_destroy(camera_pose);
+
+                if (env) {
+                    if(g_mappingFragment != nullptr && method_id != nullptr)
+                        env->CallVoidMethod(g_mappingFragment, method_id, pose_graph.getKeyFrameListSize());
+                }
+            }
+
+            m_dev_flag.unlock();
+        }
 
         background_renderer_.Draw(ar_session_, ar_frame_,
                                   depthColorVisualizationEnabled);
-
-        
-        //ArTrackingState camera_tracking_state;
-        ArCamera_getTrackingState(ar_session_, ar_camera, &camera_tracking_state);
-
-        // If the camera isn't tracking don't bother rendering other objects.
-        if (camera_tracking_state != AR_TRACKING_STATE_TRACKING) {
-            LOGI("⚠️ 카메라 트래킹 안됨 - 앵커 생성 불가");
-            return;
-        }
-
-        int32_t is_depth_supported = 0;
-        ArSession_isDepthModeSupported(ar_session_, AR_DEPTH_MODE_AUTOMATIC,
-                                       &is_depth_supported);
-        if (is_depth_supported) {
-            depth_texture_.UpdateWithDepthImageOnGlThread(*ar_session_, *ar_frame_);
-        }
 
         // Get light estimation value.
         ArLightEstimate* ar_light_estimate;
@@ -290,20 +363,20 @@ namespace hello_ar {
             int current_index = path_navigator_.GetCurrentPathIndex();
             int path_size = path.size();
 
-            for (int i = 0; i < 5; ++i) { 
+            for (int i = 0; i < 5; ++i) {
                 int idx = current_index + i;
                 if (idx >= path_size) break;
-        
+
                 const Point& p = path[idx];
-        
+
                 float anchor_pose[7] = {0};
                 anchor_pose[4] = p.x;
                 anchor_pose[5] = plane_y_;
                 anchor_pose[6] = p.z;
-        
+
                 ArPose* pose = nullptr;
                 ArPose_create(ar_session_, anchor_pose, &pose);
-        
+
                 ArAnchor* anchor = nullptr;
                 if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
                     ColoredAnchor car_anchor;
@@ -370,33 +443,33 @@ namespace hello_ar {
             if (i >= path_navigator_.GetPath().size()) break;
 
             glm::mat4 model_mat(1.0f);
-        
+
             // ⭐ Anchor로부터 변환행렬 가져오기 ⭐
             util::GetTransformMatrixFromAnchor(*carArrow_anchors_[i].anchor, ar_session_, &model_mat);
-        
+
             // 추가로 방향 회전은 여기서 적용
             const auto& path = path_navigator_.GetPath();
             int current_index = path_navigator_.GetCurrentPathIndex() + i;
             if (current_index >= path.size()) continue;
-        
+
             const Point& from = path[current_index];
             Point to = (current_index + 1 < path.size()) ? path[current_index + 1] : from;
-        
+
             glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
             float length = glm::length(direction);
             if (length < 0.01f) continue;
             direction = glm::normalize(direction);
-        
+
             float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
-        
+
             glm::vec3 position(from.x, plane_y_, from.z);
 
             model_mat = glm::translate(glm::mat4(1.0f), position);
             glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
             glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
-        
+
             model_mat = model_mat * rotation_mat * scale_mat;
-        
+
             // 렌더링
             car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, carArrow_anchors_[i].color);
         }
@@ -416,10 +489,12 @@ namespace hello_ar {
                 location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
             }
         }
+
+        ArCamera_release(ar_camera);
     }
 
     void HelloArApplication::SavePoseGraph() {
-//        pose_graph.command();
+        pose_graph.command();
     }
 
     bool HelloArApplication::IsDepthSupported() {
