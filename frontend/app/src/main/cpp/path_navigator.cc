@@ -3,21 +3,31 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "PathNavigator", __VA_ARGS__)
 
 namespace {
-    constexpr float kDeviationThreshold = 5.0f;
+    constexpr float kDeviationThreshold = 3.0f;
     constexpr float kReachThreshold = 0.8f;
-    const Point kGoal{-10.0f, -18.0f};
 }
 
 PathNavigator::PathNavigator() {
     obstacles_ = GenerateObstacles();
 }
 
+void PathNavigator::SetGoal(const Point& goal) {
+    LOGI("SetGoal_Check: x = %.2f, z = %.2f", goal.x, goal.z);
+    goal_ = goal;
+    goal_set_ = true;
+}
+
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
+    if (!goal_set_) {
+        LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 생성 생략");
+        return;
+    }
+
     if (path_generated_) return;
 
     std::set<Point> obstacles = GenerateObstacles();
 
-    path_ = astar(camera_pos, kGoal, obstacles);
+    path_ = astar(camera_pos, goal_, obstacles);
 
     if (!path_.empty()) {
         path_generated_ = true;
@@ -34,6 +44,11 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
 }
 
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
+    if (!goal_set_) {
+        LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 확인 생략");
+        return true;
+    }
+
     if (current_path_index_ >= path_.size()) {
         if (!arrival_) {
 //            JavaBridge::EnqueueAudio("arrival.m4a");
@@ -124,6 +139,7 @@ void PathNavigator::Reset() {
     path_ready_to_render_ = false;
     arrival_ = false;
     current_path_index_ = 0;
+    goal_set_ = false;
 }
 
 std::set<Point> PathNavigator::GenerateObstacles() {

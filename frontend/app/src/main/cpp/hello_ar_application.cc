@@ -190,7 +190,6 @@ namespace hello_ar {
 
         // PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
-
         // 경로 따라가기
         path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);
 
@@ -407,7 +406,7 @@ namespace hello_ar {
             int path_size = static_cast<int>(path.size());
             int current_index = path_navigator_.GetCurrentPathIndex();
 
-            if (current_index >= path_size - 5 && !path_navigator_.arrival_) {
+            if (path_size > 5 && current_index >= path_size - 5 && !path_navigator_.arrival_) {
                 glm::mat4 model_mat(1.0f);
                 if (location_pin_anchor_.trackable != nullptr) {
                     UpdateAnchorColor(&location_pin_anchor_);
@@ -416,6 +415,10 @@ namespace hello_ar {
                 location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
             }
         }
+    }
+
+    void HelloArApplication::SetGoal(const Point& goal) {
+        path_navigator_.SetGoal(goal);  // ✅ 내부 PathNavigator에 전달
     }
 
     void HelloArApplication::SavePoseGraph() {

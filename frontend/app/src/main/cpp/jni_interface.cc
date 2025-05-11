@@ -141,6 +141,11 @@ JNI_METHOD(void, savePoseGraph)
   native(native_application)->SavePoseGraph();
 }
 
+JNI_METHOD(void, sendCoordinatesToNative)
+(JNIEnv *, jclass, jlong native_application, jint x, jint y) {
+    native(native_application)->SetGoal(Point{(float)x, (float)y});
+}
+
 JNIEnv *GetJniEnv() {
   JNIEnv *env;
   jint result = g_vm->AttachCurrentThread(&env, nullptr);

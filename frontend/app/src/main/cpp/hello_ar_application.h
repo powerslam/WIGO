@@ -57,6 +57,8 @@ class HelloArApplication {
   void OnResume(JNIEnv* env, void* context, void* activity);
 
   void SavePoseGraph();
+
+  void SetGoal(const Point& goal);
   
   // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
   // is created.

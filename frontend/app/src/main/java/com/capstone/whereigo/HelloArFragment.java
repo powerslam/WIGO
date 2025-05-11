@@ -321,6 +321,13 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     viewportChanged = true;
   }
 
+  public void sendGoalToNative(int x, int y) {
+    if (nativeApplication != 0) {
+      Log.i("HelloArFragment", "sendGoalToNative: x=" + x + ", y=" + y);
+      JniInterface.sendCoordinatesToNative(nativeApplication, x, y);
+    }
+  }
+
   public static void updateYawFromNative(float cameraYaw, float pathYaw) {
     if (instance != null && instance.compassView != null) {
       Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
