@@ -49,7 +49,7 @@ public class PoseStampDataAdapter extends RecyclerView.Adapter<PoseStampDataAdap
         PoseStampData poseStampData = poseStampList.get(position);
 
         holder.binding.tvPoseStamp.setText(
-                String.format(Locale.ROOT, "x : %f y : %f label : %s", poseStampData.x(), poseStampData.y(), poseStampData.label())
+                String.format(Locale.ROOT, "x : %.2f y : %.2f", poseStampData.x(), poseStampData.y())
         );
 
         // @TODO : 삭제 버튼 추가

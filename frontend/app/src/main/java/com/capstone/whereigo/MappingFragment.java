@@ -78,8 +78,7 @@ public class MappingFragment extends Fragment {
         btn_pose_stamp.setOnClickListener(v -> {
             poseStampDataList.add(new PoseStampData(
                     0f + 0.5f * poseStampDataList.size(),
-                    0f + 0.5f * poseStampDataList.size(),
-                    ""
+                    0f + 0.5f * poseStampDataList.size()
             ));
 
             poseStampDataAdapter.notifyItemInserted(poseStampDataList.size());
