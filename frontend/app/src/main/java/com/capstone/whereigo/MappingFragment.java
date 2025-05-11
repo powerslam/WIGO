@@ -6,12 +6,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.transition.AutoTransition;
@@ -30,9 +32,11 @@ public class MappingFragment extends Fragment {
     private FragmentMappingBinding binding;
     private ConstraintLayout main_layout;
     private boolean isScaledDown = false;
+    private TextView tv_number_of_recorded_node;
     private Button btn_start_save_pose_graph;
     private Button btn_pose_stamp;
     private int originalWidth;
+    private NativeHolderViewModel viewModel;
 
     @Nullable
     @Override
@@ -49,6 +53,12 @@ public class MappingFragment extends Fragment {
 
         androidx.recyclerview.widget.RecyclerView recyclerView = binding.recyclerView;
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        viewModel = new ViewModelProvider(requireActivity()).get(NativeHolderViewModel.class);
+
+        registerNativeSelf(viewModel.getNativePtr());
+
+        tv_number_of_recorded_node = binding.numberOfRecordedNode;
 
         poseStampDataList = new ArrayList<>();
         poseStampDataAdapter = new PoseStampDataAdapter(requireContext(), poseStampDataList);
@@ -68,9 +78,12 @@ public class MappingFragment extends Fragment {
         btn_start_save_pose_graph.setOnClickListener(this::toggleScaleListener);
 
         btn_pose_stamp.setOnClickListener(v -> {
+            JniInterface.getPoseStamp(viewModel.getNativePtr());
+            float x = JniInterface.getX();
+            float z = JniInterface.getZ();
+
             poseStampDataList.add(new PoseStampData(
-                    0f + 0.5f * poseStampDataList.size(),
-                    0f + 0.5f * poseStampDataList.size()
+                    x, z
             ));
 
             indexList.add(poseStampDataList.size());
@@ -81,6 +94,8 @@ public class MappingFragment extends Fragment {
             });
         });
     }
+
+    public native void registerNativeSelf(long nativeApplicationPtr);
 
     private void toggleScaleListener(View v) {
         isScaledDown = !isScaledDown;
@@ -94,10 +109,20 @@ public class MappingFragment extends Fragment {
         animateConstraintLayout();
         fadeBtnPoseStamp();
 
-        if(!isScaledDown && !indexList.isEmpty()){
+        if(isScaledDown){
+            JniInterface.changeStatus(viewModel.getNativePtr());
+        }
+
+        else if(!isScaledDown && !indexList.isEmpty()){
             NodeLabelingDialog dialog = NodeLabelingDialog.newInstance(indexList);
             dialog.show(requireActivity().getSupportFragmentManager(), "nodeLabelDialog");
         }
+    }
+
+    public void updateKeyFrameListSize(int size){
+        tv_number_of_recorded_node.post(() -> {
+            tv_number_of_recorded_node.setText("지금까지 기록된 노드 수 : " + size);
+        });
     }
 
     private void animateConstraintLayout(){
