@@ -1,11 +1,7 @@
 package com.capstone.whereigo;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,8 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,14 +19,9 @@ import androidx.transition.Transition;
 import androidx.transition.TransitionManager;
 
 import com.capstone.whereigo.databinding.FragmentMappingBinding;
-import com.google.ar.core.Pose;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class MappingFragment extends Fragment {
     List<PoseStampData> poseStampDataList;
@@ -99,6 +88,11 @@ public class MappingFragment extends Fragment {
 
         animateConstraintLayout();
         fadeBtnPoseStamp();
+
+        if(!isScaledDown){
+            NodeLabelingDialog dialog = new NodeLabelingDialog();
+            dialog.show(requireActivity().getSupportFragmentManager(), "nodeLabelDialog");
+        }
     }
 
     private void animateConstraintLayout(){
