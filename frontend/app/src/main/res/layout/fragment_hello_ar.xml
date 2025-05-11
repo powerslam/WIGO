@@ -40,17 +40,6 @@
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="16dp" />
 
-    <Button
-        android:id="@+id/button_save_posegraph"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Save PoseGraph"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="100dp"
-        android:backgroundTint="@android:color/holo_blue_dark"
-        android:textColor="@android:color/white"/>
-
-
     <LinearLayout
         android:id="@+id/surface_status_container"
         android:layout_width="250dp"

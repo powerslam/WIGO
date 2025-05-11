@@ -27,8 +27,8 @@ import okio.Okio;
 public class FileDownloader {
 
     public static void downloadAndUnzipFile(Context context, String url, String zipFileName, String extractFolderName) {
-        File zipFile = new File(context.getFilesDir() + "/Maps", zipFileName);
-        File extractDir = new File(context.getFilesDir() + "/Maps", extractFolderName);
+        File zipFile = new File(context.getFilesDir(), zipFileName);
+        File extractDir = new File(context.getFilesDir(), extractFolderName);
 
         Handler handler = new Handler(Looper.getMainLooper());
 
