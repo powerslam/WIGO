@@ -31,14 +31,15 @@ PoseGraph::PoseGraph(
     sequence_cnt = 0;
     sequence_loop.push_back(0);
     base_sequence = 1;
-    
+
     t_loopClosure = std::thread(&PoseGraph::loopClosure, this);
     t_optimization = std::thread(&PoseGraph::optimize4DoF, this);
 }
 
 PoseGraph::~PoseGraph()
 {
-	t_optimization.join();
+ 	t_optimization.join();
+    t_loopClosure.join();
 }
 
 void PoseGraph::loadVocabulary(AAssetManager* asset_manager){
@@ -63,7 +64,32 @@ void PoseGraph::loadVocabulary(AAssetManager* asset_manager){
     
     voc = new BriefVocabulary(internal_path);
     db.setVocabulary(*voc, false, 0);
-  }
+}
+
+int PoseGraph::getKeyFrameListSize(){
+    int size = 0;
+
+    m_keyframelist.lock();
+    size = keyframelist.size();
+    m_keyframelist.unlock();
+
+    return size;
+}
+
+pair<float, float> PoseGraph::getLastElementOfKeyFrameList() {
+    pair<float, float> ret = {0., 0.};
+
+    while(m_keyframelist.try_lock()){
+        if (!keyframelist.empty()){
+            ret.first = keyframelist.back()->T_w_i.x();
+            ret.second = keyframelist.back()->T_w_i.z();
+        }
+    }
+
+    m_keyframelist.unlock();
+
+    return ret;
+}
 
 void PoseGraph::addKeyFrameBuf(KeyFramePtr keyframe){
     m_buf.lock();
@@ -88,7 +114,6 @@ void PoseGraph::addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop){
     if (flag_detect_loop){
         TicToc tmp_t;
         loop_index = detectLoop(cur_kf, cur_kf->index);
-        LOGI("loop_index : %d", loop_index);
     }
 
     else {
@@ -99,7 +124,6 @@ void PoseGraph::addKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop){
         KeyFramePtr old_kf = getKeyFrame(loop_index);
 
        if (cur_kf->findConnection(old_kf)){
-            LOGI("Oh, this is successful!");
            if (earliest_loop_index > loop_index || earliest_loop_index == -1)
                earliest_loop_index = loop_index;
 
@@ -188,7 +212,7 @@ void PoseGraph::loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
 
 KeyFramePtr PoseGraph::getKeyFrame(int index)
 {
-//    unique_lock<mutex> lock(m_keyframelist);
+    unique_lock<mutex> lock(m_keyframelist);
     list<KeyFramePtr>::iterator it = keyframelist.begin();
     for (; it != keyframelist.end(); it++)
     {
@@ -208,26 +232,18 @@ int PoseGraph::detectLoop(KeyFramePtr keyframe, int frame_index)
     QueryResults ret;
     TicToc t_query;
 
-//    LOGI("size : %d", keyframe->brief_descriptors.size());
 //    assert(keyframe->brief_descriptors.size() != 0);
 
     // @TODO 마지막 인자에 값 빼는 것 잊지 않기(원래 50을 뺐음)
     db.query(keyframe->brief_descriptors, ret, 4, frame_index);
-//    LOGI("ret : %d", ret.size());
-    // //printf("query time: %f", t_query.toc());
-    // //cout << "Searching for Image " << frame_index << ". " << ret << endl;
 
-    // TicToc t_add;
     db.add(keyframe->brief_descriptors);
-    // //printf("add feature time: %f", t_add.toc());
     bool find_loop = false;
     // // a good match with its nerghbour
     if (ret.size() >= 1 && ret[0].Score > 0.05)
     {
-        LOGI("Loop[0] Score : %lf", ret[0].Score);
         for (unsigned int i = 1; i < ret.size(); i++)
         {
-            LOGI("Loop Score : %lf", ret[i].Score);
             //if (ret[i].Score > ret[0].Score * 0.3)
             if (ret[i].Score > 0.015)
             {
@@ -452,7 +468,6 @@ void PoseGraph::command()
     m_process.lock();
     savePoseGraph();
     m_process.unlock();
-    LOGI("save pose graph finish\nyou can set 'load_previous_pose_graph' to 1 in the config file to reuse it next time\n");
 }
 
 void PoseGraph::loopClosure()
