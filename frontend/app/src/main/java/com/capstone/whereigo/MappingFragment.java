@@ -25,6 +25,7 @@ import java.util.List;
 
 public class MappingFragment extends Fragment {
     List<PoseStampData> poseStampDataList;
+    ArrayList<Integer> indexList;
     private PoseStampDataAdapter poseStampDataAdapter;
     private FragmentMappingBinding binding;
     private ConstraintLayout main_layout;
@@ -52,6 +53,8 @@ public class MappingFragment extends Fragment {
         poseStampDataList = new ArrayList<>();
         poseStampDataAdapter = new PoseStampDataAdapter(requireContext(), poseStampDataList);
 
+        indexList = new ArrayList<>();
+
         recyclerView.setAdapter(poseStampDataAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL));
 
@@ -69,6 +72,8 @@ public class MappingFragment extends Fragment {
                     0f + 0.5f * poseStampDataList.size(),
                     0f + 0.5f * poseStampDataList.size()
             ));
+
+            indexList.add(poseStampDataList.size());
 
             poseStampDataAdapter.notifyItemInserted(poseStampDataList.size());
             recyclerView.post(() -> {
@@ -89,8 +94,8 @@ public class MappingFragment extends Fragment {
         animateConstraintLayout();
         fadeBtnPoseStamp();
 
-        if(!isScaledDown){
-            NodeLabelingDialog dialog = new NodeLabelingDialog();
+        if(!isScaledDown && !indexList.isEmpty()){
+            NodeLabelingDialog dialog = NodeLabelingDialog.newInstance(indexList);
             dialog.show(requireActivity().getSupportFragmentManager(), "nodeLabelDialog");
         }
     }
