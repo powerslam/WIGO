@@ -63,7 +63,7 @@ public class JniInterface {
   /** Get plane count in current session. Used to disable the "searching for surfaces" snackbar. */
   public static native boolean hasDetectedPlanes(long nativeApplication);
 
-  public static native void sendCoordinatesToNative(long nativeApp, int x, int y);
+  public static native void sendCoordinatesToNative(long nativeApp, float x, float y);
 
   public static native boolean isDepthSupported(long nativeApplication);
 

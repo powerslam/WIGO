@@ -142,8 +142,8 @@ JNI_METHOD(void, savePoseGraph)
 }
 
 JNI_METHOD(void, sendCoordinatesToNative)
-(JNIEnv *, jclass, jlong native_application, jint x, jint y) {
-    native(native_application)->SetGoal(Point{(float)x, (float)y});
+(JNIEnv *, jclass, jlong native_application, jfloat x, jfloat z) {
+    native(native_application)->SetGoal(Point{x, z});
 }
 
 JNIEnv *GetJniEnv() {

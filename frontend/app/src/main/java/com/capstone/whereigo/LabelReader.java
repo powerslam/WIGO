@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 public class LabelReader {
 
-    public static Pair<Integer, Integer> getCoordinates(Context context, String buildingName, String roomName) {
+    public static Pair<Float, Float> getCoordinates(Context context, String buildingName, String roomName) {
         File labelFile = new File(context.getFilesDir(), buildingName + "/label.txt");
 
         if (!labelFile.exists()) {
@@ -28,9 +28,9 @@ public class LabelReader {
             JSONObject jsonObject = new JSONObject(jsonString);
 
             if (jsonObject.has(roomName)) {
-                int x = jsonObject.getJSONArray(roomName).getInt(0);
-                int y = jsonObject.getJSONArray(roomName).getInt(1);
-                return new Pair<>(x, y);
+                float x = (float) jsonObject.getJSONArray(roomName).getDouble(0);
+                float y = (float) jsonObject.getJSONArray(roomName).getDouble(1);
+                return new Pair<Float, Float>(x, y);
             } else {
                 Log.e("LabelReader", roomName + " 좌표 없음");
             }

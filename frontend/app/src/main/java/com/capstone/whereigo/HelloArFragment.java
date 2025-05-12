@@ -321,7 +321,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     viewportChanged = true;
   }
 
-  public void sendGoalToNative(int x, int y) {
+  public void sendGoalToNative(float x, float y) {
     if (nativeApplication != 0) {
       Log.i("HelloArFragment", "sendGoalToNative: x=" + x + ", y=" + y);
       JniInterface.sendCoordinatesToNative(nativeApplication, x, y);
