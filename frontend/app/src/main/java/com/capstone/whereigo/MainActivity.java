@@ -105,68 +105,11 @@ public class MainActivity extends AppCompatActivity {
                     recyclerView.setVisibility(View.VISIBLE);
                     recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
                     recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
-                        // 예: "미래관 445호" → "미래관"
-                        String buildingName = selected.split(" ")[0];
-                        String fileName = buildingName + ".zip";
-                        String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
-
-                        File labelFile = new File(MainActivity.this.getFilesDir(), buildingName + "/label.txt");
-
-                        if (labelFile.exists()) {
-                            // ✅ 이미 압축 해제되어 있는 경우 → 바로 경로 전달
-                            String roomNumber = selected.replaceAll("[^0-9]", "");
-                            Pair<Integer, Integer> coords = LabelReader.getCoordinates(MainActivity.this, buildingName, roomNumber);
-                            if (coords != null) {
-                                HelloArFragment fragment = (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                                if (fragment != null) {
-                                    Log.i("MainActivity", "즉시 경로 전달: x=" + coords.first + ", y=" + coords.second);
-                                    fragment.sendGoalToNative(coords.first, coords.second);
-                                } else {
-                                    Log.e("MainActivity", "HelloArFragment not found");
-                                }
-                            } else {
-                                Log.e("MainActivity", "좌표를 찾을 수 없습니다: " + selected);
-                            }
-                        } else {
-                            // ❗ 압축 해제 안 되어 있으면 다운로드
-                            FileDownloader.downloadAndUnzipFile(MainActivity.this, url, fileName, buildingName);
-
-                            Handler handler = new Handler(Looper.getMainLooper());
-                            long startTime = System.currentTimeMillis();
-                            long timeout = 10000; // 최대 10초 대기
-
-                            Runnable checkFileTask = new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (labelFile.exists()) {
-                                        Log.d("MainActivity", "✅ label.txt 발견됨: " + labelFile.getAbsolutePath());
-
-                                        String roomNumber = selected.replaceAll("[^0-9]", "");
-                                        Pair<Integer, Integer> coords = LabelReader.getCoordinates(MainActivity.this, buildingName, roomNumber);
-                                        if (coords != null) {
-                                            HelloArFragment fragment = (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                                            if (fragment != null) {
-                                                Log.i("MainActivity", "경로 전달: x=" + coords.first + ", y=" + coords.second);
-                                                fragment.sendGoalToNative(coords.first, coords.second);
-                                            } else {
-                                                Log.e("MainActivity", "HelloArFragment not found");
-                                            }
-                                        } else {
-                                            Log.e("MainActivity", "좌표를 찾을 수 없습니다: " + selected);
-                                        }
-
-                                    } else {
-                                        if (System.currentTimeMillis() - startTime < timeout) {
-                                            handler.postDelayed(this, 500); // 0.5초 간격으로 재확인
-                                        } else {
-                                            Log.e("MainActivity", "⏰ label.txt 생성 시간 초과: " + labelFile.getAbsolutePath());
-                                        }
-                                    }
-                                }
-                            };
-
-                            handler.post(checkFileTask); // 첫 실행
-                        }
+                        SearchResultHandler.handle(
+                            MainActivity.this,
+                            selected,
+                            () -> (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container)
+                        );
                     }));
                 } else {
                     recyclerView.setVisibility(View.GONE);
