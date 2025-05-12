@@ -88,6 +88,5 @@ public class JniInterface {
     GLUtils.texImage2D(target, 0, bitmap, 0);
   }
   
-  public static native void savePoseGraph(long nativeApplication);
-
+  public static native void savePoseGraph(long nativeApplication, String[] labels);
 }

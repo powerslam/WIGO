@@ -162,7 +162,7 @@ JNI_METHOD(float, getZ)
 
 JNI_METHOD(void, onTouched)
 (JNIEnv *, jclass, jlong native_application, jfloat x, jfloat y) {
-  native(native_application)->OnTouched(x, y);
+//  native(native_application)->OnTouched(x, y);
 }
 
 JNI_METHOD(jboolean, hasDetectedPlanes)
@@ -172,8 +172,8 @@ JNI_METHOD(jboolean, hasDetectedPlanes)
 }
 
 JNI_METHOD(void, savePoseGraph)
-(JNIEnv *, jclass, jlong native_application) {
-  native(native_application)->SavePoseGraph();
+(JNIEnv *, jclass, jlong native_application, jobjectArray labels) {
+  native(native_application)->SavePoseGraph(labels);
 }
 
 JNIEnv *GetJniEnv() {

@@ -48,7 +48,7 @@ public:
 	
 	KeyFramePtr getKeyFrame(int index);
 	
-	void savePoseGraph();
+	void savePoseGraph(const std::vector<std::string>& labels);
 	void loadPoseGraph();
 
 	const std::string VOCABULARY_FILE;
@@ -73,6 +73,8 @@ public:
 	void loopClosure();
 	void new_sequence();
 	void command();
+
+	vector<int> labeled_index;
 
 	list<KeyFramePtr> keyframelist;
 
