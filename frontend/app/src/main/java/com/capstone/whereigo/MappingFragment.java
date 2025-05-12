@@ -154,13 +154,10 @@ public class MappingFragment extends Fragment {
         final ConstraintSet constraintSet = new ConstraintSet();
         constraintSet.clone(main_layout);
 
-        final int endWidth = isScaledDown ? originalWidth / 2 : originalWidth;
-        constraintSet.constrainWidth(btn_start_save_pose_graph.getId(), endWidth); // 원하는 너비 지정
-
         constraintSet.clear(btn_start_save_pose_graph.getId(), ConstraintSet.END);
         if(isScaledDown){
             constraintSet.connect(btn_start_save_pose_graph.getId(), ConstraintSet.END,
-                    btn_pose_stamp.getId(), ConstraintSet.START, 0);
+                    binding.buttonGroupGuideLineLeft.getId(), ConstraintSet.END, 0);
 
         }
 
