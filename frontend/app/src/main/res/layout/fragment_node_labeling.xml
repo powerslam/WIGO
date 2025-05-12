@@ -14,11 +14,11 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/button_save_stamp"/>
+        app:layout_constraintBottom_toTopOf="@id/button_labeling_done"/>
 
     <Button
-        android:id="@+id/button_save_stamp"
-        android:text="저장"
+        android:id="@+id/button_labeling_done"
+        android:text="다음"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/dialog_view_pager"
