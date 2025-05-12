@@ -1,4 +1,7 @@
 #include "include/pose_graph.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
 
 int ROW, COL;
 std::string EXTERNAL_PATH;
@@ -218,7 +221,7 @@ void PoseGraph::loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
 
 KeyFramePtr PoseGraph::getKeyFrame(int index)
 {
-    unique_lock<mutex> lock(m_keyframelist);
+   unique_lock<mutex> lock(m_keyframelist);
     list<KeyFramePtr>::iterator it = keyframelist.begin();
     for (; it != keyframelist.end(); it++)
     {
@@ -515,12 +518,23 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
 {
     m_keyframelist.lock();
     TicToc tmp_t;
+
+    std::string save_folder = EXTERNAL_PATH + "/" + labels.back() + "/";
+    struct stat st;
+    if (stat(save_folder.c_str(), &st) != 0) {
+        // 폴더가 없을 경우 생성 시도
+        if (mkdir(save_folder.c_str(), 0755) != 0) {
+            m_keyframelist.unlock();
+            return;
+        }
+    }
+
     FILE *pFile, *labeled_pFile;
-    string file_path = EXTERNAL_PATH + "/" + labels.back() + ".txt";
+    string file_path = save_folder + labels.back() + ".txt";
     pFile = fopen(file_path.c_str(), "w");
     assert(pFile != nullptr);
 
-    string labeled_file_path = EXTERNAL_PATH + "/labeled_" + labels.back() + ".txt";
+    string labeled_file_path = save_folder + "labeled_" + labels.back() + ".txt";
     labeled_pFile = fopen(labeled_file_path.c_str(), "w");
     assert(labeled_pFile != nullptr);
 
@@ -553,14 +567,14 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
             it3++;
         }
 
-        img_path = EXTERNAL_PATH + "/" + to_string((*it)->index) + "_img.jpg";
+        img_path = save_folder + to_string((*it)->index) + "_img.jpg";
         cv::imwrite(img_path, (*it)->image);
 
         assert((*it)->keypoints.size() == (*it)->brief_descriptors.size());
-        brief_path = EXTERNAL_PATH + "/" + to_string((*it)->index) + "_briefdes.dat";
+        brief_path = save_folder + to_string((*it)->index) + "_briefdes.dat";
         std::ofstream brief_file(brief_path, std::ios::binary);
 
-        keypoints_path = EXTERNAL_PATH + "/" + to_string((*it)->index) + "_keypoints.txt";
+        keypoints_path = save_folder + to_string((*it)->index) + "_keypoints.txt";
         FILE *keypoints_file;
         keypoints_file = fopen(keypoints_path.c_str(), "w");
         for (int i = 0; i < (int)(*it)->keypoints.size(); i++)
