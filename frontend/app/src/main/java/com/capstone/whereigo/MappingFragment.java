@@ -2,7 +2,6 @@ package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,20 +17,19 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.AutoTransition;
 import androidx.transition.Transition;
 import androidx.transition.TransitionManager;
 
 import com.capstone.whereigo.databinding.FragmentMappingBinding;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MappingFragment extends Fragment {
-    List<PoseStampData> poseStampDataList;
-    ArrayList<Float> xList, yList;
-    ArrayList<Integer> indexList;
-    private PoseStampDataAdapter poseStampDataAdapter;
+    private NativeHolderViewModel nativeHolderViewModel;
+    private PoseStampViewModel poseStampViewModel;
+    private PoseStampRecyclerViewAdapter poseStampRecyclerViewAdapter;
     private FragmentMappingBinding binding;
     private ConstraintLayout main_layout;
     private boolean isScaledDown = false;
@@ -39,7 +37,6 @@ public class MappingFragment extends Fragment {
     private Button btn_start_save_pose_graph;
     private Button btn_pose_stamp;
     private int originalWidth;
-    private NativeHolderViewModel viewModel;
 
     @Nullable
     @Override
@@ -54,52 +51,44 @@ public class MappingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        androidx.recyclerview.widget.RecyclerView recyclerView = binding.recyclerView;
+        nativeHolderViewModel = new ViewModelProvider(requireActivity()).get(NativeHolderViewModel.class);
+        registerNativeSelf(nativeHolderViewModel.getNativePtr());
+
+        poseStampRecyclerViewAdapter = new PoseStampRecyclerViewAdapter();
+        RecyclerView recyclerView = binding.recyclerView;
+        recyclerView.setAdapter(poseStampRecyclerViewAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL));
 
-        viewModel = new ViewModelProvider(requireActivity()).get(NativeHolderViewModel.class);
-
-        registerNativeSelf(viewModel.getNativePtr());
+        poseStampViewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
+        poseStampViewModel.getPoseStampList().observe(getViewLifecycleOwner(), poseStampList -> {
+            if(!poseStampList.isEmpty()){
+                PoseStamp last = poseStampList.get(poseStampList.size() - 1);
+                poseStampRecyclerViewAdapter.addPoseStamp(last);
+                recyclerView.post(() -> {
+                    recyclerView.scrollToPosition(poseStampRecyclerViewAdapter.getItemCount() - 1);
+                });
+            }
+        });
 
         tv_number_of_recorded_node = binding.numberOfRecordedNode;
 
-        poseStampDataList = new ArrayList<>();
-        poseStampDataAdapter = new PoseStampDataAdapter(requireContext(), poseStampDataList);
-
-        indexList = new ArrayList<>();
-        xList = new ArrayList<>();
-        yList = new ArrayList<>();
-
-        recyclerView.setAdapter(poseStampDataAdapter);
-        recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL));
-
-        btn_start_save_pose_graph = binding.buttonSavePosegraph;
-        btn_pose_stamp = binding.buttonPoseStamp;
         main_layout = binding.buttonGroup;
 
+        btn_start_save_pose_graph = binding.buttonSavePosegraph;
         btn_start_save_pose_graph.post(() -> {
             originalWidth = btn_start_save_pose_graph.getWidth();
         });
         btn_start_save_pose_graph.setOnClickListener(this::toggleScaleListener);
 
+        btn_pose_stamp = binding.buttonPoseStamp;
         btn_pose_stamp.setOnClickListener(v -> {
-            JniInterface.getPoseStamp(viewModel.getNativePtr());
+            JniInterface.getPoseStamp(nativeHolderViewModel.getNativePtr());
             float x = JniInterface.getX();
             float z = JniInterface.getZ();
 
-            xList.add(x);
-            yList.add(z);
-
-            poseStampDataList.add(new PoseStampData(
-                x, z
-            ));
-
-            indexList.add(poseStampDataList.size());
-
-            poseStampDataAdapter.notifyItemInserted(poseStampDataList.size());
-            recyclerView.post(() -> {
-                recyclerView.scrollToPosition(poseStampDataAdapter.getItemCount() - 1);
-            });
+            PoseStamp newPoseStamp = new PoseStamp(x, z, R.drawable.test);
+            poseStampViewModel.addPoseStampData(newPoseStamp);
         });
     }
 
@@ -113,34 +102,26 @@ public class MappingFragment extends Fragment {
             animateConstraintLayout();
             fadeBtnPoseStamp();
 
-            JniInterface.changeStatus(viewModel.getNativePtr());
+            JniInterface.changeStatus(nativeHolderViewModel.getNativePtr());
         }
 
-        else if(/* isScaledDown && */ !indexList.isEmpty()){
+        else if(/* isScaledDown && */ poseStampViewModel.getPoseStampListSize() > 0){
             isScaledDown = false;
 
             btn_start_save_pose_graph.setText("매핑하기");
             animateConstraintLayout();
             fadeBtnPoseStamp();
 
-            JniInterface.changeStatus(viewModel.getNativePtr());
+            JniInterface.changeStatus(nativeHolderViewModel.getNativePtr());
 
-            float[] xArray = new float[xList.size()];
-            float[] yArray = new float[yList.size()];
+            PoseStampLabelingDialog dialog = PoseStampLabelingDialog.newInstance(poseStampViewModel);
+            dialog.onDismissListener = (String mapName) -> {
+                List<String> data = poseStampViewModel.getPoseStampLabelList().getValue();
+                data.add(mapName);
 
-            for (int i = 0; i < xList.size(); i++) {
-                xArray[i] = xList.get(i);
-                yArray[i] = yList.get(i);
-            }
-
-            NodeLabelingDialog dialog = NodeLabelingDialog.newInstance(indexList, xArray, yArray);
-
-            dialog.sendData = (String[] labels) -> {
-                JniInterface.savePoseGraph(viewModel.getNativePtr(), labels);
-
-                indexList.clear();
-                poseStampDataList.clear();
-                poseStampDataAdapter.notifyDataSetChanged();
+                JniInterface.savePoseGraph(
+                        nativeHolderViewModel.getNativePtr(),
+                        data.toArray(new String[0]));
             };
             
             dialog.show(requireActivity().getSupportFragmentManager(), "nodeLabelDialog");
