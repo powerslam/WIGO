@@ -221,7 +221,6 @@ void PoseGraph::loadKeyFrame(KeyFramePtr cur_kf, bool flag_detect_loop)
 
 KeyFramePtr PoseGraph::getKeyFrame(int index)
 {
-   unique_lock<mutex> lock(m_keyframelist);
     list<KeyFramePtr>::iterator it = keyframelist.begin();
     for (; it != keyframelist.end(); it++)
     {
