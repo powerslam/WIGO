@@ -5,6 +5,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import com.capstone.whereigo.databinding.CardNodeLabelingBinding;
+
 import java.util.List;
 
 public class CardPagerAdapter extends FragmentStateAdapter {
@@ -19,9 +21,14 @@ public class CardPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        // nodeList에서 position에 해당하는 데이터를 가져와 CardFragment로 전달
-        NodeLabelData nodeLabelData = nodeList.get(position % nodeList.size()); // 무한 슬라이딩을 위해 % 사용
-        return CardFragment.newInstance(nodeLabelData);
+        NodeLabelData nodeLabelData = nodeList.get(position % nodeList.size());
+        CardFragment ret = CardFragment.newInstance(nodeLabelData);
+        ret.cardInputListener = (String newText) -> {
+            NodeLabelData newNodeLabelData = new NodeLabelData(newText, nodeLabelData.getPosition(), nodeLabelData.getImageResId());
+            nodeList.set(position % nodeList.size(), newNodeLabelData);
+        };
+
+        return ret;
     }
 
     @Override

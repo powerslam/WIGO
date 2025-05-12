@@ -2,6 +2,8 @@ package com.capstone.whereigo;
 
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,12 @@ public class CardFragment extends Fragment {
     private static final String ARG_IMAGE_RES_ID = "image_res_id";
 
     private CardNodeLabelingBinding binding;
+
+    public interface CardInputListener {
+        void onTextChanged(String newText);
+    }
+
+    public CardInputListener cardInputListener;
 
     public static CardFragment newInstance(NodeLabelData nodeData) {
         CardFragment fragment = new CardFragment();
@@ -46,14 +54,38 @@ public class CardFragment extends Fragment {
         String position = getArguments().getString(ARG_POSITION);
         int imageResId = getArguments().getInt(ARG_IMAGE_RES_ID);
 
-        ImageView thumbnail = binding.thumbnail;
-        TextView positionText = binding.poseStamp;
+
         EditText editLabel = binding.editStamp;
 
-        // 데이터 설정
-        thumbnail.setImageResource(imageResId);
-        positionText.setText("위치 : " + position);
-        editLabel.setText(label);
+        if (position.charAt(0) != '-'){
+            ImageView thumbnail = binding.thumbnail;
+            thumbnail.setImageResource(imageResId);
+
+            TextView positionText = binding.poseStamp;
+            positionText.setText("위치 : " + position);
+            editLabel.setText(label);
+        }
+
+        else {
+            binding.thumbnail.setVisibility(View.GONE);
+            binding.poseStamp.setVisibility(View.GONE);
+            editLabel.setHint(label);
+        }
+
+        editLabel.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+             @Override
+             public void afterTextChanged(Editable s) {
+                 if(cardInputListener != null){
+                     cardInputListener.onTextChanged(s.toString());
+                 }
+             }
+        });
 
         return binding.getRoot();
     }
