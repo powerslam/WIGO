@@ -2,11 +2,13 @@ package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +29,7 @@ import java.util.List;
 
 public class MappingFragment extends Fragment {
     List<PoseStampData> poseStampDataList;
+    ArrayList<Float> xList, yList;
     ArrayList<Integer> indexList;
     private PoseStampDataAdapter poseStampDataAdapter;
     private FragmentMappingBinding binding;
@@ -64,6 +67,8 @@ public class MappingFragment extends Fragment {
         poseStampDataAdapter = new PoseStampDataAdapter(requireContext(), poseStampDataList);
 
         indexList = new ArrayList<>();
+        xList = new ArrayList<>();
+        yList = new ArrayList<>();
 
         recyclerView.setAdapter(poseStampDataAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL));
@@ -82,8 +87,11 @@ public class MappingFragment extends Fragment {
             float x = JniInterface.getX();
             float z = JniInterface.getZ();
 
+            xList.add(x);
+            yList.add(z);
+
             poseStampDataList.add(new PoseStampData(
-                    x, z
+                x, z
             ));
 
             indexList.add(poseStampDataList.size());
@@ -98,24 +106,48 @@ public class MappingFragment extends Fragment {
     public native void registerNativeSelf(long nativeApplicationPtr);
 
     private void toggleScaleListener(View v) {
-        isScaledDown = !isScaledDown;
+        if(!isScaledDown){
+            isScaledDown = true;
 
-        if(isScaledDown){
             btn_start_save_pose_graph.setText("저장하기");
-        } else {
-            btn_start_save_pose_graph.setText("매핑하기");
-        }
+            animateConstraintLayout();
+            fadeBtnPoseStamp();
 
-        animateConstraintLayout();
-        fadeBtnPoseStamp();
-
-        if(isScaledDown){
             JniInterface.changeStatus(viewModel.getNativePtr());
         }
 
-        else if(!isScaledDown && !indexList.isEmpty()){
-            NodeLabelingDialog dialog = NodeLabelingDialog.newInstance(indexList);
+        else if(/* isScaledDown && */ !indexList.isEmpty()){
+            isScaledDown = false;
+
+            btn_start_save_pose_graph.setText("매핑하기");
+            animateConstraintLayout();
+            fadeBtnPoseStamp();
+
+            JniInterface.changeStatus(viewModel.getNativePtr());
+
+            float[] xArray = new float[xList.size()];
+            float[] yArray = new float[yList.size()];
+
+            for (int i = 0; i < xList.size(); i++) {
+                xArray[i] = xList.get(i);
+                yArray[i] = yList.get(i);
+            }
+
+            NodeLabelingDialog dialog = NodeLabelingDialog.newInstance(indexList, xArray, yArray);
+
+            dialog.sendData = (String[] labels) -> {
+                JniInterface.savePoseGraph(viewModel.getNativePtr(), labels);
+
+                indexList.clear();
+                poseStampDataList.clear();
+                poseStampDataAdapter.notifyDataSetChanged();
+            };
+            
             dialog.show(requireActivity().getSupportFragmentManager(), "nodeLabelDialog");
+        }
+
+        else /* isScaledDown && !indexList.isEmpty() */ {
+            Toast.makeText(requireContext(), "Stamp가 찍히지 않았습니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
