@@ -56,7 +56,6 @@ public class SettingsFragment extends Fragment {
                     if (parent != null) {
                         requireActivity().getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.fragment_container, new DownloadFragment())
-                                .addToBackStack(null)
                                 .commit();
                     }
                     return true;
@@ -70,7 +69,6 @@ public class SettingsFragment extends Fragment {
                     if (parent != null) {
                         parent.getParentFragmentManager().beginTransaction()
                                 .replace(R.id.fragment_container, new MappingFragment())
-                                .addToBackStack(null)
                                 .commit();
                     }
                     return true;

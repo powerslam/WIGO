@@ -103,7 +103,6 @@ public class HelloArFragment extends Fragment {
     settingsButton.setOnClickListener(v -> activity.getSupportFragmentManager()
             .beginTransaction()
             .replace(R.id.fragment_container, new SettingsFragment())
-            .addToBackStack(null)
             .commit());
 
     searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
