@@ -61,7 +61,7 @@ class HelloArApplication {
   // OnResume is called on the UI thread from the Activity's onResume method.
   void OnResume(JNIEnv* env, void* context, void* activity);
 
-  void SavePoseGraph();
+  void SavePoseGraph(jobjectArray labels);
   
   // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
   // is created.
@@ -113,11 +113,11 @@ class HelloArApplication {
   int height_ = 1;
   int display_rotation_ = 0;
   bool is_instant_placement_enabled_ = true;
-  bool dev_flag = false;
+  bool adding_keyframe_buf = false;
 
   float plane_y_ = -1.6f;
 
-  std::mutex m_dev_flag;
+  std::mutex m_adding_keyframe_buf;
 
   AAssetManager* const asset_manager_;
 

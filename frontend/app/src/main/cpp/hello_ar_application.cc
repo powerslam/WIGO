@@ -152,9 +152,10 @@ namespace hello_ar {
     }
 
     void HelloArApplication::ChangeStatus() {
-        m_dev_flag.lock();
-        dev_flag = !dev_flag;
-        m_dev_flag.unlock();
+        while(!m_adding_keyframe_buf.try_lock());
+        adding_keyframe_buf = !adding_keyframe_buf;
+        LOGI("adding_keyframe_buf: %d", adding_keyframe_buf);
+        m_adding_keyframe_buf.unlock();
     }
 
     void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
@@ -253,8 +254,8 @@ namespace hello_ar {
         Eigen::Quaterniond q(pose_raw[3], pose_raw[0], pose_raw[1], pose_raw[2]);  // w, x, y, z
         _vio_R_w_i = q.toRotationMatrix();
 
-        if(m_dev_flag.try_lock()) {
-            if(dev_flag) {
+        if(m_adding_keyframe_buf.try_lock()) {
+            if(adding_keyframe_buf) {
                 ArImage *depth_image = nullptr;
                 ArImage *image = nullptr;
                 if (ArFrame_acquireCameraImage(ar_session_, ar_frame_, &image) == AR_SUCCESS) {
@@ -309,7 +310,7 @@ namespace hello_ar {
                 }
             }
 
-            m_dev_flag.unlock();
+            m_adding_keyframe_buf.unlock();
         }
 
         background_renderer_.Draw(ar_session_, ar_frame_,
@@ -493,8 +494,19 @@ namespace hello_ar {
         ArCamera_release(ar_camera);
     }
 
-    void HelloArApplication::SavePoseGraph() {
-        pose_graph.command();
+    void HelloArApplication::SavePoseGraph(jobjectArray labels) {
+        JNIEnv* env = GetJniEnv();
+        jsize labelLen = env->GetArrayLength(labels);
+        std::vector<std::string> v_labels;
+        for (jsize i = 0; i < labelLen; ++i) {
+            jstring jLabel = (jstring) env->GetObjectArrayElement(labels, i);
+            const char* rawStr = env->GetStringUTFChars(jLabel, nullptr);
+            v_labels.emplace_back(rawStr);
+            env->ReleaseStringUTFChars(jLabel, rawStr);
+            env->DeleteLocalRef(jLabel);
+        }
+
+        pose_graph.savePoseGraph(v_labels);
     }
 
     bool HelloArApplication::IsDepthSupported() {
@@ -536,7 +548,6 @@ namespace hello_ar {
     }
 
     void HelloArApplication::OnTouched(float x, float y) {
-        return;
         if (ar_frame_ != nullptr && ar_session_ != nullptr) {
             ArHitResultList* hit_result_list = nullptr;
             ArHitResultList_create(ar_session_, &hit_result_list);
