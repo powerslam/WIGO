@@ -111,11 +111,22 @@ public class MainActivity extends AppCompatActivity {
                         String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
 
                         File labelFile = new File(MainActivity.this.getFilesDir(), buildingName + "/label.txt");
+                        File poseGraphFile = new File(MainActivity.this.getFilesDir(), buildingName + "/4층/pose_graph.txt");
+
+                        Log.i("POSE_GRAPH_CHECK", "path=" + poseGraphFile.getAbsolutePath());
+                        Log.i("POSE_GRAPH_CHECK", "exists=" + poseGraphFile.exists());
+
+                        String poseGraphPath = poseGraphFile.getAbsolutePath();
+
+                        JniInterface.createNativeApplication(
+                                getAssets(),
+                                poseGraphPath
+                        );
 
                         if (labelFile.exists()) {
                             // ✅ 이미 압축 해제되어 있는 경우 → 바로 경로 전달
                             String roomNumber = selected.replaceAll("[^0-9]", "");
-                            Pair<Integer, Integer> coords = LabelReader.getCoordinates(MainActivity.this, buildingName, roomNumber);
+                            Pair<Float, Float> coords = LabelReader.getCoordinates(MainActivity.this, buildingName, roomNumber);
                             if (coords != null) {
                                 HelloArFragment fragment = (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                                 if (fragment != null) {
@@ -142,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
                                         Log.d("MainActivity", "✅ label.txt 발견됨: " + labelFile.getAbsolutePath());
 
                                         String roomNumber = selected.replaceAll("[^0-9]", "");
-                                        Pair<Integer, Integer> coords = LabelReader.getCoordinates(MainActivity.this, buildingName, roomNumber);
+                                        Pair<Float, Float> coords = LabelReader.getCoordinates(MainActivity.this, buildingName, roomNumber);
                                         if (coords != null) {
                                             HelloArFragment fragment = (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                                             if (fragment != null) {
