@@ -47,7 +47,7 @@ private:
 
     std::unordered_set<int> notified_turn_indices_;
 
-    std::unordered_map<int, Point> pose_graph_nodes_;
+    std::unordered_map<int, std::unordered_map<int, Point>> pose_graph_by_floor_;
 
     std::set<Point> obstacles_;  
 

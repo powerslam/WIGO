@@ -30,28 +30,19 @@ void PathNavigator::LoadPoseGraphFromFile(const std::string& path, int floor) {
         std::vector<std::string> tokens;
         std::string token;
 
-        while (iss >> token) {
-            tokens.push_back(token);
-        }
-
-        if (tokens.size() < 8) continue; // 필드 부족 시 스킵
+        while (iss >> token) tokens.push_back(token);
+        if (tokens.size() < 8) continue;
 
         int id = std::stoi(tokens[0]);
-        float y = std::stof(tokens[5]);
+        float x = std::stof(tokens[5]);
         float z = std::stof(tokens[7]);
 
-        pose_graph_nodes_[id] = Point{ y, z };
+        pose_graph_by_floor_[floor][id] = Point{x, z};
     }
 
     file.close();
-    LOGI("✅ pose_graph.txt %zu개 노드 로드 완료", pose_graph_nodes_.size());
-    int count = 0;
-    for (const auto& [id, point] : pose_graph_nodes_) {
-        LOGI("📍 노드 ID: %d → (x=%.2f, z=%.2f)", id, point.x, point.z);
-        if (++count >= 5) break;  // 최대 5개까지만 출력
-    }
+    LOGI("✅ %d층 pose_graph.txt → %zu개 노드 로드 완료", floor, pose_graph_by_floor_[floor].size());
 }
-
 
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     if (!goal_set_) {
