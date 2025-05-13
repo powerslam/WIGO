@@ -7,15 +7,13 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- 가로 기준선: 25% (왼쪽) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.20"
-        android:orientation="vertical"/>
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.2" />
 
-    <!-- 가로 기준선: 75% (오른쪽) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_end"
         android:layout_width="wrap_content"
@@ -23,7 +21,6 @@
         app:layout_constraintGuide_percent="0.8"
         android:orientation="vertical"/>
 
-    <!-- 세로 기준선: 70% (상단 기준) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top"
         android:layout_width="wrap_content"
@@ -31,7 +28,6 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.5" />
 
-    <!-- 세로 기준선: 70% (상단 기준) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_bottom"
         android:layout_width="wrap_content"
