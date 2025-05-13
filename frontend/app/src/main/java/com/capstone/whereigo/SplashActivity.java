@@ -34,7 +34,7 @@ public class SplashActivity extends AppCompatActivity {
         splashIcon.startAnimation(animation);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+            Intent intent = new Intent(SplashActivity.this, SearchActivity.class);
             startActivity(intent);
             finish();
         }, SPLASH_DURATION);
