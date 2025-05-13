@@ -10,37 +10,29 @@ import java.util.regex.Pattern;
 
 public class PoseStampViewPagerAdapter extends FragmentStateAdapter {
     private final PoseStampViewModel viewModel;
-    private String mapName;
+    private final int viewPagerSize;
 
     public PoseStampViewPagerAdapter(@NonNull FragmentActivity fragmentActivity,
                                      PoseStampViewModel viewModel) {
         super(fragmentActivity);
         this.viewModel = viewModel;
-        this.mapName = "새로운 지도";
+        this.viewPagerSize = viewModel.getPoseStampListSize();
     }
 
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        int size = viewModel.getPoseStampListSize() + 1;
+        final int realPosition = position % viewPagerSize;
 
-        PoseStamp poseStamp = position == size ? null : viewModel.getPoseStampAt(position % size);
-        String label = position == size ? this.mapName : viewModel.getLabelAt(position % size);
+        PoseStamp poseStamp = viewModel.getPoseStampAt(realPosition);
+        String label = viewModel.getLabelAt(realPosition);
 
         PoseStampCardFragment ret = PoseStampCardFragment.newInstance(poseStamp, label);
         ret.cardInputListener = newText -> {
-            if(position == size)
-                this.mapName = newText;
-
-            else
-                viewModel.updateLabel(position, newText);
+            viewModel.updateLabel(realPosition, newText);
         };
 
         return ret;
-    }
-
-    public String getMapName(){
-        return this.mapName;
     }
 
     @Override

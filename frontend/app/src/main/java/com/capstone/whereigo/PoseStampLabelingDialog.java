@@ -18,11 +18,6 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.capstone.whereigo.databinding.FragmentNodeLabelingBinding;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
-
 public class PoseStampLabelingDialog extends DialogFragment implements DialogInterface.OnDismissListener {
     private FragmentNodeLabelingBinding binding;
     private PoseStampViewPagerAdapter adapter;
@@ -59,7 +54,7 @@ public class PoseStampLabelingDialog extends DialogFragment implements DialogInt
         adapter = new PoseStampViewPagerAdapter(requireActivity(), viewModel);
         viewPager.setAdapter(adapter);
         viewPager.setPageTransformer(new MarginPageTransformer(30));
-        viewPager.setCurrentItem(Integer.MAX_VALUE / 2, false); // 무한 슬라이딩처럼
+        viewPager.setCurrentItem(Integer.MAX_VALUE / 2, false);
 
         Button btn = binding.buttonLabelingDone;
         btn.setOnClickListener(v -> {
@@ -76,7 +71,7 @@ public class PoseStampLabelingDialog extends DialogFragment implements DialogInt
     public void onDismiss(@NonNull DialogInterface dialog) {
         super.onDismiss(dialog);
         if (onDismissListener != null) {
-            onDismissListener.OnDismiss(adapter.getMapName());
+            onDismissListener.OnDismiss(viewModel.getBuildingName());
         }
     }
 
