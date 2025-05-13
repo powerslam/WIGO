@@ -68,7 +68,7 @@ public class SettingsFragment extends Fragment {
                     Fragment parent = getParentFragment();
                     if (parent != null) {
                         parent.getParentFragmentManager().beginTransaction()
-                                .replace(R.id.fragment_container, new MappingFragment())
+                                .replace(R.id.fragment_container, new BuildingInputFragment())
                                 .commit();
                     }
                     return true;
