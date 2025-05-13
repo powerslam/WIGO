@@ -17,6 +17,42 @@ void PathNavigator::SetGoal(const Point& goal) {
     goal_set_ = true;
 }
 
+void PathNavigator::LoadPoseGraphFromFile(const std::string& path, int floor) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        LOGI("❌ pose_graph.txt 열기 실패: %s", path.c_str());
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
+
+        while (iss >> token) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 8) continue; // 필드 부족 시 스킵
+
+        int id = std::stoi(tokens[0]);
+        float y = std::stof(tokens[5]);
+        float z = std::stof(tokens[7]);
+
+        pose_graph_nodes_[id] = Point{ y, z };
+    }
+
+    file.close();
+    LOGI("✅ pose_graph.txt %zu개 노드 로드 완료", pose_graph_nodes_.size());
+    int count = 0;
+    for (const auto& [id, point] : pose_graph_nodes_) {
+        LOGI("📍 노드 ID: %d → (x=%.2f, z=%.2f)", id, point.x, point.z);
+        if (++count >= 5) break;  // 최대 5개까지만 출력
+    }
+}
+
+
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     if (!goal_set_) {
         LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 생성 생략");

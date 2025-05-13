@@ -65,6 +65,8 @@ public class JniInterface {
 
   public static native void sendCoordinatesToNative(long nativeApp, float x, float y);
 
+  public static native void loadPoseGraphFromFile(long nativeApplication, String filePath, int floor);
+
   public static native boolean isDepthSupported(long nativeApplication);
 
   public static native void onSettingsChange(

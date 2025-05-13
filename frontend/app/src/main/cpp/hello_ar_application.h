@@ -59,8 +59,10 @@ class HelloArApplication {
   void SavePoseGraph();
 
   void SetGoal(const Point& goal);
-  
-  // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
+
+  void LoadPoseGraph(const std::string& path, int floor);
+
+    // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
   // is created.
   void OnSurfaceCreated();
 

@@ -22,10 +22,10 @@ public class SearchResultHandler {
         File labelFile = new File(context.getFilesDir(), buildingName + "/label.txt");
 
         if (labelFile.exists()) {
-            // 이미 있음 → 바로 처리
+            // ✅ 이미 압축 해제된 경우 바로 처리
             sendGoal(context, selected, buildingName, provider);
         } else {
-            // 다운로드 및 대기
+            // ❗압축 해제되지 않은 경우 → 다운로드 후 대기
             FileDownloader.downloadAndUnzipFile(context, url, fileName, buildingName);
             waitForLabelFile(context, labelFile, selected, buildingName, provider);
         }
@@ -40,12 +40,12 @@ public class SearchResultHandler {
             @Override
             public void run() {
                 if (labelFile.exists()) {
-                    Log.d("SearchResultHandler", "label.txt 발견됨: " + labelFile.getAbsolutePath());
+                    Log.d("SearchResultHandler", "✅ label.txt 발견됨: " + labelFile.getAbsolutePath());
                     sendGoal(context, selected, buildingName, provider);
                 } else if (System.currentTimeMillis() - startTime < timeout) {
                     handler.postDelayed(this, 500);
                 } else {
-                    Log.e("SearchResultHandler", "label.txt 생성 시간 초과: " + labelFile.getAbsolutePath());
+                    Log.e("SearchResultHandler", "❌ label.txt 생성 시간 초과: " + labelFile.getAbsolutePath());
                 }
             }
         };
@@ -57,16 +57,15 @@ public class SearchResultHandler {
         String roomNumber = selected.replaceAll("[^0-9]", "");
         Pair<Float, Float> coords = LabelReader.getCoordinates(context, buildingName, roomNumber);
 
-        if (coords != null) {
-            HelloArFragment fragment = provider.getFragment();
-            if (fragment != null) {
-                Log.i("SearchResultHandler", "경로 전달: x=" + coords.first + ", y=" + coords.second);
-                fragment.sendGoalToNative(coords.first, coords.second);
-            } else {
-                Log.e("SearchResultHandler", "HelloArFragment not found");
-            }
+        HelloArFragment fragment = provider.getFragment();
+        if (coords != null && fragment != null) {
+            // ✅ pose_graph 전 층 로드
+            PoseGraphLoader.loadAll(context, buildingName, fragment);
+
+            Log.i("SearchResultHandler", "📍 경로 전달: x=" + coords.first + ", y=" + coords.second);
+            fragment.sendGoalToNative(coords.first, coords.second);
         } else {
-            Log.e("SearchResultHandler", "좌표를 찾을 수 없습니다: " + selected);
+            Log.e("SearchResultHandler", "❌ 좌표 또는 fragment가 null입니다: " + selected);
         }
     }
 }

@@ -188,6 +188,8 @@ namespace hello_ar {
         glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
+        LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
+
         // PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
         // 경로 따라가기
@@ -419,6 +421,10 @@ namespace hello_ar {
 
     void HelloArApplication::SetGoal(const Point& goal) {
         path_navigator_.SetGoal(goal);  // ✅ 내부 PathNavigator에 전달
+    }
+
+    void HelloArApplication::LoadPoseGraph(const std::string& path, int floor) {
+        path_navigator_.LoadPoseGraphFromFile(path, floor);
     }
 
     void HelloArApplication::SavePoseGraph() {

@@ -11,6 +11,13 @@
 #include <glm/glm.hpp>
 #include <unordered_set>
 
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+
 class PathNavigator {
 public:
     PathNavigator();
@@ -24,6 +31,7 @@ public:
     int GetCurrentPathIndex() const;
     void Reset();
     bool IsGoalSet() const { return goal_set_; }
+    void LoadPoseGraphFromFile(const std::string& path, int floor);
 
     bool arrival_ = false;
 
@@ -38,6 +46,8 @@ private:
     bool goal_set_ = false;
 
     std::unordered_set<int> notified_turn_indices_;
+
+    std::unordered_map<int, Point> pose_graph_nodes_;
 
     std::set<Point> obstacles_;  
 

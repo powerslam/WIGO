@@ -146,6 +146,15 @@ JNI_METHOD(void, sendCoordinatesToNative)
     native(native_application)->SetGoal(Point{x, z});
 }
 
+JNI_METHOD(void, loadPoseGraphFromFile)
+(JNIEnv* env, jclass, jlong native_application, jstring j_path, jint floor) {
+    const char* c_path = env->GetStringUTFChars(j_path, nullptr);
+    std::string path(c_path);
+    env->ReleaseStringUTFChars(j_path, c_path);
+
+    native(native_application)->LoadPoseGraph(path, floor);
+}
+
 JNIEnv *GetJniEnv() {
   JNIEnv *env;
   jint result = g_vm->AttachCurrentThread(&env, nullptr);

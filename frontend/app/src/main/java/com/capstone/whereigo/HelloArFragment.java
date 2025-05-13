@@ -328,6 +328,11 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
   }
 
+  public void loadPoseGraphFromFile(String filePath, int floor) {
+    if (nativeApplication != 0) {
+      JniInterface.loadPoseGraphFromFile(nativeApplication, filePath, floor);
+    }
+  }
   public static void updateYawFromNative(float cameraYaw, float pathYaw) {
     if (instance != null && instance.compassView != null) {
       Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
