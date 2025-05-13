@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.3" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.65" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.2" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.8" />
+
+    <TextView
+        android:id="@+id/tv_building_input"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="건물 정보를 입력하세요."
+        android:textSize="18sp"
+        android:gravity="center_horizontal|center_vertical"
+        app:layout_constraintTop_toTopOf="@id/guide_form_top"
+        app:layout_constraintBottom_toBottomOf="@id/guide_tv_group_seperate"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_tv_group_seperate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/input_group"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="@id/guide_tv_group_seperate"
+        app:layout_constraintBottom_toBottomOf="@id/guide_form_bottom"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_input_group_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.1" />
+
+        <TextView
+            android:id="@+id/tv_edit_name"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:text="건물명"
+            android:textSize="16sp"
+            android:gravity="center_horizontal|center_vertical"
+            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
+            app:layout_constraintBottom_toTopOf="@id/tv_spinner_min"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/edit_name"/>
+
+        <EditText
+            android:id="@+id/edit_name"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:hint="건물명"
+            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
+            app:layout_constraintBottom_toTopOf="@id/spinner_min"
+            app:layout_constraintStart_toEndOf="@id/tv_edit_name"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <TextView
+            android:id="@+id/tv_spinner_min"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:text="최하층"
+            android:textSize="16sp"
+            android:gravity="center_horizontal|center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/tv_edit_name"
+            app:layout_constraintBottom_toTopOf="@id/tv_spinner_max"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/spinner_min"/>
+
+        <Spinner
+            android:id="@+id/spinner_min"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/edit_name"
+            app:layout_constraintBottom_toTopOf="@id/spinner_max"
+            app:layout_constraintStart_toEndOf="@id/tv_spinner_min"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <TextView
+            android:id="@+id/tv_spinner_max"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:text="최상층"
+            android:textSize="16sp"
+            android:gravity="center_horizontal|center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/tv_spinner_min"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/spinner_max"/>
+
+        <Spinner
+            android:id="@+id/spinner_max"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/spinner_min"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/tv_spinner_max"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_button_next_seperate_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.6" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_button_next_seperate_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.8" />
+
+    <Button
+        android:id="@+id/button_next"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="다음"
+        android:layout_gravity="center_horizontal"
+        app:layout_constraintTop_toTopOf="@id/guide_button_next_seperate_top"
+        app:layout_constraintStart_toStartOf="@id/guide_button_next_seperate_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
