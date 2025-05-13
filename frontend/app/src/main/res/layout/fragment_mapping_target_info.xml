@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.3" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.45" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.2" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_form_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.8" />
+
+    <TextView
+        android:id="@+id/tv_building_input"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="현재 지도를 작성하고자 하는 층을 입력해주세요."
+        android:gravity="center_horizontal|center_vertical"
+        app:layout_constraintTop_toTopOf="@id/guide_form_top"
+        app:layout_constraintBottom_toBottomOf="@id/guide_tv_group_seperate"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_tv_group_seperate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/input_group"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="@id/guide_tv_group_seperate"
+        app:layout_constraintBottom_toBottomOf="@id/guide_form_bottom"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_input_group_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.1" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_input_group_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.66" />
+
+        <Spinner
+            android:id="@+id/spinner_floor"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/guide_input_group_end"/>
+
+        <TextView
+            android:id="@+id/tv_spinner_floor"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:text="층"
+            android:gravity="center_horizontal|center_vertical"
+            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@id/guide_input_group_end"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_button_next_seperate_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.6" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_button_next_seperate_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.8" />
+
+    <Button
+        android:id="@+id/button_next"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="다음"
+        android:layout_gravity="center_horizontal"
+        app:layout_constraintTop_toTopOf="@id/guide_button_next_seperate_top"
+        app:layout_constraintStart_toStartOf="@id/guide_button_next_seperate_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
