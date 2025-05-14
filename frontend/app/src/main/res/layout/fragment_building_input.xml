@@ -172,6 +172,20 @@
         app:layout_constraintEnd_toEndOf="@id/guide_form_end">
 
         <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_input_group_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.4" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_input_group_bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.6" />
+
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guide_input_group_end"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -181,18 +195,18 @@
         <Spinner
             android:id="@+id/spinner_floor"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:background="@drawable/bg_input_box"
             android:padding="12dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
+            app:layout_constraintBottom_toBottomOf="@id/guide_input_group_bottom"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="@id/guide_input_group_end" />
 
         <TextView
             android:id="@+id/tv_spinner_floor"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:text="층"
             android:textSize="16sp"
             android:textColor="#212121"
@@ -209,12 +223,13 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="다음"
+        android:text="이전"
+        android:visibility="gone"
         android:textColor="@android:color/white"
         android:backgroundTint="@color/md_theme_onPrimaryContainer"
         app:layout_constraintTop_toBottomOf="@id/guide_form_bottom"
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
-        app:layout_constraintEnd_toEndOf="@id/button_next" />
+        app:layout_constraintEnd_toStartOf="@id/button_next" />
 
     <!-- 다음 버튼 -->
     <Button
