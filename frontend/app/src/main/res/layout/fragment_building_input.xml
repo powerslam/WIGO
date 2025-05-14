@@ -2,19 +2,25 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/building_input_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
 
     <!-- 상단 진행 바 -->
-    <View
+    <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progress_bar"
         android:layout_width="0dp"
-        android:layout_height="6dp"
-        android:background="@color/md_theme_onPrimaryContainer"
+        android:layout_height="0dp"
+        android:progress="50"
+        android:max="100"
         app:layout_constraintBottom_toBottomOf="@id/guide_form_top"
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
-        app:layout_constraintEnd_toEndOf="@id/guide_form_end" />
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end"
+        app:trackThickness="10dp"
+        app:trackCornerRadius="16dp"
+        app:indicatorColor="@color/md_theme_onPrimaryContainer"
+        style="@style/Widget.MaterialComponents.LinearProgressIndicator" />
 
     <!-- 가이드라인 -->
     <androidx.constraintlayout.widget.Guideline
@@ -62,16 +68,17 @@
 
     <!-- 입력 그룹 -->
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/input_group"
+        android:id="@+id/input_group_1"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:visibility="visible"
         app:layout_constraintTop_toBottomOf="@id/tv_building_input"
         app:layout_constraintBottom_toBottomOf="@id/guide_form_bottom"
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
         app:layout_constraintEnd_toEndOf="@id/guide_form_end">
 
         <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/guide_input_group_top"
+            android:id="@+id/guide_input_group_top_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -85,8 +92,8 @@
             android:textSize="16sp"
             android:textColor="#212121"
             android:gravity="center_vertical|center_horizontal"
-            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
-            app:layout_constraintBottom_toTopOf="@id/tv_spinner_min"
+            app:layout_constraintTop_toTopOf="@id/edit_name"
+            app:layout_constraintBottom_toBottomOf="@id/edit_name"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/edit_name" />
 
@@ -98,7 +105,7 @@
             android:background="@drawable/bg_input_box"
             android:padding="12dp"
             android:textColor="#000000"
-            app:layout_constraintTop_toTopOf="@id/guide_input_group_top"
+            app:layout_constraintTop_toTopOf="@id/guide_input_group_top_1"
             app:layout_constraintBottom_toTopOf="@id/spinner_min"
             app:layout_constraintStart_toEndOf="@id/tv_edit_name"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -111,8 +118,8 @@
             android:textSize="16sp"
             android:textColor="#212121"
             android:gravity="center_vertical|center_horizontal"
-            app:layout_constraintTop_toBottomOf="@id/tv_edit_name"
-            app:layout_constraintBottom_toTopOf="@id/tv_spinner_max"
+            app:layout_constraintTop_toTopOf="@id/spinner_min"
+            app:layout_constraintBottom_toBottomOf="@id/spinner_min"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/spinner_min" />
 
@@ -135,8 +142,8 @@
             android:textSize="16sp"
             android:textColor="#212121"
             android:gravity="center_vertical|center_horizontal"
-            app:layout_constraintTop_toBottomOf="@id/tv_spinner_min"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="@id/spinner_max"
+            app:layout_constraintBottom_toBottomOf="@id/spinner_max"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/spinner_max" />
 
@@ -153,17 +160,72 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- 입력 그룹 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/input_group_2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tv_building_input"
+        app:layout_constraintBottom_toTopOf="@id/button_next"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_input_group_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.66" />
+
+        <Spinner
+            android:id="@+id/spinner_floor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input_box"
+            android:padding="12dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/guide_input_group_end" />
+
+        <TextView
+            android:id="@+id/tv_spinner_floor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="층"
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:gravity="center_vertical|center_horizontal"
+            app:layout_constraintTop_toTopOf="@id/spinner_floor"
+            app:layout_constraintBottom_toBottomOf="@id/spinner_floor"
+            app:layout_constraintStart_toStartOf="@id/guide_input_group_end"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <Button
+        android:id="@+id/button_prev"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="다음"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/md_theme_onPrimaryContainer"
+        app:layout_constraintTop_toBottomOf="@id/guide_form_bottom"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/button_next" />
+
     <!-- 다음 버튼 -->
     <Button
         android:id="@+id/button_next"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="24dp"
         android:text="다음"
         android:textColor="@android:color/white"
         android:backgroundTint="@color/md_theme_onPrimaryContainer"
-        app:layout_constraintTop_toBottomOf="@id/input_group"
+        app:layout_constraintTop_toBottomOf="@id/guide_form_bottom"
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
         app:layout_constraintEnd_toEndOf="@id/guide_form_end" />
 
