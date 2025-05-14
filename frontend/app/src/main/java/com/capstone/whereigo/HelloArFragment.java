@@ -9,6 +9,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -41,6 +42,8 @@ import android.content.res.AssetManager;
 import android.os.Vibrator;
 import android.os.VibrationEffect;
 import android.os.Build;
+
+import android.widget.Button;
 
 
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
@@ -79,6 +82,8 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private static Queue<String> audioQueue = new LinkedList<>();
   private static boolean isPlaying = false;
 
+  private static Button elevatorButton;
+
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     return inflater.inflate(R.layout.fragment_hello_ar, container, false);
@@ -96,6 +101,8 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     surfaceStatusText = view.findViewById(R.id.surface_status_text);
 
     JniInterface.setClassLoader(this.getClass().getClassLoader());
+
+    elevatorButton = view.findViewById(R.id.btn_elevator);
 
     gestureDetector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
       @Override
@@ -358,6 +365,36 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     }
 
   }
+
+  public static void onGoalStatusChanged(int status) {
+    if (instance == null) return;
+
+    String message = (status == 0)
+            ? "다음 목표로 이동합니다"
+            : "목적지에 도착했습니다";
+
+    instance.requireActivity().runOnUiThread(() -> {
+      Toast.makeText(instance.requireContext(), message, Toast.LENGTH_SHORT).show();
+
+      if (elevatorButton != null) {
+        if (status == 0) {
+          elevatorButton.setVisibility(View.VISIBLE);
+
+          elevatorButton.setOnClickListener(v -> {
+            JniInterface.changeStatus(instance.nativeApplication);
+            elevatorButton.setVisibility(View.GONE); // 버튼 숨김
+          });
+
+        } else {
+          elevatorButton.setVisibility(View.GONE); // 최종 도착 시 숨김
+        }
+      }
+    });
+
+    Log.d("NativeCallback", "🎯 onGoalStatusChanged: " + message);
+  }
+
+
 
   public void onAttach(@NonNull Context context) {
     super.onAttach(context);

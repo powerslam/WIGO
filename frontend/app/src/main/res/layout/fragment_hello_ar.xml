@@ -76,4 +76,12 @@
         android:layout_gravity="center_horizontal|bottom"
         android:layout_marginBottom="50dp" />
 
+    <Button
+        android:id="@+id/btn_elevator"
+        android:layout_margin="15dp"
+        android:visibility="gone"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
 </FrameLayout>

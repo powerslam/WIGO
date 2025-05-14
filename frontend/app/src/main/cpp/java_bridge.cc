@@ -114,6 +114,21 @@ void JavaBridge::EnqueueAudio(const char* filename) {
     env->DeleteLocalRef(jFilename);
 }
 
+
+void JavaBridge::NotifyGoalStatus(int status) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+    if (!clazz) return;
+
+    jmethodID method = env->GetStaticMethodID(clazz, "onGoalStatusChanged", "(I)V");
+    if (!method) return;
+
+    env->CallStaticVoidMethod(clazz, method, status);
+}
+
+
 void JavaBridge::UpdateYaw(float cameraYaw, float pathYaw) {
     JNIEnv* env = GetEnv();
     if (!env) return;

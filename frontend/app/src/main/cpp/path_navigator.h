@@ -32,6 +32,7 @@ public:
     void LoadPoseGraphFromFile(const std::string& path, int floor);
 
     bool getarrival();
+    void ChangeStatus();
 
 private:
     std::queue<Point> goal_queue_;
@@ -43,6 +44,9 @@ private:
 
     bool goal_set_ = false;
     bool arrival_ = false;
+
+    std::mutex m_adding_keyframe_buf;
+    bool adding_keyframe_buf = true;
 
     std::unordered_set<int> notified_turn_indices_;
     std::unordered_map<int, std::unordered_map<int, Point>> pose_graph_by_floor_;

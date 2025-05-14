@@ -165,6 +165,11 @@ JNI_METHOD(void, loadPoseGraphFromFile)
     native(native_application)->LoadPoseGraph(path, floor);
 }
 
+JNI_METHOD(void, changeStatus)
+(JNIEnv *, jclass, jlong native_application) {
+    native(native_application)->path_navigator_.ChangeStatus();
+}
+
 JNIEnv *GetJniEnv() {
   JNIEnv *env;
   jint result = g_vm->AttachCurrentThread(&env, nullptr);

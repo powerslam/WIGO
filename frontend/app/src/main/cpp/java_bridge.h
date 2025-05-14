@@ -15,6 +15,8 @@ public:
     static void UpdatePathStatus(const char* status);
     static void VibrateOnce();
 
+    static void NotifyGoalStatus(int status);
+
 private:
     static JavaVM* java_vm_;
     static jobject class_loader_;

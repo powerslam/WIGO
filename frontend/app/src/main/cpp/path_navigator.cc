@@ -7,7 +7,8 @@ namespace {
     constexpr float kReachThreshold = 0.8f;
 }
 
-PathNavigator::PathNavigator() {}
+PathNavigator::PathNavigator() {
+}
 
 void PathNavigator::SetGoals(const std::vector<Point>& goals) {
     while (!goal_queue_.empty()) goal_queue_.pop();
@@ -57,8 +58,16 @@ void PathNavigator::LoadPoseGraphFromFile(const std::string& path, int floor) {
     LOGI("✅ %d층 pose_graph.txt → %zu개 노드 로드 완료", floor, pose_graph_by_floor_[floor].size());
 }
 
+void PathNavigator::ChangeStatus() {
+
+    while(!m_adding_keyframe_buf.try_lock());
+    adding_keyframe_buf = !adding_keyframe_buf;
+    LOGI("adding_keyframe_buf: %d", adding_keyframe_buf);
+    m_adding_keyframe_buf.unlock();
+}
+
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
-    if (!goal_set_ || path_generated_ || goal_queue_.empty()) return;
+    if (!goal_set_ || path_generated_ || goal_queue_.empty() || !adding_keyframe_buf) return;
 
     Point current_goal = goal_queue_.front();
 
@@ -147,7 +156,9 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
             if (!goal_queue_.empty()) {
                 LOGI("➡️ 다음 목표로 이동");
                 JavaBridge::SpeakText("다음 목표로 이동합니다.");
+                ChangeStatus();
                 TryGeneratePathIfNeeded(cam_pos);
+                JavaBridge::NotifyGoalStatus(0);
             } else {
                 LOGI("목적지 도달 완료");
                 if (!arrival_) {
@@ -155,6 +166,8 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
                     arrival_ = true;
                 }
                 goal_set_ = false;
+
+                JavaBridge::NotifyGoalStatus(1);
             }
             return true;
         }

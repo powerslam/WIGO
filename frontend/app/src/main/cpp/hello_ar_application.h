@@ -92,6 +92,8 @@ class HelloArApplication {
 
   void OnSettingsChange(bool is_instant_placement_enabled);
 
+  PathNavigator path_navigator_;
+
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session,
   const ArFrame* frame);
@@ -111,7 +113,6 @@ class HelloArApplication {
 
   AAssetManager* const asset_manager_;
 
-  PathNavigator path_navigator_;
   JNIEnv* GetJniEnv();
   DirectionHelper direction_helper_;
 
