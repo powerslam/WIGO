@@ -22,14 +22,12 @@ public class PoseStampViewPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        final int realPosition = position % viewPagerSize;
-
-        PoseStamp poseStamp = viewModel.getPoseStampAt(realPosition);
-        String label = viewModel.getLabelAt(realPosition);
+        PoseStamp poseStamp = viewModel.getPoseStampAt(position);
+        String label = viewModel.getLabelAt(position);
 
         PoseStampCardFragment ret = PoseStampCardFragment.newInstance(poseStamp, label);
         ret.cardInputListener = newText -> {
-            viewModel.updateLabel(realPosition, newText);
+            viewModel.updateLabel(position, newText);
         };
 
         return ret;
@@ -37,6 +35,6 @@ public class PoseStampViewPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return Integer.MAX_VALUE;
+        return this.viewPagerSize;
     }
 }
