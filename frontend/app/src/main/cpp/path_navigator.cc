@@ -11,7 +11,6 @@ PathNavigator::PathNavigator() {}
 
 void PathNavigator::SetGoals(const std::vector<Point>& goals) {
     while (!goal_queue_.empty()) goal_queue_.pop();
-
     for (size_t i = 0; i < goals.size(); ++i) {
         if (i % 2 == 0) {
             goal_queue_.push(goals[i]);
@@ -70,6 +69,11 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
         path_ready_to_render_ = true;
         arrival_ = false;
         LOGI("🚀 경로 생성 완료. 다음 목표: x=%.2f, z=%.2f", current_goal.x, current_goal.z);
+
+        for (size_t i = 0; i < path_.size(); ++i) {
+            LOGI("경로 %zu: x=%.2f, z=%.2f", i, path_[i].x, path_[i].z);
+        }
+
         JavaBridge::SpeakText("경로 안내를 시작합니다. 진동이 나는 방향을 찾아주세요.");
     } else {
         LOGI("❌ 경로 생성 실패");
@@ -83,16 +87,7 @@ bool PathNavigator::getarrival() {
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
     if (!goal_set_) return true;
 
-    if (current_path_index_ >= path_.size()) {
-        if (!arrival_) {
-            JavaBridge::SpeakText("목적지에 도착하였습니다. 경로 안내를 종료합니다.");
-            arrival_ = true;
-        }
-
-        char buffer[128];
-        snprintf(buffer, sizeof(buffer), "목적지에 도착하였습니다");
-        JavaBridge::UpdatePathStatus(buffer);
-
+    if (arrival_) {
         return true;
     }
 
@@ -150,12 +145,15 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
             notified_turn_indices_.clear();
 
             if (!goal_queue_.empty()) {
-                LOGI("➡️ 다음 목표로 이동합니다");
+                LOGI("➡️ 다음 목표로 이동");
                 JavaBridge::SpeakText("다음 목표로 이동합니다.");
                 TryGeneratePathIfNeeded(cam_pos);
             } else {
-                LOGI("✅ 모든 목표 도달 완료");
-                JavaBridge::SpeakText("모든 목적지에 도착하였습니다.");
+                LOGI("목적지 도달 완료");
+                if (!arrival_) {
+                    JavaBridge::SpeakText("목적지에 도착하였습니다. 경로 안내를 종료합니다.");
+                    arrival_ = true;
+                }
                 goal_set_ = false;
             }
             return true;
