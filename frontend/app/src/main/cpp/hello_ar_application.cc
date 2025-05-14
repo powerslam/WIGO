@@ -408,7 +408,7 @@ namespace hello_ar {
             int path_size = static_cast<int>(path.size());
             int current_index = path_navigator_.GetCurrentPathIndex();
 
-            if (path_size > 5 && current_index >= path_size - 5 && !path_navigator_.arrival_) {
+            if (path_size > 5 && current_index >= path_size - 5 && !path_navigator_.getarrival()) {
                 glm::mat4 model_mat(1.0f);
                 if (location_pin_anchor_.trackable != nullptr) {
                     UpdateAnchorColor(&location_pin_anchor_);

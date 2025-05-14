@@ -7,18 +7,22 @@ namespace {
     constexpr float kReachThreshold = 0.8f;
 }
 
-PathNavigator::PathNavigator() {
-    obstacles_ = GenerateObstacles();
-}
+PathNavigator::PathNavigator() {}
 
 void PathNavigator::SetGoals(const std::vector<Point>& goals) {
     while (!goal_queue_.empty()) goal_queue_.pop();
-    for (const auto& g : goals) goal_queue_.push(g);
+
+    for (size_t i = 0; i < goals.size(); ++i) {
+        if (i % 2 == 0) {
+            goal_queue_.push(goals[i]);
+        }
+    }
+
     goal_set_ = !goal_queue_.empty();
     path_generated_ = false;
-    LOGI("✅ Goal Queue 설정 완료. 총 %zu개 목표", goals.size());
+    LOGI("✅ Goal Queue 설정 완료. 총 %zu개 목표", goal_queue_.size());
 
-    std::queue<Point> goal_debug = goal_queue_;  // 원본 queue는 그대로 두고 복사본으로 출력
+    std::queue<Point> goal_debug = goal_queue_;
     int idx = 0;
     while (!goal_debug.empty()) {
         const Point& p = goal_debug.front();
@@ -58,36 +62,33 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     if (!goal_set_ || path_generated_ || goal_queue_.empty()) return;
 
     Point current_goal = goal_queue_.front();
-    std::set<Point> obstacles = GenerateObstacles();
 
-    path_ = astar(camera_pos, current_goal, obstacles);
+    path_ = astar(camera_pos, current_goal);
 
     if (!path_.empty()) {
         path_generated_ = true;
         path_ready_to_render_ = true;
         arrival_ = false;
         LOGI("🚀 경로 생성 완료. 다음 목표: x=%.2f, z=%.2f", current_goal.x, current_goal.z);
-        JavaBridge::SpeakText("경로 안내를 시작합니다.");
+        JavaBridge::SpeakText("경로 안내를 시작합니다. 진동이 나는 방향을 찾아주세요.");
     } else {
         LOGI("❌ 경로 생성 실패");
     }
 }
 
+bool PathNavigator::getarrival() {
+    return arrival_;
+}
 
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
-    if (!goal_set_) {
-        // LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 확인 생략");
-        return true;
-    }
+    if (!goal_set_) return true;
 
     if (current_path_index_ >= path_.size()) {
         if (!arrival_) {
-//            JavaBridge::EnqueueAudio("arrival.m4a");
             JavaBridge::SpeakText("목적지에 도착하였습니다. 경로 안내를 종료합니다.");
             arrival_ = true;
         }
 
-        // 상태 업데이트 메시지 전달
         char buffer[128];
         snprintf(buffer, sizeof(buffer), "목적지에 도착하였습니다");
         JavaBridge::UpdatePathStatus(buffer);
@@ -129,11 +130,9 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
         LOGI("🚨 경로 이탈 감지됨. 재탐색 시작");
         JavaBridge::SpeakText("경로를 이탈하였습니다. 경로를 재탐색합니다.");
 
-        // 현재 goal_queue_는 유지하고, 상태만 초기화
-        Reset();  // 경로, 상태, index 초기화
+        Reset();
         path_generated_ = false;
-
-        TryGeneratePathIfNeeded(cam_pos);  // 동일한 목표로 경로 재생성
+        TryGeneratePathIfNeeded(cam_pos);
         return false;
     }
 
@@ -144,7 +143,6 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
         current_path_index_++;
         LOGI("✅ 경로 지점 %d 도달", current_path_index_);
 
-        // 마지막 경로 지점 도달 시 다음 목표 처리
         if (current_path_index_ >= path_.size()) {
             goal_queue_.pop();
             path_generated_ = false;
@@ -164,7 +162,6 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
         }
     }
 
-    // 상태 업데이트 메시지 전달
     char buffer[128];
     snprintf(buffer, sizeof(buffer), "📍 현재 경로 지점 %d / %.2fm 남음", current_path_index_, distance);
     JavaBridge::UpdatePathStatus(buffer);
@@ -188,7 +185,6 @@ int PathNavigator::GetCurrentPathIndex() const {
     return current_path_index_;
 }
 
-
 void PathNavigator::Reset() {
     path_.clear();
     path_generated_ = false;
@@ -196,26 +192,4 @@ void PathNavigator::Reset() {
     arrival_ = false;
     current_path_index_ = 0;
     notified_turn_indices_.clear();
-}
-
-std::set<Point> PathNavigator::GenerateObstacles() {
-    std::set<Point> obstacles;
-
-    std::vector<Point> outer = {
-        {-11.5f, 1.8f}, {-11.5f, -20.25f}, {1.5f, -20.25f}, {1.5f, 1.8f}
-    };
-    std::vector<Point> inner = {
-        {-8.58f, -0.6f}, {-8.58f, -15.89f}, {-1.49f, -15.89f}, {-1.49f, -0.6f}
-    };
-
-    for (int i = 0; i < outer.size(); ++i) {
-        auto wall = generateWall(outer[i], outer[(i + 1) % outer.size()]);
-        obstacles.insert(wall.begin(), wall.end());
-    }
-    for (int i = 0; i < inner.size(); ++i) {
-        auto wall = generateWall(inner[i], inner[(i + 1) % inner.size()]);
-        obstacles.insert(wall.begin(), wall.end());
-    }
-
-    return obstacles;
 }

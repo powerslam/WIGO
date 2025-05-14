@@ -2,22 +2,19 @@
 
 #include <queue>
 #include <vector>
-#include <set>
+#include <unordered_set>
+#include <unordered_map>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <android/log.h>
+#include <glm/glm.hpp>
+
 #include "util.h"
 #include "direction_helper.h"
 #include "astar_pathfinding.h"
 #include "java_bridge.h"
-#include <cmath>
-#include <android/log.h>
-#include <glm/glm.hpp>
-#include <unordered_set>
-
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <unordered_map>
-
 
 class PathNavigator {
 public:
@@ -34,7 +31,7 @@ public:
     bool IsGoalSet() const { return goal_set_; }
     void LoadPoseGraphFromFile(const std::string& path, int floor);
 
-    bool arrival_ = false;
+    bool getarrival();
 
 private:
     std::queue<Point> goal_queue_;
@@ -45,12 +42,8 @@ private:
     int current_path_index_ = 0;
 
     bool goal_set_ = false;
+    bool arrival_ = false;
 
     std::unordered_set<int> notified_turn_indices_;
-
     std::unordered_map<int, std::unordered_map<int, Point>> pose_graph_by_floor_;
-
-    std::set<Point> obstacles_;  
-
-    std::set<Point> GenerateObstacles();
 };
