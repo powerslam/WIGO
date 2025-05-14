@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView recyclerView = searchView.findViewById(R.id.search_result);
 
         List<String> allResults = new ArrayList<>();
-        allResults.add("미래관 445호");
+        allResults.add("미래관 123호");
         allResults.add("미래관 447호");
         allResults.add("미래관 449호");
         allResults.add("미래관 444호");
@@ -105,16 +105,24 @@ public class MainActivity extends AppCompatActivity {
                     recyclerView.setVisibility(View.VISIBLE);
                     recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
                     recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
+
+                        String buildingName = selected.split(" ")[0];
+                        String roomNumber = selected.replaceAll("[^0-9]", "");
+
+                        int currentFloor = 6;
+
+                        String fullSelected = buildingName + " " + roomNumber;
+
                         SearchResultHandler.handle(
-                            MainActivity.this,
-                            selected,
-                            () -> (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container)
+                                MainActivity.this,
+                                fullSelected,
+                                () -> (HelloArFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container),
+                                currentFloor
                         );
                     }));
                 } else {
                     recyclerView.setVisibility(View.GONE);
                 }
-
 
             }
 

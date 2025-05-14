@@ -11,10 +11,20 @@ PathNavigator::PathNavigator() {
     obstacles_ = GenerateObstacles();
 }
 
-void PathNavigator::SetGoal(const Point& goal) {
-    LOGI("SetGoal_Check: x = %.2f, z = %.2f", goal.x, goal.z);
-    goal_ = goal;
-    goal_set_ = true;
+void PathNavigator::SetGoals(const std::vector<Point>& goals) {
+    while (!goal_queue_.empty()) goal_queue_.pop();
+    for (const auto& g : goals) goal_queue_.push(g);
+    goal_set_ = !goal_queue_.empty();
+    path_generated_ = false;
+    LOGI("✅ Goal Queue 설정 완료. 총 %zu개 목표", goals.size());
+
+    std::queue<Point> goal_debug = goal_queue_;  // 원본 queue는 그대로 두고 복사본으로 출력
+    int idx = 0;
+    while (!goal_debug.empty()) {
+        const Point& p = goal_debug.front();
+        LOGI("🎯 Goal %d: x=%.2f, z=%.2f", idx++, p.x, p.z);
+        goal_debug.pop();
+    }
 }
 
 void PathNavigator::LoadPoseGraphFromFile(const std::string& path, int floor) {
@@ -45,34 +55,28 @@ void PathNavigator::LoadPoseGraphFromFile(const std::string& path, int floor) {
 }
 
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
-    if (!goal_set_) {
-        LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 생성 생략");
-        return;
-    }
+    if (!goal_set_ || path_generated_ || goal_queue_.empty()) return;
 
-    if (path_generated_) return;
-
+    Point current_goal = goal_queue_.front();
     std::set<Point> obstacles = GenerateObstacles();
 
-    path_ = astar(camera_pos, goal_, obstacles);
+    path_ = astar(camera_pos, current_goal, obstacles);
 
     if (!path_.empty()) {
         path_generated_ = true;
         path_ready_to_render_ = true;
         arrival_ = false;
-        LOGI("🚀 경로 탐색 성공!");
-
-//        JavaBridge::EnqueueAudio("start.m4a");
-        JavaBridge::SpeakText("경로 안내를 시작합니다. 진동이 나는 방향을 찾아주세요.");
-
+        LOGI("🚀 경로 생성 완료. 다음 목표: x=%.2f, z=%.2f", current_goal.x, current_goal.z);
+        JavaBridge::SpeakText("경로 안내를 시작합니다.");
     } else {
-        LOGI("❌ 경로 탐색 실패");
+        LOGI("❌ 경로 생성 실패");
     }
 }
 
+
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
     if (!goal_set_) {
-        LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 확인 생략");
+        // LOGI("❌ 목적지(goal_)가 설정되지 않아 경로 확인 생략");
         return true;
     }
 
@@ -123,12 +127,13 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
 
     if (distance > kDeviationThreshold) {
         LOGI("🚨 경로 이탈 감지됨. 재탐색 시작");
-//        JavaBridge::EnqueueAudio("deviation.m4a");
         JavaBridge::SpeakText("경로를 이탈하였습니다. 경로를 재탐색합니다.");
-        Point old_goal = goal_;
-        Reset();
-        SetGoal(old_goal);
-        TryGeneratePathIfNeeded(cam_pos);
+
+        // 현재 goal_queue_는 유지하고, 상태만 초기화
+        Reset();  // 경로, 상태, index 초기화
+        path_generated_ = false;
+
+        TryGeneratePathIfNeeded(cam_pos);  // 동일한 목표로 경로 재생성
         return false;
     }
 
@@ -138,6 +143,25 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
         direction_helper.Reset();
         current_path_index_++;
         LOGI("✅ 경로 지점 %d 도달", current_path_index_);
+
+        // 마지막 경로 지점 도달 시 다음 목표 처리
+        if (current_path_index_ >= path_.size()) {
+            goal_queue_.pop();
+            path_generated_ = false;
+            current_path_index_ = 0;
+            notified_turn_indices_.clear();
+
+            if (!goal_queue_.empty()) {
+                LOGI("➡️ 다음 목표로 이동합니다");
+                JavaBridge::SpeakText("다음 목표로 이동합니다.");
+                TryGeneratePathIfNeeded(cam_pos);
+            } else {
+                LOGI("✅ 모든 목표 도달 완료");
+                JavaBridge::SpeakText("모든 목적지에 도착하였습니다.");
+                goal_set_ = false;
+            }
+            return true;
+        }
     }
 
     // 상태 업데이트 메시지 전달

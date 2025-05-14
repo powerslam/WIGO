@@ -48,7 +48,7 @@ namespace hello_ar {
         : // pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480),
         asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr} {
     
-        LOGI("external_path: %s", external_path.c_str());
+        // LOGI("external_path: %s", external_path.c_str());
         // pose_graph.loadVocabulary(asset_manager_);
     }
 
@@ -188,7 +188,7 @@ namespace hello_ar {
         glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
-        LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
+        // LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
 
         // PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
@@ -419,8 +419,8 @@ namespace hello_ar {
         }
     }
 
-    void HelloArApplication::SetGoal(const Point& goal) {
-        path_navigator_.SetGoal(goal);  // ✅ 내부 PathNavigator에 전달
+    void HelloArApplication::SetGoals(const std::vector<Point>& goals) {
+        path_navigator_.SetGoals(goals);
     }
 
     void HelloArApplication::LoadPoseGraph(const std::string& path, int floor) {

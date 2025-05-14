@@ -61,9 +61,7 @@ public class JniInterface {
   public static native void onTouched(long nativeApplication, float x, float y);
 
   /** Get plane count in current session. Used to disable the "searching for surfaces" snackbar. */
-  public static native boolean hasDetectedPlanes(long nativeApplication);
-
-  public static native void sendCoordinatesToNative(long nativeApp, float x, float y);
+  public static native void sendMultiGoalsToNative(long nativeApplication, float[] coords);
 
   public static native void loadPoseGraphFromFile(long nativeApplication, String filePath, int floor);
 

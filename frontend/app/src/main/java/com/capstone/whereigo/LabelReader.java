@@ -30,6 +30,7 @@ public class LabelReader {
             if (jsonObject.has(roomName)) {
                 float x = (float) jsonObject.getJSONArray(roomName).getDouble(0);
                 float y = (float) jsonObject.getJSONArray(roomName).getDouble(1);
+                Log.i("LabelReader", "✅ " + roomName + " 좌표 불러옴: x=" + x + ", y=" + y);
                 return new Pair<Float, Float>(x, y);
             } else {
                 Log.e("LabelReader", roomName + " 좌표 없음");

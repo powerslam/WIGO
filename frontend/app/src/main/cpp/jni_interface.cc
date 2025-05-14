@@ -141,9 +141,19 @@ JNI_METHOD(void, savePoseGraph)
   native(native_application)->SavePoseGraph();
 }
 
-JNI_METHOD(void, sendCoordinatesToNative)
-(JNIEnv *, jclass, jlong native_application, jfloat x, jfloat z) {
-    native(native_application)->SetGoal(Point{x, z});
+JNI_METHOD(void, sendMultiGoalsToNative)
+(JNIEnv* env, jclass, jlong native_application, jfloatArray j_goals) {
+    int len = env->GetArrayLength(j_goals);
+    jfloat* arr = env->GetFloatArrayElements(j_goals, 0);
+
+    std::vector<Point> goals;
+    for (int i = 0; i + 1 < len; i += 2) {
+        goals.emplace_back(Point{arr[i], arr[i + 1]});
+    }
+
+    native(native_application)->SetGoals(goals);
+
+    env->ReleaseFloatArrayElements(j_goals, arr, 0);
 }
 
 JNI_METHOD(void, loadPoseGraphFromFile)

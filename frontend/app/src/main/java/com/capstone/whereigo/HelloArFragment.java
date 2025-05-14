@@ -321,10 +321,13 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     viewportChanged = true;
   }
 
-  public void sendGoalToNative(float x, float y) {
-    if (nativeApplication != 0) {
-      Log.i("HelloArFragment", "sendGoalToNative: x=" + x + ", y=" + y);
-      JniInterface.sendCoordinatesToNative(nativeApplication, x, y);
+  public void sendMultiGoalsToNative(float[] coords) {
+    if (nativeApplication != 0 && coords != null && coords.length % 2 == 0) {
+      Log.i("HelloArFragment", "📤 sendMultiGoalsToNative: 총 " + (coords.length / 2) + "개 좌표 전송");
+
+      JniInterface.sendMultiGoalsToNative(nativeApplication, coords);
+    } else {
+      Log.e("HelloArFragment", "❌ nativeApplication 또는 coords 오류");
     }
   }
 
@@ -335,7 +338,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   }
   public static void updateYawFromNative(float cameraYaw, float pathYaw) {
     if (instance != null && instance.compassView != null) {
-      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
+      // Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
       instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
     }
   }

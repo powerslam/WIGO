@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <vector>
 #include <set>
 #include "util.h"
@@ -22,7 +23,7 @@ class PathNavigator {
 public:
     PathNavigator();
 
-    void SetGoal(const Point& goal);
+    void SetGoals(const std::vector<Point>& goals);
     void TryGeneratePathIfNeeded(const Point& camera_pos);
     bool UpdateNavigation(const Point& cam_pos, const float* pose_raw, DirectionHelper& direction_helper);
     bool IsReadyToRender() const;
@@ -36,7 +37,7 @@ public:
     bool arrival_ = false;
 
 private:
-    Point goal_ = {9999.0f, 9999.0f};
+    std::queue<Point> goal_queue_;
 
     std::vector<Point> path_;
     bool path_generated_ = false;

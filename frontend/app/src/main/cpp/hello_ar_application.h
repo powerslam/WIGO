@@ -58,7 +58,7 @@ class HelloArApplication {
 
   void SavePoseGraph();
 
-  void SetGoal(const Point& goal);
+  void SetGoals(const std::vector<Point>& goals);
 
   void LoadPoseGraph(const std::string& path, int floor);
 
