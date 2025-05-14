@@ -9,7 +9,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -23,7 +23,11 @@ import androidx.transition.TransitionManager;
 
 import com.capstone.whereigo.databinding.FragmentBuildingInputBinding;
 
+import java.util.regex.Pattern;
+
 public class BuildingInputFragment extends Fragment {
+    private static final Pattern VALID_FILENAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9\\- _]+$");
+
     private FragmentBuildingInputBinding binding;
     private PoseStampViewModel viewModel;
 
@@ -82,6 +86,11 @@ public class BuildingInputFragment extends Fragment {
         btnNext = binding.buttonNext;
         btnNext.setOnClickListener(v -> {
             if(!isScaledDown){
+                if(!checkBuildingName()){
+                    Toast.makeText(requireContext(), "건물 이름에 띄어쓰기는 허용되지 않습니다.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 isScaledDown = true;
 
                 binding.inputGroup1.setVisibility(View.GONE);
@@ -204,6 +213,11 @@ public class BuildingInputFragment extends Fragment {
 
         TransitionManager.beginDelayedTransition(binding.buildingInputLayout, transition);
         constraintSet.applyTo(binding.buildingInputLayout);
+    }
+
+    private boolean checkBuildingName() {
+        String buildingName = binding.editBuildingName.getText().toString();
+        return VALID_FILENAME_PATTERN.matcher(buildingName).matches();
     }
 
     private void fadeBtnPoseStamp() {
