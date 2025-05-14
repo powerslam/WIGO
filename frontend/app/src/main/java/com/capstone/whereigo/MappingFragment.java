@@ -33,10 +33,9 @@ public class MappingFragment extends Fragment {
     private FragmentMappingBinding binding;
     private ConstraintLayout main_layout;
     private boolean isScaledDown = false;
-    private TextView tv_number_of_recorded_node;
-    private Button btn_start_save_pose_graph;
-    private Button btn_pose_stamp;
-    private int originalWidth;
+    private TextView tvNumberOfRecordedNode;
+    private Button btnStartSavePoseGraph;
+    private Button btnPoseStamp;
 
     @Nullable
     @Override
@@ -71,18 +70,15 @@ public class MappingFragment extends Fragment {
             }
         });
 
-        tv_number_of_recorded_node = binding.numberOfRecordedNode;
+        tvNumberOfRecordedNode = binding.numberOfRecordedNode;
 
         main_layout = binding.buttonGroup;
 
-        btn_start_save_pose_graph = binding.buttonSavePosegraph;
-        btn_start_save_pose_graph.post(() -> {
-            originalWidth = btn_start_save_pose_graph.getWidth();
-        });
-        btn_start_save_pose_graph.setOnClickListener(this::toggleScaleListener);
+        btnStartSavePoseGraph = binding.buttonSavePosegraph;
+        btnStartSavePoseGraph.setOnClickListener(this::toggleScaleListener);
 
-        btn_pose_stamp = binding.buttonPoseStamp;
-        btn_pose_stamp.setOnClickListener(v -> {
+        btnPoseStamp = binding.buttonPoseStamp;
+        btnPoseStamp.setOnClickListener(v -> {
             JniInterface.getPoseStamp(nativeHolderViewModel.getNativePtr());
             float x = JniInterface.getX();
             float z = JniInterface.getZ();
@@ -98,7 +94,7 @@ public class MappingFragment extends Fragment {
         if(!isScaledDown){
             isScaledDown = true;
 
-            btn_start_save_pose_graph.setText("저장하기");
+            btnStartSavePoseGraph.setText("저장하기");
             animateConstraintLayout();
             fadeBtnPoseStamp();
 
@@ -108,7 +104,7 @@ public class MappingFragment extends Fragment {
         else if(/* isScaledDown && */ poseStampViewModel.getPoseStampListSize() > 0){
             isScaledDown = false;
 
-            btn_start_save_pose_graph.setText("매핑하기");
+            btnStartSavePoseGraph.setText("지도 작성 하기");
             animateConstraintLayout();
             fadeBtnPoseStamp();
 
@@ -133,19 +129,19 @@ public class MappingFragment extends Fragment {
     }
 
     public void updateKeyFrameListSize(int size){
-        tv_number_of_recorded_node.post(() -> {
-            tv_number_of_recorded_node.setText("지금까지 기록된 노드 수 : " + size);
+        tvNumberOfRecordedNode.post(() -> {
+            tvNumberOfRecordedNode.setText("지금까지 기록된 노드 수 : " + size);
         });
     }
 
     private void animateConstraintLayout(){
         if(isScaledDown){
-            btn_pose_stamp.setAlpha(0f);
-            btn_pose_stamp.setVisibility(View.VISIBLE);
+            btnPoseStamp.setAlpha(0f);
+            btnPoseStamp.setVisibility(View.VISIBLE);
         }
 
         else {
-            btn_pose_stamp.setVisibility(View.GONE);
+            btnPoseStamp.setVisibility(View.GONE);
         }
 
         Transition transition = new AutoTransition();
@@ -154,15 +150,15 @@ public class MappingFragment extends Fragment {
         final ConstraintSet constraintSet = new ConstraintSet();
         constraintSet.clone(main_layout);
 
-        constraintSet.clear(btn_start_save_pose_graph.getId(), ConstraintSet.END);
+        constraintSet.clear(btnStartSavePoseGraph.getId(), ConstraintSet.END);
         if(isScaledDown){
-            constraintSet.connect(btn_start_save_pose_graph.getId(), ConstraintSet.END,
+            constraintSet.connect(btnStartSavePoseGraph.getId(), ConstraintSet.END,
                     binding.buttonGroupGuideLineLeft.getId(), ConstraintSet.END, 0);
 
         }
 
         else {
-            constraintSet.connect(btn_start_save_pose_graph.getId(), ConstraintSet.END,
+            constraintSet.connect(btnStartSavePoseGraph.getId(), ConstraintSet.END,
                     ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
         }
 
@@ -172,14 +168,14 @@ public class MappingFragment extends Fragment {
 
     private void fadeBtnPoseStamp() {
         if (isScaledDown) {
-            btn_pose_stamp.setAlpha(0f);
-            btn_pose_stamp.setVisibility(View.VISIBLE);
+            btnPoseStamp.setAlpha(0f);
+            btnPoseStamp.setVisibility(View.VISIBLE);
         }
 
         final float startAlpha = isScaledDown ? 0f : 1f;
         final float endAlpha = isScaledDown ? 1f : 0f;
 
-        ObjectAnimator fade = ObjectAnimator.ofFloat(btn_pose_stamp, "alpha", startAlpha, endAlpha);
+        ObjectAnimator fade = ObjectAnimator.ofFloat(btnPoseStamp, "alpha", startAlpha, endAlpha);
         fade.setDuration(500);
         fade.start();
     }
