@@ -44,17 +44,30 @@ public class BuildingInputFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        progressBar = binding.progressBar;
+
         viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
 
-        progressBar = binding.progressBar;
+        binding.spinnerFloor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                viewModel.updateFloorName(parent.getItemAtPosition(position).toString());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         requireActivity().getOnBackPressedDispatcher().addCallback(
                 getViewLifecycleOwner(),
                 new OnBackPressedCallback(true) {
                     @Override
                     public void handleOnBackPressed() {
-                        if(!isScaledDown)
-                            return; // 설정화면으로 돌아가기
+                        if(!isScaledDown) {
+                            requireActivity().getSupportFragmentManager().beginTransaction()
+                                    .replace(R.id.fragment_container, new SettingsFragment())
+                                    .commit();
+                        }
 
                         prevEvent();
                     }
@@ -76,6 +89,30 @@ public class BuildingInputFragment extends Fragment {
 
                 btnNext.setText("지도 작성 하기");
                 binding.tvBuildingInput.setText("현재 지도를 작성하고자 하는 층을 입력해주세요.");
+
+                int minIdx = viewModel.getFloorMinIdx();
+                int maxIdx = viewModel.getFloorMaxIdx();
+
+                String[] floorItem = new String[minIdx + maxIdx + 1];
+
+                int idx = 0;
+                for(int i = maxIdx; i >= 0; i--){
+                    floorItem[idx] = viewModel.getFloorMaxItem()[i];
+                    idx += 1;
+                }
+
+                for(int i = 0; i < minIdx; i++){
+                    floorItem[idx] = viewModel.getFloorMinItem()[i + 1];
+                    idx += 1;
+                }
+
+                ArrayAdapter<String> floorItemAdapter = new ArrayAdapter<>(
+                        requireContext(),
+                        android.R.layout.simple_spinner_item,
+                        floorItem
+                );
+                floorItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                binding.spinnerFloor.setAdapter(floorItemAdapter);
 
                 animateConstraintLayout();
                 fadeBtnPoseStamp();
@@ -131,7 +168,6 @@ public class BuildingInputFragment extends Fragment {
         binding.inputGroup1.setVisibility(View.VISIBLE);
         binding.inputGroup2.setVisibility(View.GONE);
 
-        btnNext.setText("다음");
         binding.tvBuildingInput.setText("건물 정보를 입력하세요.");
 
         animateConstraintLayout();
@@ -140,13 +176,13 @@ public class BuildingInputFragment extends Fragment {
 
     private void animateConstraintLayout(){
         if(isScaledDown){
-
             btnPrev.setAlpha(0f);
-            btnNext.setVisibility(View.VISIBLE);
+            btnPrev.setVisibility(View.VISIBLE);
         }
 
         else {
             btnPrev.setVisibility(View.GONE);
+            btnNext.setText("다음");
         }
 
         Transition transition = new AutoTransition();
@@ -158,7 +194,7 @@ public class BuildingInputFragment extends Fragment {
         constraintSet.clear(btnNext.getId(), ConstraintSet.START);
         if(isScaledDown){
             constraintSet.connect(btnNext.getId(), ConstraintSet.START,
-                    btnPrev.getId(), ConstraintSet.END, 0);
+                    btnPrev.getId(), ConstraintSet.END, 5);
         }
 
         else {
@@ -186,7 +222,7 @@ public class BuildingInputFragment extends Fragment {
         final int endProgress = isScaledDown ? 100 : 50;
 
         ObjectAnimator animator = ObjectAnimator.ofInt(progressBar, "progress", startProgress, endProgress);
-        animator.setDuration(1000); // 1초 동안 애니메이션
+        animator.setDuration(500);
 
         fade.start();
         animator.start();

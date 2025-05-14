@@ -19,7 +19,7 @@ public class PoseStampViewModel extends ViewModel {
 
     private int floorMinIdx = 0;
     private final String[] floorMinItem = {
-            "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10"
+            "선택 안함", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10"
     };
 
     private int floorMaxIdx = 0;
