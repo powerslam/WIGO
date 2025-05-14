@@ -52,12 +52,9 @@ public class SettingsFragment extends Fragment {
             Preference mapItemPreference = findPreference("download_map");
             if (mapItemPreference != null) {
                 mapItemPreference.setOnPreferenceClickListener(preference -> {
-                    Fragment parent = getParentFragment();
-                    if (parent != null) {
-                        requireActivity().getSupportFragmentManager().beginTransaction()
+                    requireActivity().getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.fragment_container, new DownloadFragment())
                                 .commit();
-                    }
                     return true;
                 });
             }
@@ -65,12 +62,9 @@ public class SettingsFragment extends Fragment {
             Preference makeMapPreference = findPreference("make_map");
             if (makeMapPreference != null) {
                 makeMapPreference.setOnPreferenceClickListener(preference -> {
-                    Fragment parent = getParentFragment();
-                    if (parent != null) {
-                        parent.getParentFragmentManager().beginTransaction()
+                    requireActivity().getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.fragment_container, new BuildingInputFragment())
                                 .commit();
-                    }
                     return true;
                 });
             }
