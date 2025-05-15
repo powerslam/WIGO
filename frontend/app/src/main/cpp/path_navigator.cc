@@ -76,7 +76,7 @@ bool PathNavigator::getarrival() {
 }
 
 bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, DirectionHelper& direction_helper) {
-    if (!goal_set_ || arrival_ || !status_flag) return true;
+    if (!goal_set_ || arrival_ || !status_flag || path_.empty()) return true;
 
     if (current_path_index_ > 0 && current_path_index_ < path_.size() - 2) {
         if (notified_turn_indices_.find(current_path_index_) == notified_turn_indices_.end()) {

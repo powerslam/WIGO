@@ -20,39 +20,41 @@ void AStarPathfinder::LoadPoseGraph(const std::string& path, int floor) {
     }
 
     std::string line;
+    std::vector<Point> original_path;
+
     while (std::getline(file, line)) {
         std::istringstream iss(line);
         std::vector<std::string> tokens;
         std::string token;
         while (iss >> token) tokens.push_back(token);
-        if (tokens.size() < 3) continue;
 
-        float x = std::stof(tokens[1]);
-        float z = std::stof(tokens[2]);
-        pose_graph_by_floor_[floor].emplace_back(Point{x, z});
+        float x = std::stof(tokens[5]);
+        float z = std::stof(tokens[7]);
+        original_path.emplace_back(Point{x, z});
     }
     file.close();
 
-    LOGI("✅ %d층 pose_graph.txt → %zu개 노드 로드 완료", floor, pose_graph_by_floor_[floor].size());
-
-    int n = pose_graph_by_floor_[floor].size();
-    adjacency_list_by_floor_[floor].resize(n);
-
-    for (int i = 0; i < n; ++i) {
-        for (int j = i + 1; j < n; ++j) {
-            float dist = heuristic(pose_graph_by_floor_[floor][i], pose_graph_by_floor_[floor][j]);
-            if (dist <= threshold) {
-                adjacency_list_by_floor_[floor][i].emplace_back(j, dist);
-                adjacency_list_by_floor_[floor][j].emplace_back(i, dist);
+    std::vector<Point>& graph = pose_graph_by_floor_[floor];
+    if (!original_path.empty()) {
+        graph.push_back(original_path[0]);
+        for (size_t i = 1; i < original_path.size(); ++i) {
+            if (heuristic(original_path[i], graph.back()) >= 1.0f) {
+                graph.push_back(original_path[i]);
             }
         }
     }
 
-    for (const auto& [floor_num, nodes] : pose_graph_by_floor_) {
-        LOGI("📍 [층 %d] 노드 수: %zu", floor_num, nodes.size());
-        for (size_t i = 0; i < nodes.size(); ++i) {
-            const Point& p = nodes[i];
-            LOGI("  - [%zu] x: %.3f, z: %.3f", i, p.x, p.z);
+    LOGI("✅ %d층 pose_graph.txt → 원본 %zu개 → 리샘플링 %zu개 노드", floor, original_path.size(), graph.size());
+
+    int n = graph.size();
+    adjacency_list_by_floor_[floor].resize(n);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            float dist = heuristic(graph[i], graph[j]);
+            if (dist <= threshold) {
+                adjacency_list_by_floor_[floor][i].emplace_back(j, dist);
+                adjacency_list_by_floor_[floor][j].emplace_back(i, dist);
+            }
         }
     }
 }
@@ -75,9 +77,13 @@ std::vector<Point> AStarPathfinder::astar(const Point& start_coord, const Point&
     const auto& pose_graph = pose_graph_by_floor_[floor];
     const auto& adjacency_list = adjacency_list_by_floor_[floor];
 
+    LOGI("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
     int start = FindClosestNode(start_coord, floor);
     int goal = FindClosestNode(goal_coord, floor);
     if (start == -1 || goal == -1) return {};
+
+    LOGI("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
     using Node = std::pair<float, int>;
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open_set;
