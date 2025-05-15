@@ -21,11 +21,19 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.capstone.whereigo.databinding.ActivitySearchBinding;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class SearchActivity extends AppCompatActivity {
-
+    private final String TAG = "SearchActivity";
     private ActivitySearchBinding binding;
     private static final int RECORD_AUDIO_REQUEST_CODE = 100;
     private long backPressedTime = 0;
@@ -56,13 +64,26 @@ public class SearchActivity extends AppCompatActivity {
         binding.searchView.setupWithSearchBar(binding.searchBar);
 
         allResults = new ArrayList<>();
-        allResults.add("미래관 445호");
-        allResults.add("미래관 447호");
-        allResults.add("미래관 449호");
-        allResults.add("미래관 444호");
-        allResults.add("미래관 425호");
-        allResults.add("미래관 415호");
-        allResults.add("미래관 405호");
+        File[] folders = getExternalFilesDir(null).listFiles();
+        if (folders != null) {
+            for (File folder : folders) {
+                if (folder.isDirectory()) {
+                    File file = new File(folder, "label.txt");
+                    String jsonString = readFileToString(file);
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(jsonString);
+                        Iterator<String> keys = jsonObject.keys();
+
+                        while (keys.hasNext()) {
+                            allResults.add(folder.getName() + " " + keys.next());
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
 
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -122,6 +143,21 @@ public class SearchActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    public String readFileToString(File file) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line).append("\n");  // 각 줄을 StringBuilder에 추가
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return stringBuilder.toString();  // String으로 반환
     }
 
     private void navigateToMain(String query) {
