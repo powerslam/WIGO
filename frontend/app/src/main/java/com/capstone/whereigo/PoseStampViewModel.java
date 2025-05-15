@@ -1,6 +1,5 @@
 package com.capstone.whereigo;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -72,6 +71,7 @@ public class PoseStampViewModel extends ViewModel {
         return null;
     }
 
+    public void updateBuildingName(String buildingName){ this.buildingName = buildingName; }
     public String getBuildingName(){ return this.buildingName; }
 
     public int getFloorMinIdx(){ return this.floorMinIdx; }
