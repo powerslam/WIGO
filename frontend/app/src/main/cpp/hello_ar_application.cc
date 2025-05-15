@@ -146,6 +146,7 @@ namespace hello_ar {
 
     void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
                                          bool useDepthForOcclusion) {
+
         // Render the scene.
         glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -190,9 +191,7 @@ namespace hello_ar {
 
         // LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
 
-        // PathNavigator로 경로 생성 시도
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
-        // 경로 따라가기
         path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);
 
         JNIEnv* env = GetJniEnv(); 
