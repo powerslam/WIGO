@@ -7,9 +7,14 @@ import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import android.content.Intent;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.WindowCompat;
+
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.EdgeToEdge;
@@ -45,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, SearchActivity.class);
             startActivity(intent);
-            finish();  // 현재 MainActivity 종료
+            finish();
         });
 
         ImageButton settingsButton = findViewById(R.id.settings_button);
@@ -56,9 +61,32 @@ public class MainActivity extends AppCompatActivity {
                 .commit());
 
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HelloArFragment())
-                    .commit();
+            showFloorInputDialog();
         }
+    }
+
+    private void showFloorInputDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_floor_input, null);
+        EditText editText = dialogView.findViewById(R.id.edit_floor_input);
+
+        new AlertDialog.Builder(this)
+                .setTitle("현재 층 입력")
+                .setView(dialogView)
+                .setCancelable(false)
+                .setPositiveButton("확인", (dialog, which) -> {
+                    String input = editText.getText().toString().trim();
+                    if (!input.isEmpty()) {
+                        Toast.makeText(this, input + "층 선택됨", Toast.LENGTH_SHORT).show();
+
+                        // HelloArFragment 로드
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new HelloArFragment())
+                                .commit();
+                    } else {
+                        Toast.makeText(this, "층을 입력해주세요", Toast.LENGTH_SHORT).show();
+                        showFloorInputDialog(); // 재실행
+                    }
+                })
+                .show();
     }
 }

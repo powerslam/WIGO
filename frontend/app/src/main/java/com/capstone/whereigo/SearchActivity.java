@@ -60,7 +60,6 @@ public class SearchActivity extends AppCompatActivity {
             return true;
         });
 
-        // 데이터 리스트
         allResults = new ArrayList<>();
         allResults.add("미래관 445호");
         allResults.add("미래관 447호");
