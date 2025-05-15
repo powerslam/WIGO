@@ -151,7 +151,7 @@ JNI_METHOD(void, sendMultiGoalsToNative)
         goals.emplace_back(Point{arr[i], arr[i + 1]});
     }
 
-    native(native_application)->SetGoals(goals);
+    native(native_application)->path_navigator_.SetGoals(goals);
 
     env->ReleaseFloatArrayElements(j_goals, arr, 0);
 }

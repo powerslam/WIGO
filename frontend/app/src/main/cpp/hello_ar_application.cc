@@ -418,10 +418,6 @@ namespace hello_ar {
         }
     }
 
-    void HelloArApplication::SetGoals(const std::vector<Point>& goals) {
-        path_navigator_.SetGoals(goals);
-    }
-
     void HelloArApplication::LoadPoseGraph(const std::string& path, int floor) {
         path_navigator_.LoadPoseGraphFromFile(path, floor);
     }
