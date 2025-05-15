@@ -527,7 +527,7 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
     pFile = fopen(file_path.c_str(), "w");
     assert(pFile != nullptr);
 
-    string labeled_file_path = save_folder + "labeled_pose_graph.txt";
+    string labeled_file_path = save_folder + "label.txt";
     labeled_pFile = fopen(labeled_file_path.c_str(), "a");
     assert(labeled_pFile != nullptr);
 
@@ -555,7 +555,16 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
                  (int)(*it)->keypoints.size());
 
         if(it2 != labeled_index.end() && (*it)->index == *it2){
-            fprintf (labeled_pFile, "\t\"%s\": [%f %f]\n", it3->c_str(), PG_tmp_T.x(), PG_tmp_T.z());
+            fprintf (labeled_pFile, "\t\"%s\": [%f, %f]", it3->c_str(), PG_tmp_T.x(), PG_tmp_T.z());
+
+            if(it2 != labeled_index.end() - 1){
+                fprintf(labeled_pFile, ",\n");
+            }
+
+            else {
+                fprintf(labeled_pFile, "\n");
+            }
+
             it2++;
             it3++;
         }
