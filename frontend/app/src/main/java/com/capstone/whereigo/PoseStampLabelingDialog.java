@@ -59,8 +59,7 @@ public class PoseStampLabelingDialog extends DialogFragment implements DialogInt
         viewPager.setPageTransformer(new MarginPageTransformer(30));
         viewPager.setCurrentItem(0, false);
 
-        Button btn = binding.buttonLabelingDone;
-        btn.setOnClickListener(v -> {
+        binding.buttonLabelingDone.setOnClickListener(v -> {
             for(int pos = 0; pos < adapter.getItemCount(); pos++){
                 if(!checkBuildingName(viewModel.getLabelAt(pos))){
                     viewPager.setCurrentItem(pos, true);
@@ -71,9 +70,6 @@ public class PoseStampLabelingDialog extends DialogFragment implements DialogInt
 
             int backStackCount = requireActivity().getSupportFragmentManager().getBackStackEntryCount();
             Toast.makeText(requireContext(), "저장이완료됐어용가리치킨더조이 : " + backStackCount, Toast.LENGTH_SHORT).show();
-            requireActivity().getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HelloArFragment())
-                    .commit();
             dismiss();
         });
     }
