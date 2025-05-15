@@ -80,7 +80,8 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
 
         nativeApplication = JniInterface.createNativeApplication(
                 JniInterface.assetManager,
-                requireActivity().getExternalFilesDir(null).getAbsolutePath()
+                requireActivity().getExternalFilesDir(null).getAbsolutePath(),
+                false
         );
 
         registerNativeSelf(nativeApplication);
