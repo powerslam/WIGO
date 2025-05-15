@@ -516,17 +516,7 @@ void PoseGraph::loopClosure()
 void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
 {
     m_keyframelist.lock();
-    TicToc tmp_t;
-
     std::string save_folder = EXTERNAL_PATH + "/" + labels.back() + "/";
-    struct stat st;
-    if (stat(save_folder.c_str(), &st) != 0) {
-        // 폴더가 없을 경우 생성 시도
-        if (mkdir(save_folder.c_str(), 0755) != 0) {
-            m_keyframelist.unlock();
-            return;
-        }
-    }
 
     FILE *pFile, *labeled_pFile;
     string file_path = save_folder + labels.back() + ".txt";
@@ -591,7 +581,6 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
     fclose(labeled_pFile);
     fclose(pFile);
 
-    printf("save pose graph time: %f s\n", tmp_t.toc() / 1000);
     m_keyframelist.unlock();
 }
 

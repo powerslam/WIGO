@@ -25,6 +25,7 @@ import androidx.transition.TransitionManager;
 
 import com.capstone.whereigo.databinding.FragmentBuildingInputBinding;
 
+import java.io.File;
 import java.util.regex.Pattern;
 
 public class BuildingInputFragment extends Fragment {
@@ -135,35 +136,22 @@ public class BuildingInputFragment extends Fragment {
                 btnNext.setText("지도 작성 하기");
                 binding.tvBuildingInput.setText("현재 지도를 작성하고자 하는 층을 입력해주세요.");
 
-                int minIdx = viewModel.getFloorMinIdx();
-                int maxIdx = viewModel.getFloorMaxIdx();
-
-                String[] floorItem = new String[minIdx + maxIdx + 1];
-
-                int idx = 0;
-                for(int i = maxIdx; i >= 0; i--){
-                    floorItem[idx] = viewModel.getFloorMaxItem()[i];
-                    idx += 1;
-                }
-
-                for(int i = 0; i < minIdx; i++){
-                    floorItem[idx] = viewModel.getFloorMinItem()[i + 1];
-                    idx += 1;
-                }
-
+                viewModel.updateFloorItem();
                 ArrayAdapter<String> floorItemAdapter = new ArrayAdapter<>(
                         requireContext(),
                         android.R.layout.simple_spinner_item,
-                        floorItem
+                        viewModel.getFloorItem()
                 );
                 floorItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 binding.spinnerFloor.setAdapter(floorItemAdapter);
+                binding.spinnerFloor.setSelection(viewModel.getFloorIdx());
 
                 animateConstraintLayout();
                 fadeBtnPoseStamp();
             }
 
             else {
+                makeBuildingMapDirectories();
                 requireActivity().getSupportFragmentManager().beginTransaction()
                         .replace(R.id.layout_mapping_main, new MappingFragment())
                         .commit();
@@ -209,12 +197,45 @@ public class BuildingInputFragment extends Fragment {
         binding.spinnerFloor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                viewModel.updateFloorIdx(position);
                 viewModel.updateFloorName(parent.getItemAtPosition(position).toString());
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
+    }
+
+    private void makeBuildingMapDirectories() {
+        File buildingDir = new File(
+                requireContext().getExternalFilesDir(null),
+                viewModel.getBuildingName()
+        );
+
+        if (!buildingDir.exists()) {
+            boolean success = buildingDir.mkdirs();
+            if (success) {
+                Log.d(TAG, "폴더 생성 성공: " + buildingDir.getAbsolutePath());
+            } else {
+                Log.e(TAG, "폴더 생성 실패: " + buildingDir.getAbsolutePath());
+            }
+        } else {
+            Log.d(TAG, "이미 존재함: " + buildingDir.getAbsolutePath());
+        }
+
+        for (String name : viewModel.getFloorItem()) {
+            File folder = new File(buildingDir, name + "층");
+            if (!folder.exists()) {
+                boolean success = folder.mkdirs();
+                if (success) {
+                    Log.d(TAG, "폴더 생성 성공: " + folder.getAbsolutePath());
+                } else {
+                    Log.e(TAG, "폴더 생성 실패: " + folder.getAbsolutePath());
+                }
+            } else {
+                Log.d(TAG, "이미 존재함: " + folder.getAbsolutePath());
+            }
+        }
     }
 
     private void prevEvent() {

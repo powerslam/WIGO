@@ -28,7 +28,7 @@ public class PoseStampLabelingDialog extends DialogFragment implements DialogInt
 
     @FunctionalInterface
     public interface OnDismissListener {
-        void OnDismiss(String map_name);
+        void OnDismiss();
     }
 
     public OnDismissListener onDismissListener;
@@ -78,7 +78,7 @@ public class PoseStampLabelingDialog extends DialogFragment implements DialogInt
     public void onDismiss(@NonNull DialogInterface dialog) {
         super.onDismiss(dialog);
         if (onDismissListener != null) {
-            onDismissListener.OnDismiss(viewModel.getBuildingName());
+            onDismissListener.OnDismiss();
         }
     }
 
