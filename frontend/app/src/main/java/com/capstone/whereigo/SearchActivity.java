@@ -20,14 +20,20 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.capstone.whereigo.databinding.ActivitySearchBinding;
-import com.google.android.material.search.SearchBar;
-import com.google.android.material.search.SearchView;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class SearchActivity extends AppCompatActivity {
-
+    private final String TAG = "SearchActivity";
     private ActivitySearchBinding binding;
     private static final int RECORD_AUDIO_REQUEST_CODE = 100;
     private long backPressedTime = 0;
@@ -40,13 +46,8 @@ public class SearchActivity extends AppCompatActivity {
         binding = ActivitySearchBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        SearchBar searchBar = binding.searchBar;
-        SearchView searchView = binding.searchView;
-        searchView.setupWithSearchBar(searchBar);
-        searchBar.inflateMenu(R.menu.search_menu);
-
-        // 음성 검색 메뉴 처리
-        searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
+        binding.searchBar.inflateMenu(R.menu.search_menu);
+        binding.searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
             if (checkAudioPermission()) {
                 if (SpeechRecognizer.isRecognitionAvailable(this)) {
                     VoiceRecordDialog dialog = new VoiceRecordDialog();
@@ -60,16 +61,30 @@ public class SearchActivity extends AppCompatActivity {
             return true;
         });
 
-        allResults = new ArrayList<>();
-        allResults.add("미래관 445호");
-        allResults.add("미래관 447호");
-        allResults.add("미래관 449호");
-        allResults.add("미래관 444호");
-        allResults.add("미래관 425호");
-        allResults.add("미래관 415호");
-        allResults.add("미래관 405호");
+        binding.searchView.setupWithSearchBar(binding.searchBar);
 
-        // 검색 텍스트 변경 감지
+        allResults = new ArrayList<>();
+        File[] folders = getExternalFilesDir(null).listFiles();
+        if (folders != null) {
+            for (File folder : folders) {
+                if (folder.isDirectory()) {
+                    File file = new File(folder, "label.txt");
+                    String jsonString = readFileToString(file);
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(jsonString);
+                        Iterator<String> keys = jsonObject.keys();
+
+                        while (keys.hasNext()) {
+                            allResults.add(folder.getName() + " " + keys.next());
+                        }
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
@@ -94,7 +109,6 @@ public class SearchActivity extends AppCompatActivity {
             }
         });
 
-        // 키보드 Enter (검색) 키로 바로 전환
         binding.searchView.getEditText().setOnEditorActionListener((TextView v, int actionId, android.view.KeyEvent event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
                 String query = binding.searchView.getText().toString().trim();
@@ -106,12 +120,17 @@ public class SearchActivity extends AppCompatActivity {
             return false;
         });
 
-        // 뒤로가기 동작 제어
+        binding.settingsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(SearchActivity.this, SettingActivity.class);
+            startActivity(intent);
+            finish();
+        });
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (searchView.isShowing()) {
-                    searchView.hide();
+                if (binding.searchView.isShowing()) {
+                    binding.searchView.hide();
                 } else {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - backPressedTime < backPressInterval) {
@@ -124,8 +143,21 @@ public class SearchActivity extends AppCompatActivity {
                 }
             }
         });
+    }
 
-        setupWakeWordListener();
+    public String readFileToString(File file) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line).append("\n");  // 각 줄을 StringBuilder에 추가
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return stringBuilder.toString();  // String으로 반환
     }
 
     private void navigateToMain(String query) {
@@ -152,16 +184,10 @@ public class SearchActivity extends AppCompatActivity {
 
         if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "음성 권한이 허용되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "음성 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
             }
-        }
-    }
-
-    private void setupWakeWordListener() {
-        if (!checkAudioPermission()) {
-            requestAudioPermission();
         }
     }
 }

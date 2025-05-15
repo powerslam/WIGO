@@ -7,6 +7,8 @@ import android.widget.TextView;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
+import androidx.activity.OnBackPressedCallback;
+
 public class SetPreferenceFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -35,5 +37,19 @@ public class SetPreferenceFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                Intent intent = new Intent(requireContext(), SearchActivity.class);
+                startActivity(intent);
+                requireActivity().finish();
+            }
+        });
     }
 }

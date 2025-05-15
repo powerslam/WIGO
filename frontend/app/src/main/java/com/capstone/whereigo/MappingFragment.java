@@ -80,7 +80,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
 
         nativeApplication = JniInterface.createNativeApplication(
                 JniInterface.assetManager,
-                requireActivity().getExternalFilesDir("pose_graph").getAbsolutePath()
+                requireActivity().getExternalFilesDir(null).getAbsolutePath()
         );
 
         registerNativeSelf(nativeApplication);
@@ -148,7 +148,8 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
             PoseStampLabelingDialog dialog = PoseStampLabelingDialog.newInstance(viewModel);
             dialog.onDismissListener = () -> {
                 List<String> data = viewModel.getPoseStampLabelList().getValue();
-                data.add(String.format(Locale.ROOT, "%s/%s", viewModel.getBuildingName(), viewModel.getFloorName()));
+                data.add(viewModel.getFloorName());
+                data.add(viewModel.getBuildingName());
 
                 JniInterface.savePoseGraph(
                         nativeApplication,

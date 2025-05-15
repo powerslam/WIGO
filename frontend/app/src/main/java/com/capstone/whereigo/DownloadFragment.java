@@ -1,6 +1,7 @@
 package com.capstone.whereigo;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class DownloadFragment extends Fragment {
+    private final String TAG = "DownloadFragment";
     private FragmentDownloadBinding binding;
 
     @Nullable
@@ -53,14 +55,13 @@ public class DownloadFragment extends Fragment {
     private List<MapData> listMapFolders() {
         List<MapData> result = new ArrayList<>();
 
-        File mapsFolder = new File(requireContext().getFilesDir(), "Maps");
-        File[] folders = mapsFolder.listFiles();
+        File[] folders = requireContext().getExternalFilesDir(null).listFiles();
 
         if (folders != null) {
             for (File folder : folders) {
                 if (folder.isDirectory()) {
                     long folderSize = calculateFolderSize(folder);
-                    String sizeString = (folderSize / (1024 * 1024)) + "MB";
+                    String sizeString = String.format(Locale.ROOT, "%.2f MB", 1. * folderSize / (1024 * 1024));
 
                     String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                             .format(new Date(folder.lastModified()));
