@@ -69,21 +69,32 @@ public class SearchActivity extends AppCompatActivity {
             for (File folder : folders) {
                 if (folder.isDirectory()) {
                     File file = new File(folder, "label.txt");
+
+                    if (!file.exists()) {
+                        continue;
+                    }
+
                     String jsonString = readFileToString(file);
-                    JSONObject jsonObject = null;
+                    if (jsonString == null || jsonString.trim().isEmpty()) {
+                        android.util.Log.w(TAG, "label.txt is empty in folder: " + folder.getName());
+                        continue;
+                    }
+
                     try {
-                        jsonObject = new JSONObject(jsonString);
+                        JSONObject jsonObject = new JSONObject(jsonString);
                         Iterator<String> keys = jsonObject.keys();
 
                         while (keys.hasNext()) {
                             allResults.add(folder.getName() + " " + keys.next());
                         }
                     } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                        android.util.Log.e(TAG, "Invalid JSON in folder: " + folder.getName(), e);
+                        continue;
                     }
                 }
             }
         }
+
 
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
