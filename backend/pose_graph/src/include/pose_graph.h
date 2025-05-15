@@ -48,7 +48,7 @@ public:
 	
 	KeyFramePtr getKeyFrame(int index);
 	
-	void savePoseGraph();
+	void savePoseGraph(const std::vector<std::string>& labels);
 	void loadPoseGraph();
 
 	const std::string VOCABULARY_FILE;
@@ -64,16 +64,20 @@ public:
 	Eigen::Vector3d last_t = Eigen::Vector3d(-100, -100, -100);
 
 public:
+    pair<float, float> getLastElementOfKeyFrameList();
 	int detectLoop(KeyFramePtr keyframe, int frame_index);
 	void addKeyFrameIntoVoc(KeyFramePtr keyframe);
 	void addKeyFrameBuf(KeyFramePtr data);
+    int getKeyFrameListSize();
 	void optimize4DoF();
 	void loopClosure();
 	void new_sequence();
 	void command();
 
+	vector<int> labeled_index;
+
 	list<KeyFramePtr> keyframelist;
-	
+
 	std::mutex m_keyframelist;
 	std::mutex m_optimize_buf;
 	std::mutex m_path;
