@@ -77,13 +77,9 @@ std::vector<Point> AStarPathfinder::astar(const Point& start_coord, const Point&
     const auto& pose_graph = pose_graph_by_floor_[floor];
     const auto& adjacency_list = adjacency_list_by_floor_[floor];
 
-    LOGI("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
     int start = FindClosestNode(start_coord, floor);
     int goal = FindClosestNode(goal_coord, floor);
     if (start == -1 || goal == -1) return {};
-
-    LOGI("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
     using Node = std::pair<float, int>;
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open_set;

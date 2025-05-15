@@ -162,7 +162,7 @@ JNI_METHOD(void, loadPoseGraphFromFile)
     std::string path(c_path);
     env->ReleaseStringUTFChars(j_path, c_path);
 
-    native(native_application)->astar_pathfinding_.LoadPoseGraph(path, floor);
+    native(native_application)->path_navigator_.astar_pathfinding_.LoadPoseGraph(path, floor);
 }
 
 JNI_METHOD(void, changeStatus)

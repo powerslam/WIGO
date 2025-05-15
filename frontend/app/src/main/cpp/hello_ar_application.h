@@ -90,8 +90,6 @@ class HelloArApplication {
 
   PathNavigator path_navigator_;
 
-  AStarPathfinder astar_pathfinding_;
-
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session,
   const ArFrame* frame);

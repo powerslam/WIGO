@@ -33,6 +33,8 @@ public:
     void ChangeStatus();
     bool GetStatusFlag();
 
+    AStarPathfinder astar_pathfinding_;
+
 private:
     std::queue<Point> goal_queue_;
 
@@ -48,8 +50,6 @@ private:
     bool status_flag = true;
 
     std::unordered_set<int> notified_turn_indices_;
-
-    AStarPathfinder astar_pathfinding_;
 
     int current_floor_;
 };
