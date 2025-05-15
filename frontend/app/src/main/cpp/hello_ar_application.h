@@ -53,7 +53,7 @@ namespace hello_ar {
 class HelloArApplication {
  public:
   // Constructor and deconstructor.
-  explicit HelloArApplication(AAssetManager* asset_manager, std::string& external_path);
+  explicit HelloArApplication(AAssetManager* asset_manager, std::string& external_path, bool mode);
   ~HelloArApplication();  // OnPause is called on the UI thread from the Activity's onPause method.
   
   void OnPause();
@@ -115,6 +115,7 @@ class HelloArApplication {
   bool is_instant_placement_enabled_ = true;
   bool adding_keyframe_buf = false;
   bool flag = true;
+
   //맵 생성 모드와 내비게이션 모드 설정
   bool mode = true;
   float plane_y_ = -1.6f;

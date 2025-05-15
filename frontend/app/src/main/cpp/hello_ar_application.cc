@@ -44,9 +44,9 @@ namespace hello_ar {
         }
 
     }  // namespace
-    HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path)
+    HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path, bool mode)
         : pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480),
-        asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr} {
+        asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr}, mode(mode) {
 
         g_mappingFragment = nullptr;
         method_id = nullptr;
@@ -297,7 +297,8 @@ namespace hello_ar {
                                                                           image_mat, 0);
                         keyframe->computeBRIEFPoint(asset_manager_, intrinsic_param, depth_mat);
                         pose_graph.addKeyFrameBuf(keyframe);
-                        if(flag){
+                        //mode 변수 추가
+                        if(flag && mode){
                           //boolean type 으로 변경
                           flag = !(pose_graph.InitialPose(keyframe));
                           if(!flag){
@@ -357,7 +358,7 @@ namespace hello_ar {
         ArTrackableList_getSize(ar_session_, plane_list, &plane_list_size);
         plane_count_ = plane_list_size;
 
-        if (path_navigator_.IsReadyToRender()) {
+        if (path_navigator_.IsReadyToRender() && mode) {
 
             if (location_pin_anchor_.anchor != nullptr) ArAnchor_release(location_pin_anchor_.anchor);
             if (location_pin_anchor_.trackable != nullptr) ArTrackable_release(location_pin_anchor_.trackable);
@@ -419,85 +420,88 @@ namespace hello_ar {
             path_navigator_.SetReadyToRenderFalse();
         }
 
-
-        for (int i = 0; i < plane_list_size; ++i) {
-            ArTrackable* ar_trackable = nullptr;
-            ArTrackableList_acquireItem(ar_session_, plane_list, i, &ar_trackable);
-            ArPlane* ar_plane = ArAsPlane(ar_trackable);
-            ArTrackingState out_tracking_state;
-            ArTrackable_getTrackingState(ar_session_, ar_trackable,
-                                         &out_tracking_state);
-
-            ArPlane* subsume_plane;
-            ArPlane_acquireSubsumedBy(ar_session_, ar_plane, &subsume_plane);
-            if (subsume_plane != nullptr) {
-                ArTrackable_release(ArAsTrackable(subsume_plane));
-                ArTrackable_release(ar_trackable);
-                continue;
-            }
-
-            if (ArTrackingState::AR_TRACKING_STATE_TRACKING != out_tracking_state) {
-                ArTrackable_release(ar_trackable);
-                continue;
-            }
-
-            plane_renderer_.Draw(projection_mat, view_mat, *ar_session_, *ar_plane);
-            ArTrackable_release(ar_trackable);
-        }
-
-        ArTrackableList_destroy(plane_list);
-        plane_list = nullptr;
-
-        for (int i = 0; i < carArrow_anchors_.size(); ++i) {
-            if (i >= path_navigator_.GetPath().size()) break;
-
-            glm::mat4 model_mat(1.0f);
-
-            // ⭐ Anchor로부터 변환행렬 가져오기 ⭐
-            util::GetTransformMatrixFromAnchor(*carArrow_anchors_[i].anchor, ar_session_, &model_mat);
-
-            // 추가로 방향 회전은 여기서 적용
-            const auto& path = path_navigator_.GetPath();
-            int current_index = path_navigator_.GetCurrentPathIndex() + i;
-            if (current_index >= path.size()) continue;
-
-            const Point& from = path[current_index];
-            Point to = (current_index + 1 < path.size()) ? path[current_index + 1] : from;
-
-            glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
-            float length = glm::length(direction);
-            if (length < 0.01f) continue;
-            direction = glm::normalize(direction);
-
-            float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
-
-            glm::vec3 position(from.x, plane_y_, from.z);
-
-            model_mat = glm::translate(glm::mat4(1.0f), position);
-            glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
-            glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
-
-            model_mat = model_mat * rotation_mat * scale_mat;
-
-            // 렌더링
-            car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, carArrow_anchors_[i].color);
-        }
-
-
-        if (location_pin_anchor_.anchor != nullptr) {
-            const auto& path = path_navigator_.GetPath();
-            int path_size = static_cast<int>(path.size());
-            int current_index = path_navigator_.GetCurrentPathIndex();
-
-            if (current_index >= path_size - 5 && !path_navigator_.arrival_) {
-                glm::mat4 model_mat(1.0f);
-                if (location_pin_anchor_.trackable != nullptr) {
-                    UpdateAnchorColor(&location_pin_anchor_);
+        if(mode)
+        {
+            for (int i = 0; i < plane_list_size; ++i) {
+                ArTrackable* ar_trackable = nullptr;
+                ArTrackableList_acquireItem(ar_session_, plane_list, i, &ar_trackable);
+                ArPlane* ar_plane = ArAsPlane(ar_trackable);
+                ArTrackingState out_tracking_state;
+                ArTrackable_getTrackingState(ar_session_, ar_trackable,
+                                             &out_tracking_state);
+    
+                ArPlane* subsume_plane;
+                ArPlane_acquireSubsumedBy(ar_session_, ar_plane, &subsume_plane);
+                if (subsume_plane != nullptr) {
+                    ArTrackable_release(ArAsTrackable(subsume_plane));
+                    ArTrackable_release(ar_trackable);
+                    continue;
                 }
-                util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
-                location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
+    
+                if (ArTrackingState::AR_TRACKING_STATE_TRACKING != out_tracking_state) {
+                    ArTrackable_release(ar_trackable);
+                    continue;
+                }
+    
+                plane_renderer_.Draw(projection_mat, view_mat, *ar_session_, *ar_plane);
+                ArTrackable_release(ar_trackable);
+            }
+    
+            ArTrackableList_destroy(plane_list);
+            plane_list = nullptr;
+    
+            for (int i = 0; i < carArrow_anchors_.size(); ++i) {
+                if (i >= path_navigator_.GetPath().size()) break;
+    
+                glm::mat4 model_mat(1.0f);
+    
+                // ⭐ Anchor로부터 변환행렬 가져오기 ⭐
+                util::GetTransformMatrixFromAnchor(*carArrow_anchors_[i].anchor, ar_session_, &model_mat);
+    
+                // 추가로 방향 회전은 여기서 적용
+                const auto& path = path_navigator_.GetPath();
+                int current_index = path_navigator_.GetCurrentPathIndex() + i;
+                if (current_index >= path.size()) continue;
+    
+                const Point& from = path[current_index];
+                Point to = (current_index + 1 < path.size()) ? path[current_index + 1] : from;
+    
+                glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
+                float length = glm::length(direction);
+                if (length < 0.01f) continue;
+                direction = glm::normalize(direction);
+    
+                float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
+    
+                glm::vec3 position(from.x, plane_y_, from.z);
+    
+                model_mat = glm::translate(glm::mat4(1.0f), position);
+                glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
+                glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
+    
+                model_mat = model_mat * rotation_mat * scale_mat;
+    
+                // 렌더링
+                car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, carArrow_anchors_[i].color);
+            }
+    
+    
+            if (location_pin_anchor_.anchor != nullptr) {
+                const auto& path = path_navigator_.GetPath();
+                int path_size = static_cast<int>(path.size());
+                int current_index = path_navigator_.GetCurrentPathIndex();
+    
+                if (current_index >= path_size - 5 && !path_navigator_.arrival_) {
+                    glm::mat4 model_mat(1.0f);
+                    if (location_pin_anchor_.trackable != nullptr) {
+                        UpdateAnchorColor(&location_pin_anchor_);
+                    }
+                    util::GetTransformMatrixFromAnchor(*location_pin_anchor_.anchor, ar_session_, &model_mat);
+                    location_pin_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, location_pin_anchor_.color);
+                }
             }
         }
+        
 
         ArCamera_release(ar_camera);
     }
@@ -732,4 +736,5 @@ namespace hello_ar {
          // Fallback color
          SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);
      }
+
  }  // namespace hello_ar
