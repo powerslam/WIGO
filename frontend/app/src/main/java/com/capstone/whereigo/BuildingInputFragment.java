@@ -1,7 +1,9 @@
 package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +28,8 @@ import com.capstone.whereigo.databinding.FragmentBuildingInputBinding;
 import java.util.regex.Pattern;
 
 public class BuildingInputFragment extends Fragment {
+    private final String TAG = "BuildingInputFragment";
+
     private static final Pattern VALID_FILENAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9\\- _]+$");
 
     private FragmentBuildingInputBinding binding;
@@ -33,14 +37,52 @@ public class BuildingInputFragment extends Fragment {
 
     private ProgressBar progressBar;
     private Button btnPrev, btnNext;
+
+    private static final String ARG_IS_SCALED_DOWN = "ARG_IS_SCALED_DOWN";
     private boolean isScaledDown = false;
+
+    public BuildingInputFragment() {}
+
+    public static BuildingInputFragment newInstance(boolean arg_is_scaled_down) {
+        BuildingInputFragment fragment = new BuildingInputFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_IS_SCALED_DOWN, arg_is_scaled_down);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
         binding = FragmentBuildingInputBinding.inflate(inflater, container, false);
+
+        Bundle args = getArguments();
+        if (args != null) {
+            isScaledDown = args.getBoolean(ARG_IS_SCALED_DOWN);
+
+            if(isScaledDown){
+                binding.buttonPrev.setVisibility(View.VISIBLE);
+                binding.buttonNext.setText("지도 작성 하기");
+
+                binding.inputGroup1.setVisibility(View.GONE);
+                binding.inputGroup2.setVisibility(View.VISIBLE);
+
+                final ConstraintSet constraintSet = new ConstraintSet();
+                constraintSet.clone(binding.buildingInputLayout);
+
+                constraintSet.clear(binding.buttonNext.getId(), ConstraintSet.START);
+                constraintSet.connect(binding.buttonNext.getId(), ConstraintSet.START,
+                        binding.buttonPrev.getId(), ConstraintSet.END, 5);
+
+                constraintSet.applyTo(binding.buildingInputLayout);
+            }
+
+            Log.d(TAG, "" + isScaledDown);
+        }
+
         return binding.getRoot();
     }
 
@@ -48,35 +90,27 @@ public class BuildingInputFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        progressBar = binding.progressBar;
-
-        viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
-
-        binding.spinnerFloor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                viewModel.updateFloorName(parent.getItemAtPosition(position).toString());
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
         requireActivity().getOnBackPressedDispatcher().addCallback(
                 getViewLifecycleOwner(),
                 new OnBackPressedCallback(true) {
                     @Override
                     public void handleOnBackPressed() {
                         if(!isScaledDown) {
-                            requireActivity().getSupportFragmentManager().beginTransaction()
-                                    .replace(R.id.fragment_container, new SettingsFragment())
-                                    .commit();
+                            Intent intent = new Intent(requireContext(), SettingActivity.class);
+                            startActivity(intent);
+                            requireActivity().finish();
                         }
 
                         prevEvent();
                     }
                 }
         );
+
+        viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
+
+        binding.editBuildingName.setText(viewModel.getBuildingName());
+
+        progressBar = binding.progressBar;
 
         btnPrev = binding.buttonPrev;
         btnPrev.setOnClickListener(v -> {
@@ -95,6 +129,8 @@ public class BuildingInputFragment extends Fragment {
 
                 binding.inputGroup1.setVisibility(View.GONE);
                 binding.inputGroup2.setVisibility(View.VISIBLE);
+
+                viewModel.updateBuildingName(binding.editBuildingName.getText().toString());
 
                 btnNext.setText("지도 작성 하기");
                 binding.tvBuildingInput.setText("현재 지도를 작성하고자 하는 층을 입력해주세요.");
@@ -128,9 +164,8 @@ public class BuildingInputFragment extends Fragment {
             }
 
             else {
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, new MappingFragment())
+                requireActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.layout_mapping_main, new MappingFragment())
                         .commit();
             }
         });
@@ -142,6 +177,7 @@ public class BuildingInputFragment extends Fragment {
         );
         floorMinItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.spinnerMin.setAdapter(floorMinItemAdapter);
+        binding.spinnerMax.setSelection(viewModel.getFloorMinIdx());
         binding.spinnerMin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -159,10 +195,21 @@ public class BuildingInputFragment extends Fragment {
         );
         floorMaxItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.spinnerMax.setAdapter(floorMaxItemAdapter);
+        binding.spinnerMax.setSelection(viewModel.getFloorMaxIdx());
         binding.spinnerMax.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 viewModel.updateFloorMaxIdx(position);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        binding.spinnerFloor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                viewModel.updateFloorName(parent.getItemAtPosition(position).toString());
             }
 
             @Override

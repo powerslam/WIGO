@@ -1,7 +1,11 @@
 package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
+import android.hardware.display.DisplayManager;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,17 +29,30 @@ import androidx.transition.TransitionManager;
 import com.capstone.whereigo.databinding.FragmentMappingBinding;
 
 import java.util.List;
+import java.util.Map;
 
-public class MappingFragment extends Fragment {
-    private NativeHolderViewModel nativeHolderViewModel;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+public class MappingFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
+    private final String TAG = "MappingFragment";
+
     private PoseStampViewModel poseStampViewModel;
     private PoseStampRecyclerViewAdapter poseStampRecyclerViewAdapter;
     private FragmentMappingBinding binding;
     private ConstraintLayout main_layout;
+
     private boolean isScaledDown = false;
+
     private TextView tvNumberOfRecordedNode;
-    private Button btnStartSavePoseGraph;
-    private Button btnPoseStamp;
+    private Button btnStartSavePoseGraph, btnPoseStamp;
+    private GLSurfaceView surfaceView;
+
+    private long nativeApplication;
+
+    private int viewportWidth;
+    private int viewportHeight;
+    private boolean viewportChanged = false;
 
     @Nullable
     @Override
@@ -50,8 +67,23 @@ public class MappingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        nativeHolderViewModel = new ViewModelProvider(requireActivity()).get(NativeHolderViewModel.class);
-        registerNativeSelf(nativeHolderViewModel.getNativePtr());
+        surfaceView = binding.surfaceview;
+        surfaceView.setPreserveEGLContextOnPause(true);
+        surfaceView.setEGLContextClientVersion(2);
+        surfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        surfaceView.setRenderer(this);
+        surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        surfaceView.setWillNotDraw(false);
+
+        JniInterface.setClassLoader(this.getClass().getClassLoader());
+        JniInterface.assetManager = requireActivity().getAssets();
+
+        nativeApplication = JniInterface.createNativeApplication(
+                JniInterface.assetManager,
+                requireActivity().getExternalFilesDir("pose_graph").getAbsolutePath()
+        );
+
+        registerNativeSelf(nativeApplication);
 
         poseStampRecyclerViewAdapter = new PoseStampRecyclerViewAdapter();
         RecyclerView recyclerView = binding.recyclerView;
@@ -79,7 +111,7 @@ public class MappingFragment extends Fragment {
 
         btnPoseStamp = binding.buttonPoseStamp;
         btnPoseStamp.setOnClickListener(v -> {
-            JniInterface.getPoseStamp(nativeHolderViewModel.getNativePtr());
+            JniInterface.getPoseStamp(nativeApplication);
             float x = JniInterface.getX();
             float z = JniInterface.getZ();
 
@@ -94,11 +126,10 @@ public class MappingFragment extends Fragment {
         if(!isScaledDown){
             isScaledDown = true;
 
+            JniInterface.changeStatus(nativeApplication);
             btnStartSavePoseGraph.setText("저장하기");
             animateConstraintLayout();
             fadeBtnPoseStamp();
-
-            JniInterface.changeStatus(nativeHolderViewModel.getNativePtr());
         }
 
         else if(/* isScaledDown && */ poseStampViewModel.getPoseStampListSize() > 0){
@@ -108,7 +139,7 @@ public class MappingFragment extends Fragment {
             animateConstraintLayout();
             fadeBtnPoseStamp();
 
-            JniInterface.changeStatus(nativeHolderViewModel.getNativePtr());
+            JniInterface.changeStatus(nativeApplication);
 
             PoseStampLabelingDialog dialog = PoseStampLabelingDialog.newInstance(poseStampViewModel);
             dialog.onDismissListener = (String mapName) -> {
@@ -116,8 +147,12 @@ public class MappingFragment extends Fragment {
                 data.add(mapName);
 
                 JniInterface.savePoseGraph(
-                        nativeHolderViewModel.getNativePtr(),
+                        nativeApplication,
                         data.toArray(new String[0]));
+
+                requireActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.layout_mapping_main, BuildingInputFragment.newInstance(true))
+                        .commit();
             };
             
             dialog.show(requireActivity().getSupportFragmentManager(), "nodeLabelDialog");
@@ -178,6 +213,74 @@ public class MappingFragment extends Fragment {
         ObjectAnimator fade = ObjectAnimator.ofFloat(btnPoseStamp, "alpha", startAlpha, endAlpha);
         fade.setDuration(500);
         fade.start();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (!CameraPermissionHelper.hasCameraPermission(requireActivity())) {
+            CameraPermissionHelper.requestCameraPermission(requireActivity());
+            return;
+        }
+
+        try {
+            JniInterface.onResume(nativeApplication, requireContext(), requireActivity());
+            surfaceView.onResume();
+        } catch (Exception e) {
+            Log.e(TAG, "Exception creating session", e);
+            return;
+        }
+
+        requireContext().getSystemService(DisplayManager.class).registerDisplayListener(this, null);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        surfaceView.onPause();
+        JniInterface.onPause(nativeApplication);
+        requireContext().getSystemService(DisplayManager.class).unregisterDisplayListener(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        new Thread(() -> {
+            synchronized (this) {
+                JniInterface.destroyNativeApplication(nativeApplication);
+                nativeApplication = 0;
+            }
+        }).start();
+    }
+
+    @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        JniInterface.onGlSurfaceCreated(nativeApplication);
+    }
+
+    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+        viewportWidth = width;
+        viewportHeight = height;
+        viewportChanged = true;
+    }
+
+    @Override public void onDrawFrame(GL10 gl) {
+        synchronized (this) {
+            if (nativeApplication == 0) return;
+            if (viewportChanged) {
+                int displayRotation = requireActivity().getWindowManager().getDefaultDisplay().getRotation();
+                JniInterface.onDisplayGeometryChanged(nativeApplication, displayRotation, viewportWidth, viewportHeight);
+                viewportChanged = false;
+            }
+
+            JniInterface.onGlSurfaceDrawFrame(nativeApplication, false, false);
+        }
+    }
+
+    @Override public void onDisplayAdded(int displayId) {}
+    @Override public void onDisplayRemoved(int displayId) {}
+    @Override public void onDisplayChanged(int displayId) {
+        viewportChanged = true;
     }
 
     @Override
