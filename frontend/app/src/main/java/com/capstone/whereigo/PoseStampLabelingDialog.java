@@ -1,14 +1,12 @@
 package com.capstone.whereigo;
 
-import android.app.Dialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -18,22 +16,26 @@ import androidx.fragment.app.DialogFragment;
 import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.capstone.whereigo.databinding.CardNodeLabelingBinding;
 import com.capstone.whereigo.databinding.FragmentNodeLabelingBinding;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.regex.Pattern;
 
-public class NodeLabelingDialog extends DialogFragment {
-    private static final String ARG_NODE_IDX_LIST = "arg_node_idx_list";
+public class PoseStampLabelingDialog extends DialogFragment implements DialogInterface.OnDismissListener {
+    private static final Pattern VALID_FILENAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9\\- _]+$");
     private FragmentNodeLabelingBinding binding;
+    private PoseStampViewPagerAdapter adapter;
+    private PoseStampViewModel viewModel;
 
-    public static NodeLabelingDialog newInstance(ArrayList<Integer> data) {
-        NodeLabelingDialog fragment = new NodeLabelingDialog();
-        Bundle args = new Bundle();
-        args.putIntegerArrayList(ARG_NODE_IDX_LIST, data);
-        fragment.setArguments(args);
+    @FunctionalInterface
+    public interface OnDismissListener {
+        void OnDismiss();
+    }
+
+    public OnDismissListener onDismissListener;
+
+    public static PoseStampLabelingDialog newInstance(PoseStampViewModel viewModel) {
+        PoseStampLabelingDialog fragment = new PoseStampLabelingDialog();
+        fragment.viewModel = viewModel;
         return fragment;
     }
 
@@ -52,33 +54,32 @@ public class NodeLabelingDialog extends DialogFragment {
 
         ViewPager2 viewPager = binding.dialogViewPager;
 
-        assert getArguments() != null;
-        ArrayList<Integer> data = getArguments().getIntegerArrayList(ARG_NODE_IDX_LIST);
-        assert data != null;
-
-        List<NodeLabelData> nodeList = new ArrayList<>();
-        for(Integer index: data){
-            nodeList.add(new NodeLabelData(
-                    String.format(Locale.ROOT, "노드 %d", index),
-                    "(10, 20)",
-                    R.drawable.test)
-            );
-        }
-
-        CardPagerAdapter adapter = new CardPagerAdapter(requireActivity(), nodeList);
+        adapter = new PoseStampViewPagerAdapter(requireActivity(), viewModel);
         viewPager.setAdapter(adapter);
         viewPager.setPageTransformer(new MarginPageTransformer(30));
-        viewPager.setCurrentItem(Integer.MAX_VALUE / 2, false); // 무한 슬라이딩처럼
+        viewPager.setCurrentItem(0, false);
 
-        Button btn = binding.buttonSaveStamp;
-        btn.setOnClickListener(v -> {
+        binding.buttonLabelingDone.setOnClickListener(v -> {
+            for(int pos = 0; pos < adapter.getItemCount(); pos++){
+                if(!checkBuildingName(viewModel.getLabelAt(pos))){
+                    viewPager.setCurrentItem(pos, true);
+                    Toast.makeText(requireContext(), "노드명에 띄어쓰기는 허용되지 않습니다.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+
             int backStackCount = requireActivity().getSupportFragmentManager().getBackStackEntryCount();
             Toast.makeText(requireContext(), "저장이완료됐어용가리치킨더조이 : " + backStackCount, Toast.LENGTH_SHORT).show();
-            requireActivity().getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HelloArFragment())
-                    .commit();
             dismiss();
         });
+    }
+
+    @Override
+    public void onDismiss(@NonNull DialogInterface dialog) {
+        super.onDismiss(dialog);
+        if (onDismissListener != null) {
+            onDismissListener.OnDismiss();
+        }
     }
 
     @Override
@@ -90,5 +91,9 @@ public class NodeLabelingDialog extends DialogFragment {
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
+    }
+
+    private boolean checkBuildingName(String label) {
+        return VALID_FILENAME_PATTERN.matcher(label).matches();
     }
 }

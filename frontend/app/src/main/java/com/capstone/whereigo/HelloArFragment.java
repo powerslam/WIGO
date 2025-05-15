@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -100,11 +101,11 @@ public class HelloArFragment extends Fragment {
     searchBar.inflateMenu(searchMenu);
 
     ImageButton settingsButton = binding.settingsButton;
-    settingsButton.setOnClickListener(v -> activity.getSupportFragmentManager()
-            .beginTransaction()
-            .replace(R.id.fragment_container, new SettingsFragment())
-            .addToBackStack(null)
-            .commit());
+    settingsButton.setOnClickListener(v -> {
+      Intent intent = new Intent(requireContext(), SettingActivity.class);
+      startActivity(intent);
+      requireActivity().finish();
+    });
 
     searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
       if (checkAudioPermission()) {
