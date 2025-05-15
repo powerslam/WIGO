@@ -20,8 +20,6 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.capstone.whereigo.databinding.ActivitySearchBinding;
-import com.google.android.material.search.SearchBar;
-import com.google.android.material.search.SearchView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,13 +38,8 @@ public class SearchActivity extends AppCompatActivity {
         binding = ActivitySearchBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        SearchBar searchBar = binding.searchBar;
-        SearchView searchView = binding.searchView;
-        searchView.setupWithSearchBar(searchBar);
-        searchBar.inflateMenu(R.menu.search_menu);
-
-        // 음성 검색 메뉴 처리
-        searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
+        binding.searchBar.inflateMenu(R.menu.search_menu);
+        binding.searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
             if (checkAudioPermission()) {
                 if (SpeechRecognizer.isRecognitionAvailable(this)) {
                     VoiceRecordDialog dialog = new VoiceRecordDialog();
@@ -60,6 +53,8 @@ public class SearchActivity extends AppCompatActivity {
             return true;
         });
 
+        binding.searchView.setupWithSearchBar(binding.searchBar);
+
         allResults = new ArrayList<>();
         allResults.add("미래관 445호");
         allResults.add("미래관 447호");
@@ -69,7 +64,6 @@ public class SearchActivity extends AppCompatActivity {
         allResults.add("미래관 415호");
         allResults.add("미래관 405호");
 
-        // 검색 텍스트 변경 감지
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
@@ -94,7 +88,6 @@ public class SearchActivity extends AppCompatActivity {
             }
         });
 
-        // 키보드 Enter (검색) 키로 바로 전환
         binding.searchView.getEditText().setOnEditorActionListener((TextView v, int actionId, android.view.KeyEvent event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
                 String query = binding.searchView.getText().toString().trim();
@@ -106,12 +99,17 @@ public class SearchActivity extends AppCompatActivity {
             return false;
         });
 
-        // 뒤로가기 동작 제어
+        binding.settingsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(SearchActivity.this, SettingActivity.class);
+            startActivity(intent);
+            finish();
+        });
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (searchView.isShowing()) {
-                    searchView.hide();
+                if (binding.searchView.isShowing()) {
+                    binding.searchView.hide();
                 } else {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - backPressedTime < backPressInterval) {
@@ -124,8 +122,6 @@ public class SearchActivity extends AppCompatActivity {
                 }
             }
         });
-
-        setupWakeWordListener();
     }
 
     private void navigateToMain(String query) {
@@ -152,16 +148,10 @@ public class SearchActivity extends AppCompatActivity {
 
         if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "음성 권한이 허용되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "음성 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
             }
-        }
-    }
-
-    private void setupWakeWordListener() {
-        if (!checkAudioPermission()) {
-            requestAudioPermission();
         }
     }
 }

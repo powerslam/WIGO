@@ -47,4 +47,14 @@
             app:layout_behavior="@string/searchbar_scrolling_view_behavior" />
     </com.google.android.material.search.SearchView>
 
+    <ImageButton
+        android:id="@+id/settings_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="10dp"
+        android:src="@drawable/ic_settings"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"/>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
