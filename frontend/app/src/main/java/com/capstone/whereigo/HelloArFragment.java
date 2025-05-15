@@ -81,9 +81,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private static Queue<String> audioQueue = new LinkedList<>();
   private static boolean isPlaying = false;
-
-  int goal_floor_ = SearchResultHandler.goal_floor;
-
   private static Button elevatorButton;
 
   @Override
@@ -388,7 +385,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
           elevatorButton.setOnClickListener(v -> {
             JniInterface.changeStatus(instance.nativeApplication);
-            JniInterface.setCurrentFloor(instance.nativeApplication, goal_floor_);
+            JniInterface.setCurrentFloor(instance.nativeApplication, SearchResultHandler.goal_floor);
             elevatorButton.setVisibility(View.GONE); // 버튼 숨김
           });
 
