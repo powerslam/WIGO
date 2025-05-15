@@ -244,7 +244,6 @@ int PoseGraph::detectLoop(KeyFramePtr keyframe, int frame_index)
 
     // @TODO 마지막 인자에 값 빼는 것 잊지 않기(원래 50을 뺐음)
     db.query(keyframe->brief_descriptors, ret, 4, frame_index);
-
     db.add(keyframe->brief_descriptors);
     bool find_loop = false;
     // // a good match with its nerghbour
@@ -278,6 +277,7 @@ int PoseGraph::detectLoop(KeyFramePtr keyframe, int frame_index)
 
 void PoseGraph::addKeyFrameIntoVoc(KeyFramePtr keyframe)
 {
+    // 돌려줘
     db.add(keyframe->brief_descriptors);
 }
 
@@ -594,6 +594,7 @@ void PoseGraph::loadPoseGraph()
     pFile = fopen (file_path.c_str(),"r");
     if (pFile == NULL)
     {
+        LOGI("lode previous pose graph error: wrong previous pose graph path or no previous pose graph \n the system will start with new pose graph \n");
         printf("lode previous pose graph error: wrong previous pose graph path or no previous pose graph \n the system will start with new pose graph \n");
         return;
     }
@@ -693,4 +694,75 @@ void PoseGraph::loadPoseGraph()
     fclose (pFile);
     printf("load pose graph time: %f s\n", tmp_t.toc()/1000);
     base_sequence = 0;
+}
+
+void PoseGraph::setIntrinsicParam(double fx, double fy, double cx, double cy)
+{
+    K = (cv::Mat_<double>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1.0);
+}
+
+
+bool PoseGraph::InitialPose(KeyFramePtr init_frame)
+{
+    if(LOAD_PREVIOUS_POSE_GRAPH)
+    {
+        loadPoseGraph();
+        LOAD_PREVIOUS_POSE_GRAPH = false;
+    }
+
+    if(keyframelist.size() == 0) return false;
+
+    //2. brief 매칭
+    QueryResults ret;
+    db.query(init_frame->brief_descriptors, ret, 1, 15);
+    LOGI("열심히 찾고는 있는데 ㅠㅠ");
+    if(ret.size() == 0 ) return false;
+    if(ret[0].Score < 0.015) return false;
+    idx = ret[0].Id;
+    
+    auto it = keyframelist.begin();
+    std::advance(it, idx);
+
+    //3. PnP-RANSAC
+    Eigen::Vector3d rel_t;
+    Eigen::Quaterniond rel_q;
+    KeyFramePtr map_frame = *it;
+    if (max_count < 10000)
+    {
+        bool check = init_frame->findRelativePose(map_frame, rel_t, rel_q);
+        if(!check) return false;
+        max_count++;
+        LOGI("Estimated Pose in Map: t = [%.2f %.2f %.2f], q = [%.2f %.2f %.2f %.2f]",
+             rel_t.x(), rel_t.y(), rel_t.z(), rel_q.w(), rel_q.x(), rel_q.y(), rel_q.z());
+        if(rel_t.norm() > 0.3)
+            return false;
+    } 
+    else 
+    {
+        LOGI("Pose estimation failed");
+        Eigen::Vector3d t_map = map_frame->vio_T_w_i;
+        x = t_map.x();
+        z = t_map.z();
+        return true;
+    }
+
+    //4. 상대 위치 정보
+    Eigen::Vector3d t_map = map_frame->vio_T_w_i;
+    // LOGI("이것은 입에서 나는 소리가 아니여 x, x, z, z, %.2f %.2f %.2f %.2f", t_map.x(), rel_t.x(), t_map.z(), rel_t.z());
+    x = t_map.x() + rel_t.x();
+    z = t_map.z() + rel_t.z();
+    // LOGI("이것은 입에서 나는 소리여 x, z, %.2f %.2f", x, z);
+
+    // LOGI("아이고 변환했슈");
+    Eigen::Matrix3d R_w_m = map_frame->vio_R_w_i;
+    // t_w_m: map_frame의 위치
+    Quaterniond R_w_m_q = Eigen::Quaterniond(R_w_m);
+    Eigen::Vector3d t_w_m = map_frame->vio_T_w_i;
+    Eigen::Vector3d t_w_c = -R_w_m * rel_t + t_w_m;
+    Eigen::Quaterniond R_w_c = R_w_m_q * rel_q;
+    
+    x = t_w_c.x();
+    z = t_w_c.z();
+    // LOGI("이것은 입에서 나는 소리여 x, z, %.2f %.2f", x, z);
+    return true;
 }

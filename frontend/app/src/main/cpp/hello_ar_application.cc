@@ -297,9 +297,17 @@ namespace hello_ar {
                                                                           image_mat, 0);
                         keyframe->computeBRIEFPoint(asset_manager_, intrinsic_param, depth_mat);
                         pose_graph.addKeyFrameBuf(keyframe);
+                        if(flag){
+                          //boolean type 으로 변경
+                          flag = !(pose_graph.InitialPose(keyframe));
+                          if(!flag){
+                            LOGI("idx : %d", pose_graph.idx);
+                            LOGI("x,y를 출력해봅시다!, x : %.2f, z : %.2f", pose_graph.x,  pose_graph.z);
+                            LOGI("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                          }
+                        }
                     }
                 }
-
                 ArImage_release(image);
                 ArImage_release(depth_image);
                 ArPose_destroy(camera_pose);
@@ -548,179 +556,180 @@ namespace hello_ar {
     }
 
     void HelloArApplication::OnTouched(float x, float y) {
-        if (ar_frame_ != nullptr && ar_session_ != nullptr) {
-            ArHitResultList* hit_result_list = nullptr;
-            ArHitResultList_create(ar_session_, &hit_result_list);
-            CHECK(hit_result_list);
-            if (is_instant_placement_enabled_) {
-                ArFrame_hitTestInstantPlacement(ar_session_, ar_frame_, x, y,
-                                                kApproximateDistanceMeters,
-                                                hit_result_list);
-            } else {
-                ArFrame_hitTest(ar_session_, ar_frame_, x, y, hit_result_list);
-            }
-
-            int32_t hit_result_list_size = 0;
-            ArHitResultList_getSize(ar_session_, hit_result_list,
-                                    &hit_result_list_size);
-
-            // The hitTest method sorts the resulting list by distance from the camera,
-            // increasing.  The first hit result will usually be the most relevant when
-            // responding to user input.
-
-            ArHitResult* ar_hit_result = nullptr;
-            for (int32_t i = 0; i < hit_result_list_size; ++i) {
-                ArHitResult* ar_hit = nullptr;
-                ArHitResult_create(ar_session_, &ar_hit);
-                ArHitResultList_getItem(ar_session_, hit_result_list, i, ar_hit);
-
-                if (ar_hit == nullptr) {
-                    LOGE("HelloArApplication::OnTouched ArHitResultList_getItem error");
-                    return;
-                }
-
-                ArTrackable* ar_trackable = nullptr;
-                ArHitResult_acquireTrackable(ar_session_, ar_hit, &ar_trackable);
-                ArTrackableType ar_trackable_type = AR_TRACKABLE_NOT_VALID;
-                ArTrackable_getType(ar_session_, ar_trackable, &ar_trackable_type);
-                // Creates an anchor if a plane or an oriented point was hit.
-                if (AR_TRACKABLE_PLANE == ar_trackable_type) {
-                    ArPose* hit_pose = nullptr;
-                    ArPose_create(ar_session_, nullptr, &hit_pose);
-                    ArHitResult_getHitPose(ar_session_, ar_hit, hit_pose);
-                    int32_t in_polygon = 0;
-                    ArPlane* ar_plane = ArAsPlane(ar_trackable);
-                    ArPlane_isPoseInPolygon(ar_session_, ar_plane, hit_pose, &in_polygon);
-
-                    // Use hit pose and camera pose to check if hittest is from the
-                    // back of the plane, if it is, no need to create the anchor.
-                    ArPose* camera_pose = nullptr;
-                    ArPose_create(ar_session_, nullptr, &camera_pose);
-                    ArCamera* ar_camera;
-                    ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
-                    ArCamera_getPose(ar_session_, ar_camera, camera_pose);
-                    ArCamera_release(ar_camera);
-                    float normal_distance_to_plane = util::CalculateDistanceToPlane(
-                            *ar_session_, *hit_pose, *camera_pose);
-
-                    ArPose_destroy(hit_pose);
-                    ArPose_destroy(camera_pose);
-
-                    if (!in_polygon || normal_distance_to_plane < 0) {
-                        continue;
-                    }
-
-                    ar_hit_result = ar_hit;
-                    break;
-                } else if (AR_TRACKABLE_POINT == ar_trackable_type) {
-                    ArPoint* ar_point = ArAsPoint(ar_trackable);
-                    ArPointOrientationMode mode;
-                    ArPoint_getOrientationMode(ar_session_, ar_point, &mode);
-                    if (AR_POINT_ORIENTATION_ESTIMATED_SURFACE_NORMAL == mode) {
-                        ar_hit_result = ar_hit;
-                        break;
-                    }
-                } else if (AR_TRACKABLE_INSTANT_PLACEMENT_POINT == ar_trackable_type) {
-                    ar_hit_result = ar_hit;
-                } else if (AR_TRACKABLE_DEPTH_POINT == ar_trackable_type) {
-                    // ArDepthPoints are only returned if ArConfig_setDepthMode() is called
-                    // with AR_DEPTH_MODE_AUTOMATIC.
-                    ar_hit_result = ar_hit;
-                }
-            }
-
-            if (ar_hit_result) {
-                // Note that the application is responsible for releasing the anchor
-                // pointer after using it. Call ArAnchor_release(anchor) to release.
-                ArAnchor* anchor = nullptr;
-                if (ArHitResult_acquireNewAnchor(ar_session_, ar_hit_result, &anchor) !=
-                    AR_SUCCESS) {
-                    LOGE(
-                            "HelloArApplication::OnTouched ArHitResult_acquireNewAnchor error");
-                    return;
-                }
-
-                ArTrackingState tracking_state = AR_TRACKING_STATE_STOPPED;
-                ArAnchor_getTrackingState(ar_session_, anchor, &tracking_state);
-                if (tracking_state != AR_TRACKING_STATE_TRACKING) {
-                    ArAnchor_release(anchor);
-                    return;
-                }
-
-                if (anchors_.size() >= kMaxNumberOfAndroidsToRender) {
-                    ArAnchor_release(anchors_[0].anchor);
-                    ArTrackable_release(anchors_[0].trackable);
-                    anchors_.erase(anchors_.begin());
-                }
-
-                ArTrackable* ar_trackable = nullptr;
-                ArHitResult_acquireTrackable(ar_session_, ar_hit_result, &ar_trackable);
-                // Assign a color to the object for rendering based on the trackable type
-                // this anchor attached to. For AR_TRACKABLE_POINT, it's blue color, and
-                // for AR_TRACKABLE_PLANE, it's green color.
-                ColoredAnchor colored_anchor;
-                colored_anchor.anchor = anchor;
-                colored_anchor.trackable = ar_trackable;
-
-                UpdateAnchorColor(&colored_anchor);
-                anchors_.push_back(colored_anchor);
-
-                ArHitResult_destroy(ar_hit_result);
-                ar_hit_result = nullptr;
-
-                ArHitResultList_destroy(hit_result_list);
-                hit_result_list = nullptr;
-            }
-        }
-    }
-
-    void HelloArApplication::UpdateAnchorColor(ColoredAnchor* colored_anchor) {
-        if (colored_anchor->trackable == nullptr) {
-            // 기본 흰색 설정
-            SetColor(255.0f, 255.0f, 255.0f, 255.0f, colored_anchor->color);
-            return;
-        }
-        ArTrackable* ar_trackable = colored_anchor->trackable;
-        float* color = colored_anchor->color;
-
-        ArTrackableType ar_trackable_type;
-        ArTrackable_getType(ar_session_, ar_trackable, &ar_trackable_type);
-
-        if (ar_trackable_type == AR_TRACKABLE_POINT) {
-            SetColor(66.0f, 133.0f, 244.0f, 255.0f, color);
-            return;
-        }
-
-        if (ar_trackable_type == AR_TRACKABLE_PLANE) {
-            SetColor(139.0f, 195.0f, 74.0f, 255.0f, color);
-            return;
-        }
-
-        if (ar_trackable_type == AR_TRACKABLE_DEPTH_POINT) {
-            SetColor(199.0f, 8.0f, 65.0f, 255.0f, color);
-            return;
-        }
-
-        if (ar_trackable_type == AR_TRACKABLE_INSTANT_PLACEMENT_POINT) {
-            ArInstantPlacementPoint* ar_instant_placement_point =
-                    ArAsInstantPlacementPoint(ar_trackable);
-            ArInstantPlacementPointTrackingMethod tracking_method;
-            ArInstantPlacementPoint_getTrackingMethod(
-                    ar_session_, ar_instant_placement_point, &tracking_method);
-            if (tracking_method ==
-                AR_INSTANT_PLACEMENT_POINT_TRACKING_METHOD_FULL_TRACKING) {
-                SetColor(255.0f, 255.0f, 137.0f, 255.0f, color);
-                return;
-            } else if (
-                    tracking_method ==
-                    AR_INSTANT_PLACEMENT_POINT_TRACKING_METHOD_SCREENSPACE_WITH_APPROXIMATE_DISTANCE) {  // NOLINT
-                SetColor(255.0f, 255.0f, 255.0f, 255.0f, color);
-                return;
-            }
-        }
-
-
-        // Fallback color
-        SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);
-    }
-}  // namespace hello_ar
+         return;
+         if (ar_frame_ != nullptr && ar_session_ != nullptr) {
+             ArHitResultList* hit_result_list = nullptr;
+             ArHitResultList_create(ar_session_, &hit_result_list);
+             CHECK(hit_result_list);
+             if (is_instant_placement_enabled_) {
+                 ArFrame_hitTestInstantPlacement(ar_session_, ar_frame_, x, y,
+                                                 kApproximateDistanceMeters,
+                                                 hit_result_list);
+             } else {
+                 ArFrame_hitTest(ar_session_, ar_frame_, x, y, hit_result_list);
+             }
+ 
+             int32_t hit_result_list_size = 0;
+             ArHitResultList_getSize(ar_session_, hit_result_list,
+                                     &hit_result_list_size);
+ 
+             // The hitTest method sorts the resulting list by distance from the camera,
+             // increasing.  The first hit result will usually be the most relevant when
+             // responding to user input.
+ 
+             ArHitResult* ar_hit_result = nullptr;
+             for (int32_t i = 0; i < hit_result_list_size; ++i) {
+                 ArHitResult* ar_hit = nullptr;
+                 ArHitResult_create(ar_session_, &ar_hit);
+                 ArHitResultList_getItem(ar_session_, hit_result_list, i, ar_hit);
+ 
+                 if (ar_hit == nullptr) {
+                     LOGE("HelloArApplication::OnTouched ArHitResultList_getItem error");
+                     return;
+                 }
+ 
+                 ArTrackable* ar_trackable = nullptr;
+                 ArHitResult_acquireTrackable(ar_session_, ar_hit, &ar_trackable);
+                 ArTrackableType ar_trackable_type = AR_TRACKABLE_NOT_VALID;
+                 ArTrackable_getType(ar_session_, ar_trackable, &ar_trackable_type);
+                 // Creates an anchor if a plane or an oriented point was hit.
+                 if (AR_TRACKABLE_PLANE == ar_trackable_type) {
+                     ArPose* hit_pose = nullptr;
+                     ArPose_create(ar_session_, nullptr, &hit_pose);
+                     ArHitResult_getHitPose(ar_session_, ar_hit, hit_pose);
+                     int32_t in_polygon = 0;
+                     ArPlane* ar_plane = ArAsPlane(ar_trackable);
+                     ArPlane_isPoseInPolygon(ar_session_, ar_plane, hit_pose, &in_polygon);
+ 
+                     // Use hit pose and camera pose to check if hittest is from the
+                     // back of the plane, if it is, no need to create the anchor.
+                     ArPose* camera_pose = nullptr;
+                     ArPose_create(ar_session_, nullptr, &camera_pose);
+                     ArCamera* ar_camera;
+                     ArFrame_acquireCamera(ar_session_, ar_frame_, &ar_camera);
+                     ArCamera_getPose(ar_session_, ar_camera, camera_pose);
+                     ArCamera_release(ar_camera);
+                     float normal_distance_to_plane = util::CalculateDistanceToPlane(
+                             *ar_session_, *hit_pose, *camera_pose);
+ 
+                     ArPose_destroy(hit_pose);
+                     ArPose_destroy(camera_pose);
+ 
+                     if (!in_polygon || normal_distance_to_plane < 0) {
+                         continue;
+                     }
+ 
+                     ar_hit_result = ar_hit;
+                     break;
+                 } else if (AR_TRACKABLE_POINT == ar_trackable_type) {
+                     ArPoint* ar_point = ArAsPoint(ar_trackable);
+                     ArPointOrientationMode mode;
+                     ArPoint_getOrientationMode(ar_session_, ar_point, &mode);
+                     if (AR_POINT_ORIENTATION_ESTIMATED_SURFACE_NORMAL == mode) {
+                         ar_hit_result = ar_hit;
+                         break;
+                     }
+                 } else if (AR_TRACKABLE_INSTANT_PLACEMENT_POINT == ar_trackable_type) {
+                     ar_hit_result = ar_hit;
+                 } else if (AR_TRACKABLE_DEPTH_POINT == ar_trackable_type) {
+                     // ArDepthPoints are only returned if ArConfig_setDepthMode() is called
+                     // with AR_DEPTH_MODE_AUTOMATIC.
+                     ar_hit_result = ar_hit;
+                 }
+             }
+ 
+             if (ar_hit_result) {
+                 // Note that the application is responsible for releasing the anchor
+                 // pointer after using it. Call ArAnchor_release(anchor) to release.
+                 ArAnchor* anchor = nullptr;
+                 if (ArHitResult_acquireNewAnchor(ar_session_, ar_hit_result, &anchor) !=
+                     AR_SUCCESS) {
+                     LOGE(
+                             "HelloArApplication::OnTouched ArHitResult_acquireNewAnchor error");
+                     return;
+                 }
+ 
+                 ArTrackingState tracking_state = AR_TRACKING_STATE_STOPPED;
+                 ArAnchor_getTrackingState(ar_session_, anchor, &tracking_state);
+                 if (tracking_state != AR_TRACKING_STATE_TRACKING) {
+                     ArAnchor_release(anchor);
+                     return;
+                 }
+ 
+                 if (anchors_.size() >= kMaxNumberOfAndroidsToRender) {
+                     ArAnchor_release(anchors_[0].anchor);
+                     ArTrackable_release(anchors_[0].trackable);
+                     anchors_.erase(anchors_.begin());
+                 }
+ 
+                 ArTrackable* ar_trackable = nullptr;
+                 ArHitResult_acquireTrackable(ar_session_, ar_hit_result, &ar_trackable);
+                 // Assign a color to the object for rendering based on the trackable type
+                 // this anchor attached to. For AR_TRACKABLE_POINT, it's blue color, and
+                 // for AR_TRACKABLE_PLANE, it's green color.
+                 ColoredAnchor colored_anchor;
+                 colored_anchor.anchor = anchor;
+                 colored_anchor.trackable = ar_trackable;
+ 
+                 UpdateAnchorColor(&colored_anchor);
+                 anchors_.push_back(colored_anchor);
+ 
+                 ArHitResult_destroy(ar_hit_result);
+                 ar_hit_result = nullptr;
+ 
+                 ArHitResultList_destroy(hit_result_list);
+                 hit_result_list = nullptr;
+             }
+         }
+     }
+ 
+     void HelloArApplication::UpdateAnchorColor(ColoredAnchor* colored_anchor) {
+         if (colored_anchor->trackable == nullptr) {
+             // 기본 흰색 설정
+             SetColor(255.0f, 255.0f, 255.0f, 255.0f, colored_anchor->color);
+             return;
+         }
+         ArTrackable* ar_trackable = colored_anchor->trackable;
+         float* color = colored_anchor->color;
+ 
+         ArTrackableType ar_trackable_type;
+         ArTrackable_getType(ar_session_, ar_trackable, &ar_trackable_type);
+ 
+         if (ar_trackable_type == AR_TRACKABLE_POINT) {
+             SetColor(66.0f, 133.0f, 244.0f, 255.0f, color);
+             return;
+         }
+ 
+         if (ar_trackable_type == AR_TRACKABLE_PLANE) {
+             SetColor(139.0f, 195.0f, 74.0f, 255.0f, color);
+             return;
+         }
+ 
+         if (ar_trackable_type == AR_TRACKABLE_DEPTH_POINT) {
+             SetColor(199.0f, 8.0f, 65.0f, 255.0f, color);
+             return;
+         }
+ 
+         if (ar_trackable_type == AR_TRACKABLE_INSTANT_PLACEMENT_POINT) {
+             ArInstantPlacementPoint* ar_instant_placement_point =
+                     ArAsInstantPlacementPoint(ar_trackable);
+             ArInstantPlacementPointTrackingMethod tracking_method;
+             ArInstantPlacementPoint_getTrackingMethod(
+                     ar_session_, ar_instant_placement_point, &tracking_method);
+             if (tracking_method ==
+                 AR_INSTANT_PLACEMENT_POINT_TRACKING_METHOD_FULL_TRACKING) {
+                 SetColor(255.0f, 255.0f, 137.0f, 255.0f, color);
+                 return;
+             } else if (
+                     tracking_method ==
+                     AR_INSTANT_PLACEMENT_POINT_TRACKING_METHOD_SCREENSPACE_WITH_APPROXIMATE_DISTANCE) {  // NOLINT
+                 SetColor(255.0f, 255.0f, 255.0f, 255.0f, color);
+                 return;
+             }
+         }
+ 
+ 
+         // Fallback color
+         SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);
+     }
+ }  // namespace hello_ar

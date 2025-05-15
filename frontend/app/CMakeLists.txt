@@ -21,8 +21,8 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 add_subdirectory(
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../backend/pose_graph
-        ${CMAKE_BINARY_DIR}/../../../backend/pose_graph/build
+       ${CMAKE_CURRENT_SOURCE_DIR}/../../backend/pose_graph
+       ${CMAKE_BINARY_DIR}/../../../backend/pose_graph/build
 )
 
 # Import the ARCore (Google Play Services for AR) library.

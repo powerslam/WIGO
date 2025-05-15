@@ -114,7 +114,7 @@ class HelloArApplication {
   int display_rotation_ = 0;
   bool is_instant_placement_enabled_ = true;
   bool adding_keyframe_buf = false;
-
+  bool flag = true;
   float plane_y_ = -1.6f;
 
   std::mutex m_adding_keyframe_buf;
