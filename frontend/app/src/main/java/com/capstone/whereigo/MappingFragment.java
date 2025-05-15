@@ -29,7 +29,7 @@ import androidx.transition.TransitionManager;
 import com.capstone.whereigo.databinding.FragmentMappingBinding;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -37,7 +37,7 @@ import javax.microedition.khronos.opengles.GL10;
 public class MappingFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
     private final String TAG = "MappingFragment";
 
-    private PoseStampViewModel poseStampViewModel;
+    private PoseStampViewModel viewModel;
     private PoseStampRecyclerViewAdapter poseStampRecyclerViewAdapter;
     private FragmentMappingBinding binding;
     private ConstraintLayout main_layout;
@@ -91,8 +91,8 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL));
 
-        poseStampViewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
-        poseStampViewModel.getPoseStampList().observe(getViewLifecycleOwner(), poseStampList -> {
+        viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
+        viewModel.getPoseStampList().observe(getViewLifecycleOwner(), poseStampList -> {
             if(!poseStampList.isEmpty()){
                 PoseStamp last = poseStampList.get(poseStampList.size() - 1);
                 poseStampRecyclerViewAdapter.addPoseStamp(last);
@@ -116,7 +116,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
             float z = JniInterface.getZ();
 
             PoseStamp newPoseStamp = new PoseStamp(x, z, R.drawable.test);
-            poseStampViewModel.addPoseStampData(newPoseStamp);
+            viewModel.addPoseStampData(newPoseStamp);
         });
     }
 
@@ -132,7 +132,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
             fadeBtnPoseStamp();
         }
 
-        else if(/* isScaledDown && */ poseStampViewModel.getPoseStampListSize() > 0){
+        else if(/* isScaledDown && */ viewModel.getPoseStampListSize() > 0){
             isScaledDown = false;
 
             btnStartSavePoseGraph.setText("지도 작성 하기");
@@ -141,10 +141,10 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
 
             JniInterface.changeStatus(nativeApplication);
 
-            PoseStampLabelingDialog dialog = PoseStampLabelingDialog.newInstance(poseStampViewModel);
-            dialog.onDismissListener = (String mapName) -> {
-                List<String> data = poseStampViewModel.getPoseStampLabelList().getValue();
-                data.add(mapName);
+            PoseStampLabelingDialog dialog = PoseStampLabelingDialog.newInstance(viewModel);
+            dialog.onDismissListener = () -> {
+                List<String> data = viewModel.getPoseStampLabelList().getValue();
+                data.add(String.format(Locale.ROOT, "%s/%s", viewModel.getBuildingName(), viewModel.getFloorName()));
 
                 JniInterface.savePoseGraph(
                         nativeApplication,
