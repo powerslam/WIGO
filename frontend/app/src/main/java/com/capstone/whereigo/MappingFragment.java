@@ -100,6 +100,10 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
                     recyclerView.scrollToPosition(poseStampRecyclerViewAdapter.getItemCount() - 1);
                 });
             }
+
+            else {
+                poseStampRecyclerViewAdapter.clearPoseStampList();
+            }
         });
 
         tvNumberOfRecordedNode = binding.numberOfRecordedNode;
@@ -116,7 +120,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
             float z = JniInterface.getZ();
 
             PoseStamp newPoseStamp = new PoseStamp(x, z, R.drawable.test);
-            viewModel.addPoseStampData(newPoseStamp);
+            viewModel.addPoseStamp(newPoseStamp);
         });
     }
 
@@ -149,6 +153,8 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
                 JniInterface.savePoseGraph(
                         nativeApplication,
                         data.toArray(new String[0]));
+
+                viewModel.clearPoseStampList();
 
                 requireActivity().getSupportFragmentManager().beginTransaction()
                         .replace(R.id.layout_mapping_main, BuildingInputFragment.newInstance(true))

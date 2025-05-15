@@ -20,6 +20,11 @@ public class PoseStampRecyclerViewAdapter extends RecyclerView.Adapter<PoseStamp
         notifyItemInserted(poseStampList.size() - 1);
     }
 
+    public void clearPoseStampList() {
+        poseStampList.clear();
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public PoseStampViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

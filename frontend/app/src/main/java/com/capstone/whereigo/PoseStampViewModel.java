@@ -49,21 +49,52 @@ public class PoseStampViewModel extends ViewModel {
     public LiveData<List<PoseStamp>> getPoseStampList() {
         return poseStampList;
     }
-
-    public LiveData<List<String>> getPoseStampLabelList() {
-        return poseStampLabelList;
-    }
-
     public int getPoseStampListSize() {
         return Objects.requireNonNull(poseStampList.getValue()).size();
     }
+    public void addPoseStamp(PoseStamp newItem) {
+        List<PoseStamp> currentPoseStampList = poseStampList.getValue();
+        List<String> currentPoseStampLabelList = poseStampLabelList.getValue();
 
+        if (currentPoseStampList != null && currentPoseStampLabelList != null) {
+            currentPoseStampList.add(newItem);
+            currentPoseStampLabelList.add(
+                    String.format(Locale.ROOT, "노드 : %d", currentPoseStampList.size())
+            );
+
+            poseStampList.setValue(currentPoseStampList);
+            poseStampLabelList.setValue(currentPoseStampLabelList);
+        }
+    }
+    public void clearPoseStampList() {
+        List<PoseStamp> currentPoseStampList = poseStampList.getValue();
+        List<String> currentPoseStampLabelList = poseStampLabelList.getValue();
+
+        if (currentPoseStampList != null && currentPoseStampLabelList != null) {
+            currentPoseStampList.clear();
+            currentPoseStampLabelList.clear();
+
+            poseStampList.setValue(currentPoseStampList);
+            poseStampLabelList.setValue(currentPoseStampLabelList);
+        }
+    }
     public PoseStamp getPoseStampAt(int index) {
         List<PoseStamp> list = poseStampList.getValue();
         if (list != null && index >= 0 && index < list.size()) {
             return list.get(index);
         }
         return null;
+    }
+    public LiveData<List<String>> getPoseStampLabelList() {
+        return poseStampLabelList;
+    }
+
+    public void updateLabel(int index, String newLabel) {
+        List<String> list = poseStampLabelList.getValue();
+        if (list != null && index < list.size()) {
+            list.set(index, newLabel);
+            poseStampLabelList.setValue(list);
+        }
     }
 
     public String getLabelAt(int index) {
@@ -108,27 +139,4 @@ public class PoseStampViewModel extends ViewModel {
 
     public String getFloorName(){ return this.floorName; }
     public void updateFloorName(String floorName){ this.floorName = floorName; }
-
-    public void updateLabel(int index, String newLabel) {
-        List<String> list = poseStampLabelList.getValue();
-        if (list != null && index < list.size()) {
-            list.set(index, newLabel);
-            poseStampLabelList.setValue(list);
-        }
-    }
-
-    public void addPoseStampData(PoseStamp newItem) {
-        List<PoseStamp> currentPoseStampList = poseStampList.getValue();
-        List<String> currentPoseStampLabelList = poseStampLabelList.getValue();
-        
-        if (currentPoseStampList != null && currentPoseStampLabelList != null) {
-            currentPoseStampList.add(newItem);
-            currentPoseStampLabelList.add(
-                    String.format(Locale.ROOT, "노드 : %d", currentPoseStampList.size())
-            );
-
-            poseStampList.setValue(currentPoseStampList);
-            poseStampLabelList.setValue(currentPoseStampLabelList);
-        }
-    }
 }
