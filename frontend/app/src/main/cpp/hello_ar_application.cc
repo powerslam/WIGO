@@ -418,10 +418,6 @@ namespace hello_ar {
         }
     }
 
-    void HelloArApplication::LoadPoseGraph(const std::string& path, int floor) {
-        path_navigator_.LoadPoseGraphFromFile(path, floor);
-    }
-
     void HelloArApplication::SavePoseGraph() {
 //        pose_graph.command();
     }

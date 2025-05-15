@@ -31,33 +31,6 @@ void PathNavigator::SetGoals(const std::vector<Point>& goals) {
     }
 }
 
-void PathNavigator::LoadPoseGraphFromFile(const std::string& path, int floor) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        LOGI("❌ pose_graph.txt 열기 실패: %s", path.c_str());
-        return;
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::vector<std::string> tokens;
-        std::string token;
-
-        while (iss >> token) tokens.push_back(token);
-        if (tokens.size() < 8) continue;
-
-        int id = std::stoi(tokens[0]);
-        float x = std::stof(tokens[5]);
-        float z = std::stof(tokens[7]);
-
-        pose_graph_by_floor_[floor][id] = Point{x, z};
-    }
-
-    file.close();
-    LOGI("✅ %d층 pose_graph.txt → %zu개 노드 로드 완료", floor, pose_graph_by_floor_[floor].size());
-}
-
 bool PathNavigator::GetStatusFlag(){
     return status_flag;
 }
@@ -75,7 +48,7 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
 
     Point current_goal = goal_queue_.front();
 
-    path_ = astar(camera_pos, current_goal);
+    path_ = astar_pathfinding_.astar(camera_pos, current_goal);
 
     if (!path_.empty()) {
         path_generated_ = true;

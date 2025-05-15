@@ -5,8 +5,6 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
-#include <fstream>
-#include <sstream>
 #include <cmath>
 #include <android/log.h>
 #include <glm/glm.hpp>
@@ -29,7 +27,6 @@ public:
     int GetCurrentPathIndex() const;
     void Reset();
     bool IsGoalSet() const { return goal_set_; }
-    void LoadPoseGraphFromFile(const std::string& path, int floor);
 
     bool getarrival();
     void ChangeStatus();
@@ -50,5 +47,6 @@ private:
     bool status_flag = true;
 
     std::unordered_set<int> notified_turn_indices_;
-    std::unordered_map<int, std::unordered_map<int, Point>> pose_graph_by_floor_;
+
+    AStarPathfinder astar_pathfinding_;
 };

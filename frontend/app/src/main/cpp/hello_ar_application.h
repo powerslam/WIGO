@@ -58,10 +58,6 @@ class HelloArApplication {
 
   void SavePoseGraph();
 
-  void SetGoals(const std::vector<Point>& goals);
-
-  void LoadPoseGraph(const std::string& path, int floor);
-
     // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
   // is created.
   void OnSurfaceCreated();
@@ -93,6 +89,8 @@ class HelloArApplication {
   void OnSettingsChange(bool is_instant_placement_enabled);
 
   PathNavigator path_navigator_;
+
+  AStarPathfinder astar_pathfinding_;
 
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session,
