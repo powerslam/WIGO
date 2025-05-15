@@ -66,6 +66,8 @@ public class JniInterface {
   public static native void loadPoseGraphFromFile(long nativeApplication, String filePath, int floor);
 
   public static native void changeStatus(long nativeApplication);
+
+  public static native void setCurrentFloor(long nativeApplication, int current_floor);
   public static native boolean isDepthSupported(long nativeApplication);
 
   public static native void onSettingsChange(

@@ -29,6 +29,7 @@ public:
     bool IsGoalSet() const { return goal_set_; }
 
     bool getarrival();
+    void SetCurrentFloor(int current_floor);
     void ChangeStatus();
     bool GetStatusFlag();
 
@@ -49,4 +50,6 @@ private:
     std::unordered_set<int> notified_turn_indices_;
 
     AStarPathfinder astar_pathfinding_;
+
+    int current_floor_;
 };

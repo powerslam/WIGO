@@ -12,6 +12,8 @@ import java.util.List;
 
 public class SearchResultHandler {
 
+    public static int goal_floor = -1;
+
     public interface FragmentProvider {
         HelloArFragment getFragment();
     }
@@ -60,12 +62,15 @@ public class SearchResultHandler {
             return;
         }
 
+        fragment.setCurrentFloor(currentFloor);
+
         // pose_graph 전체 로드
         PoseGraphLoader.loadAll(context, buildingName, fragment);
 
         // 목적지 방번호 추출
         String roomNumber = selected.replaceAll("[^0-9]", "");
         int goalFloor = Character.getNumericValue(roomNumber.charAt(0));  // 예: 445 → 4
+        goal_floor = goalFloor;
 
         Log.i("SearchResultHandler", "currentFloor: " + currentFloor + ", roomNumber: " + roomNumber + ", goalFloor: " + goalFloor);
 

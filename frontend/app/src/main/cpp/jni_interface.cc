@@ -170,6 +170,11 @@ JNI_METHOD(void, changeStatus)
     native(native_application)->path_navigator_.ChangeStatus();
 }
 
+JNI_METHOD(void, setCurrentFloor)
+(JNIEnv *, jclass, jlong native_application, jint current_floor) {
+    native(native_application)->path_navigator_.SetCurrentFloor(current_floor);
+}
+
 JNIEnv *GetJniEnv() {
   JNIEnv *env;
   jint result = g_vm->AttachCurrentThread(&env, nullptr);

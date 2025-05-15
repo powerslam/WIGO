@@ -82,6 +82,8 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private static Queue<String> audioQueue = new LinkedList<>();
   private static boolean isPlaying = false;
 
+  int goal_floor_ = SearchResultHandler.goal_floor;
+
   private static Button elevatorButton;
 
   @Override
@@ -343,6 +345,10 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       JniInterface.loadPoseGraphFromFile(nativeApplication, filePath, floor);
     }
   }
+
+  public void setCurrentFloor(int floor) {
+    JniInterface.setCurrentFloor(nativeApplication, floor);
+  }
   public static void updateYawFromNative(float cameraYaw, float pathYaw) {
     if (instance != null && instance.compassView != null) {
       // Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
@@ -382,6 +388,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
           elevatorButton.setOnClickListener(v -> {
             JniInterface.changeStatus(instance.nativeApplication);
+            JniInterface.setCurrentFloor(instance.nativeApplication, goal_floor_);
             elevatorButton.setVisibility(View.GONE); // 버튼 숨김
           });
 

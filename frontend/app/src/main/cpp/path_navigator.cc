@@ -10,6 +10,11 @@ namespace {
 PathNavigator::PathNavigator() {
 }
 
+void PathNavigator::SetCurrentFloor(int current_floor){
+    current_floor_ = current_floor;
+    LOGI("currentFloor: %d", current_floor_);
+}
+
 void PathNavigator::SetGoals(const std::vector<Point>& goals) {
     while (!goal_queue_.empty()) goal_queue_.pop();
     for (size_t i = 0; i < goals.size(); ++i) {
