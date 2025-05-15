@@ -53,7 +53,7 @@ void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
 
     Point current_goal = goal_queue_.front();
 
-    path_ = astar_pathfinding_.astar(camera_pos, current_goal);
+    path_ = astar_pathfinding_.astar(camera_pos, current_goal, current_floor_);
 
     if (!path_.empty()) {
         path_generated_ = true;

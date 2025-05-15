@@ -26,14 +26,27 @@ import okio.Okio;
 
 public class FileDownloader {
 
-    public static void downloadAndUnzipFile(Context context, String url, String zipFileName, String extractFolderName) {
+    public interface OnUnzipCompleteListener {
+        void onComplete();
+        void onFailure(String errorMessage);
+    }
+
+    public static void downloadAndUnzipFile(
+            Context context,
+            String url,
+            String zipFileName,
+            String extractFolderName,
+            OnUnzipCompleteListener listener
+    ) {
         File zipFile = new File(context.getFilesDir(), zipFileName);
         File extractDir = new File(context.getFilesDir(), extractFolderName);
-
         Handler handler = new Handler(Looper.getMainLooper());
 
         if (extractDir.exists()) {
-            handler.post(() -> Toast.makeText(context, "이미 다운로드 및 압축 해제됨", Toast.LENGTH_SHORT).show());
+            handler.post(() -> {
+                Toast.makeText(context, "이미 다운로드 및 압축 해제됨", Toast.LENGTH_SHORT).show();
+                listener.onComplete();
+            });
             return;
         }
 
@@ -44,13 +57,19 @@ public class FileDownloader {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 Log.d("DownloadFailure", Objects.requireNonNull(e.getMessage()));
-                handler.post(() -> Toast.makeText(context, "다운로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                handler.post(() -> {
+                    Toast.makeText(context, "다운로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    listener.onFailure(e.getMessage());
+                });
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (!response.isSuccessful()) {
-                    handler.post(() -> Toast.makeText(context, "서버 응답 실패", Toast.LENGTH_SHORT).show());
+                    handler.post(() -> {
+                        Toast.makeText(context, "서버 응답 실패", Toast.LENGTH_SHORT).show();
+                        listener.onFailure("서버 응답 실패");
+                    });
                     return;
                 }
 
@@ -58,21 +77,16 @@ public class FileDownloader {
                 sink.writeAll(response.body().source());
                 sink.close();
 
-                handler.post(() -> Toast.makeText(context, "ZIP 저장: " + zipFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
-
                 try {
                     unzip(zipFile, extractDir);
+                    zipFile.delete();
 
-                    boolean deleted = zipFile.delete();
-                    Log.d("ZIP", "ZIP 파일 삭제됨: " + deleted);
-
-                    handler.post(() -> Toast.makeText(
-                            context,
-                            "압축 해제 완료: " + extractDir.getAbsolutePath(),
-                            Toast.LENGTH_SHORT
-                    ).show());
+                    listener.onComplete();
                 } catch (Exception e) {
-                    handler.post(() -> Toast.makeText(context, "압축 해제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    handler.post(() -> {
+                        Toast.makeText(context, "압축 해제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        listener.onFailure(e.getMessage());
+                    });
                 }
             }
         });

@@ -28,8 +28,17 @@ public class SearchResultHandler {
         if (labelFile.exists()) {
             sendMultiGoals(context, selected, buildingName, provider, currentFloor);
         } else {
-            FileDownloader.downloadAndUnzipFile(context, url, fileName, buildingName);
-            waitForLabelFile(context, labelFile, selected, buildingName, provider, currentFloor);
+            FileDownloader.downloadAndUnzipFile(context, url, fileName, buildingName, new FileDownloader.OnUnzipCompleteListener() {
+            @Override
+            public void onComplete() {
+                waitForLabelFile(context, labelFile, selected, buildingName, provider, currentFloor);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Log.e("SearchResultHandler", "다운로드 또는 압축 해제 실패: " + errorMessage);
+            }});
+
         }
     }
 
