@@ -59,7 +59,7 @@ jint JNI_OnLoad(JavaVM *vm, void *) {
 }
 
 JNI_METHOD(jlong, createNativeApplication)
-(JNIEnv *env, jclass, jobject j_asset_manager, jstring j_path) {
+(JNIEnv *env, jclass, jobject j_asset_manager, jstring j_path, jboolean flag) {
   AAssetManager *asset_manager = AAssetManager_fromJava(env, j_asset_manager);
   if (asset_manager == nullptr) {
     LOGE("❌ AssetManager_fromJava failed! AssetManager is null.");
@@ -69,7 +69,7 @@ JNI_METHOD(jlong, createNativeApplication)
 
   const char* c_path = env->GetStringUTFChars(j_path, nullptr);  // Java String → C 문자열
   std::string path(c_path);  // C 문자열 → std::string
-  return jptr(new hello_ar::HelloArApplication(asset_manager, path));
+  return jptr(new hello_ar::HelloArApplication(asset_manager, path, flag));
 }
 
 JNI_METHOD(jboolean, isDepthSupported)

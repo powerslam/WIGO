@@ -33,7 +33,7 @@ public class JniInterface {
   private static final String TAG = "JniInterface";
   static AssetManager assetManager;
 
-  public static native long createNativeApplication(AssetManager assetManager, String externalPath);
+  public static native long createNativeApplication(AssetManager assetManager, String externalPath, boolean mode);
 
   public static native void destroyNativeApplication(long nativeApplication);
 
