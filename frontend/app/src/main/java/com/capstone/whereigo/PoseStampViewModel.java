@@ -14,7 +14,6 @@ public class PoseStampViewModel extends ViewModel {
     private final MutableLiveData<List<String>> poseStampLabelList = new MutableLiveData<>();
 
     private String buildingName = "";
-    private String floorName = "";
 
     private int floorMinIdx = 0;
     private final String[] floorMinItem = {
@@ -34,6 +33,10 @@ public class PoseStampViewModel extends ViewModel {
             "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
             "91", "92", "93", "94", "95", "96", "97", "98", "99", "100"
     };
+
+    private int floorIdx = 0;
+    private String[] floorItem = null;
+    private String floorName = "";
 
     public PoseStampViewModel() {
         List<PoseStamp> initPoseStampList = new ArrayList<>();
@@ -81,6 +84,27 @@ public class PoseStampViewModel extends ViewModel {
     public int getFloorMaxIdx(){ return this.floorMaxIdx; }
     public String[] getFloorMaxItem() { return this.floorMaxItem; }
     public void updateFloorMaxIdx(int index) { this.floorMaxIdx = index; }
+
+    public int getFloorIdx(){ return this.floorIdx; }
+    public void updateFloorItem() {
+        int minIdx = this.getFloorMinIdx();
+        int maxIdx = this.getFloorMaxIdx();
+
+        this.floorItem = new String[minIdx + maxIdx + 1];
+
+        int idx = 0;
+        for(int i = maxIdx; i >= 0; i--){
+            floorItem[idx] = this.getFloorMaxItem()[i];
+            idx += 1;
+        }
+
+        for(int i = 0; i < minIdx; i++){
+            floorItem[idx] = this.getFloorMinItem()[i + 1];
+            idx += 1;
+        }
+    }
+    public String[] getFloorItem() { return this.floorItem; }
+    public void updateFloorIdx(int index) { this.floorIdx = index; }
 
     public String getFloorName(){ return this.floorName; }
     public void updateFloorName(String floorName){ this.floorName = floorName; }
