@@ -198,7 +198,7 @@ public class BuildingInputFragment extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 viewModel.updateFloorIdx(position);
-                viewModel.updateFloorName(parent.getItemAtPosition(position).toString());
+                viewModel.updateFloorName(parent.getItemAtPosition(position).toString() + "층");
             }
 
             @Override

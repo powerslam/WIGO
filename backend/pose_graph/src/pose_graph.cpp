@@ -516,15 +516,19 @@ void PoseGraph::loopClosure()
 void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
 {
     m_keyframelist.lock();
-    std::string save_folder = EXTERNAL_PATH + "/" + labels.back() + "/";
+    std::string building_name = *(labels.rbegin());
+    std::string floor_name = *(labels.rbegin() + 1) + "/";
+    std::string save_folder = EXTERNAL_PATH + "/" + building_name + "/";
+
+    LOGI("%s", save_folder.c_str());
 
     FILE *pFile, *labeled_pFile;
-    string file_path = save_folder + labels.back() + ".txt";
+    string file_path = save_folder + floor_name + "pose_graph.txt";
     pFile = fopen(file_path.c_str(), "w");
     assert(pFile != nullptr);
 
-    string labeled_file_path = save_folder + "labeled_" + labels.back() + ".txt";
-    labeled_pFile = fopen(labeled_file_path.c_str(), "w");
+    string labeled_file_path = save_folder + "labeled_pose_graph.txt";
+    labeled_pFile = fopen(labeled_file_path.c_str(), "a");
     assert(labeled_pFile != nullptr);
 
     fprintf(labeled_pFile, "{\n");
@@ -556,14 +560,14 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
             it3++;
         }
 
-        img_path = save_folder + to_string((*it)->index) + "_img.jpg";
+        img_path = save_folder + floor_name + to_string((*it)->index) + "_img.jpg";
         cv::imwrite(img_path, (*it)->image);
 
         assert((*it)->keypoints.size() == (*it)->brief_descriptors.size());
-        brief_path = save_folder + to_string((*it)->index) + "_briefdes.dat";
+        brief_path = save_folder + floor_name + to_string((*it)->index) + "_briefdes.dat";
         std::ofstream brief_file(brief_path, std::ios::binary);
 
-        keypoints_path = save_folder + to_string((*it)->index) + "_keypoints.txt";
+        keypoints_path = save_folder + floor_name + to_string((*it)->index) + "_keypoints.txt";
         FILE *keypoints_file;
         keypoints_file = fopen(keypoints_path.c_str(), "w");
         for (int i = 0; i < (int)(*it)->keypoints.size(); i++)
