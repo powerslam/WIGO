@@ -134,7 +134,6 @@ public class SearchActivity extends AppCompatActivity {
         binding.settingsButton.setOnClickListener(v -> {
             Intent intent = new Intent(SearchActivity.this, SettingActivity.class);
             startActivity(intent);
-            finish();
         });
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
