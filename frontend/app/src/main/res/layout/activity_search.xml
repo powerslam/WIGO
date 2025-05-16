@@ -9,6 +9,13 @@
     android:background="#133e33">
 
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_top_05"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintGuide_percent="0.005"
+        android:orientation="horizontal" />
+
+    <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top_20"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -16,7 +23,7 @@
         android:orientation="horizontal" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_top_50"
+        android:id="@+id/guideline_top_40"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintGuide_percent="0.40"
@@ -37,7 +44,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="@string/searchbar_hint"
-        app:layout_constraintTop_toTopOf="@id/guideline_top_50"
+        app:layout_constraintTop_toTopOf="@id/guideline_top_40"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="16dp"
@@ -70,10 +77,11 @@
         android:id="@+id/settings_button"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="10dp"
+        android:layout_margin="15dp"
         android:src="@drawable/ic_settings"
         android:background="@android:color/transparent"
-        android:scaleType="fitCenter"/>
+        android:scaleType="fitCenter"
+        app:layout_constraintTop_toTopOf="@id/guideline_top_05"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -13,7 +13,7 @@ import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SplashActivity extends AppCompatActivity {
-    private static final int SPLASH_DURATION = 5000; // 2초
+    private static final int SPLASH_DURATION = 3000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
