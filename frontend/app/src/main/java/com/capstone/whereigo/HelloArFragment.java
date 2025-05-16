@@ -384,6 +384,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
           elevatorButton.setVisibility(View.VISIBLE);
 
           elevatorButton.setOnClickListener(v -> {
+            JniInterface.restartSession(instance.nativeApplication, instance.activity.getApplicationContext(), instance.activity);
             JniInterface.changeStatus(instance.nativeApplication);
             JniInterface.setCurrentFloor(instance.nativeApplication, SearchResultHandler.goal_floor);
             elevatorButton.setVisibility(View.GONE); // 버튼 숨김

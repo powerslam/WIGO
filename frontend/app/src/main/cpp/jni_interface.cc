@@ -170,6 +170,12 @@ JNI_METHOD(void, changeStatus)
     native(native_application)->path_navigator_.ChangeStatus();
 }
 
+JNI_METHOD(void, restartSession)
+(JNIEnv* env, jclass, jlong native_application, jobject context, jobject activity) {
+    auto* app = reinterpret_cast<hello_ar::HelloArApplication*>(native_application);
+    app->RestartSession(env, context, activity);
+}
+
 JNI_METHOD(void, setCurrentFloor)
 (JNIEnv *, jclass, jlong native_application, jint current_floor) {
     native(native_application)->path_navigator_.SetCurrentFloor(current_floor);

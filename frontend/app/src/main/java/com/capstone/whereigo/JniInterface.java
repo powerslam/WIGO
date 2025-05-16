@@ -88,5 +88,6 @@ public class JniInterface {
   }
   
   public static native void savePoseGraph(long nativeApplication);
+  public static native void restartSession(long nativeApp, Context context, Activity activity);
 
 }

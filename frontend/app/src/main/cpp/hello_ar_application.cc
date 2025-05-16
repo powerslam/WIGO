@@ -153,7 +153,8 @@ namespace hello_ar {
 
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-
+        
+        if(!path_navigator_.GetStatusFlag()) return;
         if (ar_session_ == nullptr) return;
 
         ArSession_setCameraTextureName(ar_session_,
@@ -421,7 +422,21 @@ namespace hello_ar {
     void HelloArApplication::SavePoseGraph() {
 //        pose_graph.command();
     }
+    
+    void HelloArApplication::RestartSession(JNIEnv* env, void* context, void* activity) {
+        if (ar_session_ != nullptr) {
+            ArSession_destroy(ar_session_);
+            ar_session_ = nullptr;
+        }
 
+        if (ar_frame_ != nullptr) {
+            ArFrame_destroy(ar_frame_);
+            ar_frame_ = nullptr;
+        }
+
+        // 완전한 세션 재시작
+        OnResume(env, context, activity);
+    }
     bool HelloArApplication::IsDepthSupported() {
         int32_t is_supported = 0;
         ArSession_isDepthModeSupported(ar_session_, AR_DEPTH_MODE_AUTOMATIC,
