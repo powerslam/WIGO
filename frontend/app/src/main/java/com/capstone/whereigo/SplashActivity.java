@@ -26,7 +26,9 @@ public class SplashActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int screenWidth = displayMetrics.widthPixels;
 
-        TranslateAnimation animation = new TranslateAnimation(0, screenWidth - 450, 0, 0);
+        int moveX = (int) (screenWidth * 0.2f);
+
+        TranslateAnimation animation = new TranslateAnimation(-moveX, moveX, 0, 0);
         animation.setDuration(2000); // 2초
         animation.setRepeatCount(Animation.INFINITE);
         animation.setRepeatMode(Animation.RESTART);
