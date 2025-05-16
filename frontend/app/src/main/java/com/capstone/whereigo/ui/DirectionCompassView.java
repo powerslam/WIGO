@@ -71,20 +71,19 @@ public class DirectionCompassView extends View {
         float width = getWidth();
         float height = getHeight();
 
-        // 둥근 배경 그리기 (radius는 적당히 조절)
-        float cornerRadius = 80f;
-        //canvas.drawRoundRect(0, 0, width, height, cornerRadius, cornerRadius, paintBackground);
+        float centerX = width / 2f;
+        float centerY = height / 2f;
+        float radius = Math.min(centerX, centerY) * 0.9f;  // 화면의 90%까지 크기 활용
 
-        float centerX = getWidth() / 2f;
-        float centerY = getHeight() / 2f;
-        float radius = Math.min(centerX, centerY) - 80;
+        // 배경 원
+        canvas.drawCircle(centerX, centerY, radius + radius * 0.1f, WhitepaintCircle);
 
-        canvas.drawCircle(centerX, centerY, radius+30, WhitepaintCircle);
-        // 원 그리기
-        canvas.drawCircle(centerX, centerY, radius-70, paintCircle);
-        canvas.drawCircle(centerX, centerY, radius-160, paintCircle);
+        // 원 그리기 (비율 기반 반지름)
+        paintCircle.setStrokeWidth(radius * 0.03f);
+        canvas.drawCircle(centerX, centerY, radius * 0.7f, paintCircle);
+        canvas.drawCircle(centerX, centerY, radius * 0.4f, paintCircle);
 
-        // 방향 점 위치 계산
+        // 방향 계산
         float cameraAngleRad = (float) Math.toRadians(cameraYaw);
         float pathAngleRad = (float) Math.toRadians(pathYaw);
 
@@ -95,51 +94,34 @@ public class DirectionCompassView extends View {
         float pathY = (float) (centerY + radius * Math.cos(pathAngleRad));
 
 
+
+        float cameraRadius = radius * 0.85f;
+
+        float cameraX_icon = (float) (centerX + cameraRadius * Math.sin(cameraAngleRad));
+        float cameraY_icon = (float) (centerY + cameraRadius * Math.cos(cameraAngleRad));
+
+        // 내 방향 (회전된 아이콘)
         if (bitmapUser != null) {
-            float iconSize = 180f;
-            RectF dst2 = new RectF(
-                    centerX - iconSize / 2,
-                    centerY - iconSize / 2,
-                    centerX + iconSize / 2,
-                    centerY + iconSize / 2
-            );
-            canvas.drawBitmap(bitmapUser, null, dst2, null);
-        }
+            float iconSize = radius * 0.4f;
 
-        // 내 방향 원 (노란색)
-        if (bitmapUser != null) {
-            float iconSize = 180f;
-
-            canvas.save(); // 현재 상태 저장
-
-            // 회전 기준점: 아이콘 중심
-            canvas.rotate(-cameraYaw + 180, cameraX, cameraY);  // 회전 (주의: Android는 시계방향 기준이므로 음수 처리)
+            canvas.save();
+            canvas.rotate(-cameraYaw + 180, cameraX_icon, cameraY_icon);  // 회전
 
             RectF dst = new RectF(
-                    cameraX - iconSize / 2,
-                    cameraY - iconSize / 2,
-                    cameraX + iconSize / 2,
-                    cameraY + iconSize / 2
+                    cameraX_icon - iconSize / 2,
+                    cameraY_icon - iconSize / 2,
+                    cameraX_icon + iconSize / 2,
+                    cameraY_icon + iconSize / 2
             );
 
             canvas.drawBitmap(bitmapUser, null, dst, null);
-
-            canvas.restore(); // 이전 상태로 되돌림 (다른 UI 요소에 영향 X)
+            canvas.restore();
         }
 
-        // 경로 방향 삼각형 (빨간색)
-        float arrowSize = 140;
-        float arrowX = (float) (centerX + (radius-30 - arrowSize) * Math.sin(pathAngleRad));
-        float arrowY = (float) (centerY + (radius-30 - arrowSize) * Math.cos(pathAngleRad));
-        canvas.drawCircle(arrowX, arrowY, 60, paintArrow);  // 삼각형 대신 원으로 단순화
-
-        // 카메라 방향선
-//        float lineLength = radius * 0.9f;
-//        float endX = (float) (centerX + lineLength * Math.sin(cameraAngleRad));
-//        float endY = (float) (centerY + lineLength * Math.cos(cameraAngleRad));
-//
-//        paintDot.setStrokeWidth(8);
-//        canvas.drawLine(centerX, centerY, endX, endY, paintDot);
-
+        // 경로 방향 원
+        float arrowSize = radius * 0.6f;
+        float arrowX = (float) (centerX + (radius - arrowSize) * Math.sin(pathAngleRad));
+        float arrowY = (float) (centerY + (radius - arrowSize) * Math.cos(pathAngleRad));
+        canvas.drawCircle(arrowX, arrowY, radius * 0.2f, paintArrow); // 원 크기도 비율로 조정
     }
 }
