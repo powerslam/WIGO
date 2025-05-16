@@ -89,6 +89,12 @@ public class MainActivity extends AppCompatActivity {
 
                         // HelloArFragment 로드
                         getSupportFragmentManager().beginTransaction()
+                                .setCustomAnimations(
+                                        R.anim.enter_anim,       // 새 Fragment 등장
+                                        R.anim.exit_anim,        // 현재 Fragment 퇴장
+                                        R.anim.pop_enter_anim,   // 뒤로갈 때 새 Fragment 등장
+                                        R.anim.pop_exit_anim     // 뒤로갈 때 현재 Fragment 퇴장
+                                )
                                 .replace(R.id.fragment_container, new HelloArFragment())
                                 .commit();
                     } else {

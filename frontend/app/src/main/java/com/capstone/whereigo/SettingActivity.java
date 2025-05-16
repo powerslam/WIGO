@@ -35,6 +35,12 @@ public class SettingActivity extends AppCompatActivity {
         });
 
         getSupportFragmentManager().beginTransaction()
+                .setCustomAnimations(
+                        R.anim.enter_anim,       // 새 Fragment 등장
+                        R.anim.exit_anim,        // 현재 Fragment 퇴장
+                        R.anim.pop_enter_anim,   // 뒤로갈 때 새 Fragment 등장
+                        R.anim.pop_exit_anim     // 뒤로갈 때 현재 Fragment 퇴장
+                )
                 .replace(R.id.setting_list, new SetPreferenceFragment())
                 .commit();
     }

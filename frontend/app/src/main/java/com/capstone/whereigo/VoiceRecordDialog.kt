@@ -1,7 +1,7 @@
+// VoiceRecordDialog.kt
 package com.capstone.whereigo
 
 import android.app.Dialog
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognitionListener
@@ -12,15 +12,12 @@ import android.util.Log
 import android.view.*
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
-import com.aallam.openai.api.chat.ChatCompletion
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.OpenAI
 import com.capstone.whereigo.databinding.DialogVoiceRecordBinding
+import com.capstone.whereigo.network.*
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.*
 
 class VoiceRecordDialog : DialogFragment() {
@@ -31,8 +28,17 @@ class VoiceRecordDialog : DialogFragment() {
     private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var recognizerIntent: Intent
     private var isListening = false
-    private val openAI = OpenAI("")
 
+    private val retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl("http://146.56.106.246:8000/") // 서버 주소로 변경
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    private val gptApi by lazy {
+        retrofit.create(GPTApiService::class.java)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -40,11 +46,10 @@ class VoiceRecordDialog : DialogFragment() {
         _binding = DialogVoiceRecordBinding.inflate(inflater, container, false)
         initSpeechRecognizer()
 
-        tts = TextToSpeech(context ){
-            val result = tts.setLanguage(Locale.KOREAN)
+        tts = TextToSpeech(context) {
+            tts.setLanguage(Locale.KOREAN)
         }
 
-        // UI 뜨고 500ms 후 음성 인식 시작
         binding.root.postDelayed({
             if (!isListening) {
                 isListening = true
@@ -85,61 +90,61 @@ class VoiceRecordDialog : DialogFragment() {
             override fun onResults(results: Bundle?) {
                 isListening = false
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                //결과 값 출력하는 부분
                 val resultText = matches?.joinToString(" ") ?: "결과 없음"
                 Log.d("VoiceDialog", "최종 인식 결과: $resultText")
-                if (resultText != "결과 없음"){
+
+                if (resultText != "결과 없음") {
                     lifecycleScope.launch {
-                        val chatCompletionRequest = ChatCompletionRequest(
-                            model = ModelId("gpt-4o-mini"),
-                            messages = listOf(
-                                ChatMessage(
-                                    role = ChatRole.System,
-                                    content = """
-                                        너는 사회적 약자를 위한 실내 네비게이션 앱 'wigo'야
-                                        질문에 대해 다음 시퀀스를 따라가
-                                        1. 짧고 간결하게 공손하게 답해
-                                        2. 답변의 형식은 { 'command': ~명령~, 'context': ~명령 내용~} 으로 나오게
-                                        3. 길 찾는 것과 관련 된 명령 일 시, 반환은 'navigate', 목적지
-                                        4. 설정 변경에 관련 된 명령 일 시, 반환은 'settings', 설정내용
-                                        5. 그 외 답변 일 시, 반환은 'except', 자율적인 답변
-                                        6. 답변이 이상하면 너가 약간의 추론을 통해서 올바른 답변이 나오게 해
-                                    """.trimIndent()
-                                ),
-                                ChatMessage(
-                                    role = ChatRole.User,
-                                    content = resultText  // 여기 문자열로!
+                        try {
+                            val response = gptApi.sendMessage(
+                                GPTRequest(
+                                    messages = listOf(
+                                        GPTMessage("system", """
+                                            너는 사회적 약자를 위한 실내 네비게이션 앱 'wigo'야
+                                            질문에 대해 다음 시퀀스를 따라가
+                                            1. 짧고 간결하게 공손하게 답해
+                                            2. 답변의 형식은 { 'command': ~명령~, 'context': ~명령 내용~ } 으로 나오게
+                                            3. 길 찾는 명령: command='navigate'
+                                            4. 설정 명령: command='settings'
+                                            5. 그 외: command='except'
+                                            6. 이상할 경우, 추론하여 바르게 답해
+                                        """.trimIndent()),
+                                        GPTMessage("user", resultText)
+                                    )
                                 )
                             )
-                        )
 
-                        try {
-                            val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest)
-                            //Log.d("VoiceDialog", completion.choices.firstOrNull()?.message?.content.toString())
-                            val jsonAnswer = JSONObject(completion.choices.firstOrNull()?.message?.content)
-                            val command = jsonAnswer["command"].toString()
-                            val reply = jsonAnswer["context"].toString()
-                            Log.d("VoiceDialog", "응답: ${jsonAnswer}")
-                            //Toast.makeText(requireContext(), "응답: ${completion.choices.firstOrNull()?.message?.content}", Toast.LENGTH_SHORT).show()
-                            if(command == "navigate"){
+                            if (response.isSuccessful) {
+                                val content = response.body()?.choices?.firstOrNull()?.message?.content
+                                Log.d("VoiceDialog", "응답 본문: $content")
+                                val json = JSONObject(content ?: "{}")
+                                val command = json.getString("command")
+                                val reply = json.getString("context")
 
-                            }
-                            else if(command == "settings"){
-                                if(reply == "volume"){
-                                    val value = jsonAnswer["value"] as Int
-
+                                when (command) {
+                                    "navigate" -> {
+                                        //
+                                    }
+                                    "settings" -> {
+                                        if (reply == "volume") {
+                                            val value = json.getInt("value")
+                                            //
+                                        }
+                                    }
+                                    "except" -> {
+                                        tts.speak(reply, TextToSpeech.QUEUE_FLUSH, null, null)
+                                    }
                                 }
-                            }
-                            else if(command == "except"){
-                                tts.speak("${reply}", TextToSpeech.QUEUE_FLUSH, null, null)
+                            } else {
+                                Log.e("VoiceDialog", "서버 응답 실패: ${response.code()}")
                             }
                         } catch (e: Exception) {
-                            Log.e("VoiceDialog", "OpenAI 호출 실패: ${e.message}")
+                            Log.e("VoiceDialog", "GPT 호출 오류: ${e.message}")
                         }
 
                         if (isAdded) dismissAllowingStateLoss()
                     }
-                } else{
+                } else {
                     if (isAdded) dismissAllowingStateLoss()
                 }
             }
@@ -156,8 +161,6 @@ class VoiceRecordDialog : DialogFragment() {
             override fun onPartialResults(partialResults: Bundle?) {}
         })
     }
-
-
 
     override fun onDestroyView() {
         speechRecognizer?.destroy()

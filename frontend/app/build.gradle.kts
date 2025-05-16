@@ -93,6 +93,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // json 형식 의존성
 
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
+
+    // Retrofit 추가
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
 }
 
 val extractNativeLibraries by tasks.registering(Copy::class) {
