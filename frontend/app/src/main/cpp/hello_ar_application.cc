@@ -190,7 +190,7 @@ namespace hello_ar {
         glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
-        // LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
+        LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
 
         path_navigator_.TryGeneratePathIfNeeded(cam_pos);
         path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);

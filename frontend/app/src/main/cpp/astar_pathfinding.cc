@@ -101,6 +101,12 @@ std::vector<Point> AStarPathfinder::astar(const Point& start_coord, const Point&
                 path.push_back(pose_graph[at]);
             }
             std::reverse(path.begin(), path.end());
+
+//            LOGI("🟢 A* 경로 (%zu개 노드):", path.size());
+//            for (const auto& p : path) {
+//                LOGI("   📍 Point(x=%.2f, z=%.2f)", p.x, p.z);
+//            }
+
             return path;
         }
 

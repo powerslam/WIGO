@@ -17,15 +17,23 @@ void PathNavigator::SetCurrentFloor(int current_floor){
 
 void PathNavigator::SetGoals(const std::vector<Point>& goals) {
     while (!goal_queue_.empty()) goal_queue_.pop();
+    while (!start_queue_.empty()) start_queue_.pop();
+
+    start_queue_.push(Point{0.0f, 0.0f});
+
     for (size_t i = 0; i < goals.size(); ++i) {
         if (i % 2 == 0) {
             goal_queue_.push(goals[i]);
+        } else {
+            start_queue_.push(goals[i]);
         }
     }
 
     goal_set_ = !goal_queue_.empty();
     path_generated_ = false;
+
     LOGI("✅ Goal Queue 설정 완료. 총 %zu개 목표", goal_queue_.size());
+    LOGI("✅ Start Queue 설정 완료. 총 %zu개 시작점", start_queue_.size());
 
     std::queue<Point> goal_debug = goal_queue_;
     int idx = 0;
@@ -33,6 +41,14 @@ void PathNavigator::SetGoals(const std::vector<Point>& goals) {
         const Point& p = goal_debug.front();
         LOGI("🎯 Goal %d: x=%.2f, z=%.2f", idx++, p.x, p.z);
         goal_debug.pop();
+    }
+
+    std::queue<Point> start_debug = start_queue_;
+    idx = 0;
+    while (!start_debug.empty()) {
+        const Point& p = start_debug.front();
+        LOGI("🚩 Start %d: x=%.2f, z=%.2f", idx++, p.x, p.z);
+        start_debug.pop();
     }
 }
 
@@ -51,9 +67,10 @@ void PathNavigator::ChangeStatus() {
 void PathNavigator::TryGeneratePathIfNeeded(const Point& camera_pos) {
     if (!goal_set_ || path_generated_ || goal_queue_.empty() || !status_flag) return;
 
+    Point current_start = start_queue_.front();
     Point current_goal = goal_queue_.front();
 
-    path_ = astar_pathfinding_.astar(camera_pos, current_goal, current_floor_);
+    path_ = astar_pathfinding_.astar(current_start + camera_pos, current_goal, current_floor_);
 
     if (!path_.empty()) {
         path_generated_ = true;
@@ -126,6 +143,7 @@ bool PathNavigator::UpdateNavigation(const Point& cam_pos, const float* matrix, 
         LOGI("✅ 경로 지점 %d 도달", current_path_index_);
 
         if (current_path_index_ >= path_.size()) {
+            start_queue_.pop();
             goal_queue_.pop();
             Reset();
 

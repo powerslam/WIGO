@@ -37,6 +37,7 @@ public:
 
 private:
     std::queue<Point> goal_queue_;
+    std::queue<Point> start_queue_;
 
     std::vector<Point> path_;
     bool path_generated_ = false;

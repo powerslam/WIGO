@@ -25,11 +25,6 @@ glm::vec3 PoseHelper::GetCameraPosition(const float* pose_raw) {
   return {pose_raw[4], pose_raw[5], pose_raw[6]};
 }
 
-bool Point::operator<(const Point& other) const {
-  if (std::abs(x - other.x) > 1e-4) return x < other.x;
-  return z < other.z;
-}
-
 namespace nav {
 
   std::string GetTurnAudioFile(float angle) {
