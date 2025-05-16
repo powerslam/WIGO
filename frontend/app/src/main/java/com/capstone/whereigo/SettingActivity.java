@@ -23,9 +23,13 @@ public class SettingActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivitySettingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        
         binding.toolbar.setNavigationOnClickListener(v -> {
-            getSupportFragmentManager().popBackStack();
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                getSupportFragmentManager().popBackStack();
+            } else {
+                finish();
+            }
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.settingMain, (v, insets) -> {
