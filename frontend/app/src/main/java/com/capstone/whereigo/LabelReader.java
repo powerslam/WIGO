@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 public class LabelReader {
 
     public static Pair<Float, Float> getCoordinates(Context context, String buildingName, String roomName) {
-        File labelFile = new File(context.getFilesDir(), buildingName + "/label.txt");
+        File labelFile = new File(context.getExternalFilesDir(null), buildingName + "/label.txt");
 
         if (!labelFile.exists()) {
             Log.e("LabelReader", "label.txt 파일이 존재하지 않음");

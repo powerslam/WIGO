@@ -8,7 +8,7 @@ import java.io.File;
 public class PoseGraphLoader {
 
     public static void loadAll(Context context, String buildingName, HelloArFragment fragment) {
-        File buildingDir = new File(context.getFilesDir(), buildingName);
+        File buildingDir = new File(context.getExternalFilesDir(null), buildingName);
         File[] floorDirs = buildingDir.listFiles();
 
         if (floorDirs == null) {

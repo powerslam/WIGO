@@ -68,7 +68,7 @@ public class MapDataAdapter extends RecyclerView.Adapter<MapDataAdapter.ViewHold
                     .setMessage(mapData.getFileName() + "을(를) 삭제하시겠습니까?")
                     .setPositiveButton("삭제", (dialog, which) -> {
                         // FileDownloader와 동일한 구조에 맞춤:
-                        File file = new File(context.getFilesDir(), "Maps/" + mapData.getFileName());
+                        File file = new File(context.getExternalFilesDir(null), "Maps/" + mapData.getFileName());
                         boolean deleted = false;
 
                         Log.d("DeleteCheck", "삭제 대상 경로: " + file.getAbsolutePath());

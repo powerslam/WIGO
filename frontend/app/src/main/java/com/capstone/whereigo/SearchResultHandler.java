@@ -23,25 +23,24 @@ public class SearchResultHandler {
         String fileName = buildingName + ".zip";
         String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
 
-        File labelFile = new File(context.getFilesDir(), buildingName + "/label.txt");
+        File labelFile = new File(context.getExternalFilesDir(null), buildingName + "/label.txt");
 
         if (labelFile.exists()) {
             sendMultiGoals(context, selected, buildingName, provider, currentFloor);
         } else {
             FileDownloader.downloadAndUnzipFile(context, url, fileName, buildingName, new FileDownloader.OnUnzipCompleteListener() {
-            @Override
-            public void onComplete() {
-                waitForLabelFile(context, labelFile, selected, buildingName, provider, currentFloor);
-            }
+                @Override
+                public void onComplete() {
+                    waitForLabelFile(context, labelFile, selected, buildingName, provider, currentFloor);
+                }
 
-            @Override
-            public void onFailure(String errorMessage) {
-                Log.e("SearchResultHandler", "다운로드 또는 압축 해제 실패: " + errorMessage);
-            }});
+                @Override
+                public void onFailure(String errorMessage) {
+                    Log.e("SearchResultHandler", "다운로드 또는 압축 해제 실패: " + errorMessage);
+                }});
 
         }
     }
-
     private static void waitForLabelFile(Context context, File labelFile, String selected, String buildingName, FragmentProvider provider, int currentFloor) {
         Handler handler = new Handler(Looper.getMainLooper());
         long startTime = System.currentTimeMillis();

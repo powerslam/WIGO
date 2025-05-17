@@ -38,8 +38,8 @@ public class FileDownloader {
             String extractFolderName,
             OnUnzipCompleteListener listener
     ) {
-        File zipFile = new File(context.getFilesDir(), zipFileName);
-        File extractDir = new File(context.getFilesDir(), extractFolderName);
+        File zipFile = new File(context.getExternalFilesDir(null), zipFileName);
+        File extractDir = new File(context.getExternalFilesDir(null), extractFolderName);
         Handler handler = new Handler(Looper.getMainLooper());
 
         if (extractDir.exists()) {
