@@ -1,6 +1,7 @@
 package com.capstone.whereigo;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -16,6 +17,9 @@ import com.capstone.whereigo.databinding.ActivityMainBinding;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private ActivityMainBinding binding;
+
+    private String fullSelected;
+    private int currentFloor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +42,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+
+        Intent intent = getIntent();
+        fullSelected = intent.getStringExtra("search_query");
+        currentFloor = intent.getIntExtra("current_floor", 6);
+        Log.d("Hello", fullSelected);
+        Log.d("Hello", "" + currentFloor);
 
         if (savedInstanceState == null) {
             showFloorInputDialog();
@@ -65,8 +75,9 @@ public class MainActivity extends AppCompatActivity {
                                         R.anim.pop_enter_anim,   // 뒤로갈 때 새 Fragment 등장
                                         R.anim.pop_exit_anim     // 뒤로갈 때 현재 Fragment 퇴장
                                 )
-                                .replace(R.id.fragment_container, new HelloArFragment())
+                                .replace(R.id.fragment_container, new HelloArFragment(fullSelected, currentFloor))
                                 .commit();
+
                     } else {
                         Toast.makeText(this, "층을 입력해주세요", Toast.LENGTH_SHORT).show();
                         showFloorInputDialog(); // 재실행

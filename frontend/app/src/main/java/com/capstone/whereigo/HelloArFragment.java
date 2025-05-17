@@ -18,7 +18,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.os.Looper;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -56,6 +55,8 @@ import android.net.Uri;
 import android.content.res.AssetFileDescriptor;
 import java.io.IOException;
 import android.content.Context;
+
+import java.util.Objects;
 import java.util.Queue;
 import java.util.LinkedList;
 import android.content.res.AssetManager;
@@ -83,8 +84,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private TextView surfaceStatusText;
   private DirectionCompassView compassView;
 
-  private GestureDetector gestureDetector;
-
   private long nativeApplication;
   private FragmentActivity activity;
 
@@ -97,6 +96,14 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private static Button elevatorButton;
 
   private FragmentHelloArBinding binding;
+
+  private int currentFloor;
+  private String fullSelected;
+
+  public HelloArFragment(String fullSelected, int currentFloor){
+    this.fullSelected = fullSelected;
+    this.currentFloor = currentFloor;
+  }
 
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -156,6 +163,21 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
           recyclerView.setVisibility(View.VISIBLE);
           recyclerView.setLayoutManager(new LinearLayoutManager(activity));
           recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
+
+            String buildingName = selected.split(" ")[0];
+            String roomNumber = selected.replaceAll("[^0-9]", "");
+
+            int currentFloor = 6;
+
+            String fullSelected = buildingName + " " + roomNumber;
+            Log.d(TAG, fullSelected);
+
+            SearchResultHandler.handle(
+                    requireContext(),
+                    fullSelected,
+                    () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container),
+                    currentFloor
+            );
           }));
         }
 
@@ -170,7 +192,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       }
     });
 
-    surfaceView.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
+    surfaceView = binding.surfaceview;
     surfaceView.setPreserveEGLContextOnPause(true);
     surfaceView.setEGLContextClientVersion(2);
     surfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
@@ -256,11 +278,19 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
+    JniInterface.setClassLoader(this.getClass().getClassLoader());
     TtsManager.INSTANCE.init(requireContext());
     AudioManager.getInstance().init(requireContext());
 
     elevatorButton = view.findViewById(R.id.btn_elevator);
     compassView = view.findViewById(R.id.compassView);
+
+    SearchResultHandler.handle(
+            requireContext(),
+            fullSelected,
+            () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container),
+            currentFloor
+    );
   }
 
   public void sendMultiGoalsToNative(float[] coords) {
@@ -282,6 +312,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   public void setCurrentFloor(int floor) {
     JniInterface.setCurrentFloor(nativeApplication, floor);
   }
+
   public static void updateYawFromNative(float cameraYaw, float pathYaw) {
     if (instance != null && instance.compassView != null) {
       // Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
@@ -352,6 +383,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     super.onAttach(context);
     instance = this;
   }
+
   public static void vibrateOnce() {
     Vibrator vibrator = (Vibrator) instance.requireContext().getSystemService(Context.VIBRATOR_SERVICE);
     if (vibrator != null && vibrator.hasVibrator()) {
