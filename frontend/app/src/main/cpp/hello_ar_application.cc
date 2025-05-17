@@ -46,7 +46,7 @@ namespace hello_ar {
     }  // namespace
     HelloArApplication::HelloArApplication(AAssetManager* asset_manager, std::string& external_path, bool mode)
         : pose_graph(external_path, "brief_pattern.yml", "brief_k10L6.bin", false, 0.2, 640, 480),
-        asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr}, mode(mode) {
+        mode(mode), asset_manager_(asset_manager), location_pin_anchor_{nullptr, nullptr} {
 
         g_mappingFragment = nullptr;
         method_id = nullptr;
@@ -151,7 +151,7 @@ namespace hello_ar {
         }
     }
 
-    void HelloArApplication::ChangeStatus() {
+    void HelloArApplication::changeStatusMain() {
         while(!m_adding_keyframe_buf.try_lock());
         adding_keyframe_buf = !adding_keyframe_buf;
         LOGI("adding_keyframe_buf: %d", adding_keyframe_buf);
@@ -160,6 +160,7 @@ namespace hello_ar {
 
     void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
                                          bool useDepthForOcclusion) {
+
         // Render the scene.
         glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -167,6 +168,7 @@ namespace hello_ar {
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
 
+        if(!path_navigator_.GetStatusFlag()) return;
         if (ar_session_ == nullptr) return;
 
         ArSession_setCameraTextureName(ar_session_,
@@ -203,10 +205,9 @@ namespace hello_ar {
         glm::vec3 cam_pos_vec3 = PoseHelper::GetCameraPosition(pose_raw);
         Point cam_pos{cam_pos_vec3.x, cam_pos_vec3.z};
 
-        // PathNavigator로 경로 생성 시도
-        path_navigator_.TryGeneratePathIfNeeded(cam_pos);
+        LOGI("📸 카메라 위치: x = %.3f, z = %.3f", cam_pos.x, cam_pos.z);
 
-        // 경로 따라가기
+        path_navigator_.TryGeneratePathIfNeeded(cam_pos);
         path_navigator_.UpdateNavigation(cam_pos, matrix, direction_helper_);
 
         if(this->intrinsic_param.fx == 0.0){
@@ -225,7 +226,7 @@ namespace hello_ar {
             ArCameraIntrinsics_destroy(intrinsics);
         }
 
-        JNIEnv* env = GetJniEnv(); 
+        JNIEnv* env = GetJniEnv();
 
         if (env) {
             // yaw 정보 JNI로 전달
@@ -373,20 +374,20 @@ namespace hello_ar {
             int current_index = path_navigator_.GetCurrentPathIndex();
             int path_size = path.size();
 
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < 5; ++i) { 
                 int idx = current_index + i;
                 if (idx >= path_size) break;
-
+        
                 const Point& p = path[idx];
-
+        
                 float anchor_pose[7] = {0};
                 anchor_pose[4] = p.x;
                 anchor_pose[5] = plane_y_;
                 anchor_pose[6] = p.z;
-
+        
                 ArPose* pose = nullptr;
                 ArPose_create(ar_session_, anchor_pose, &pose);
-
+        
                 ArAnchor* anchor = nullptr;
                 if (ArSession_acquireNewAnchor(ar_session_, pose, &anchor) == AR_SUCCESS) {
                     ColoredAnchor car_anchor;
@@ -429,7 +430,7 @@ namespace hello_ar {
                 ArTrackingState out_tracking_state;
                 ArTrackable_getTrackingState(ar_session_, ar_trackable,
                                              &out_tracking_state);
-    
+
                 ArPlane* subsume_plane;
                 ArPlane_acquireSubsumedBy(ar_session_, ar_plane, &subsume_plane);
                 if (subsume_plane != nullptr) {
@@ -437,61 +438,61 @@ namespace hello_ar {
                     ArTrackable_release(ar_trackable);
                     continue;
                 }
-    
+
                 if (ArTrackingState::AR_TRACKING_STATE_TRACKING != out_tracking_state) {
                     ArTrackable_release(ar_trackable);
                     continue;
                 }
-    
+
                 plane_renderer_.Draw(projection_mat, view_mat, *ar_session_, *ar_plane);
                 ArTrackable_release(ar_trackable);
             }
-    
+
             ArTrackableList_destroy(plane_list);
             plane_list = nullptr;
-    
+
             for (int i = 0; i < carArrow_anchors_.size(); ++i) {
                 if (i >= path_navigator_.GetPath().size()) break;
-    
+
                 glm::mat4 model_mat(1.0f);
-    
+
                 // ⭐ Anchor로부터 변환행렬 가져오기 ⭐
                 util::GetTransformMatrixFromAnchor(*carArrow_anchors_[i].anchor, ar_session_, &model_mat);
-    
+
                 // 추가로 방향 회전은 여기서 적용
                 const auto& path = path_navigator_.GetPath();
                 int current_index = path_navigator_.GetCurrentPathIndex() + i;
                 if (current_index >= path.size()) continue;
-    
+
                 const Point& from = path[current_index];
                 Point to = (current_index + 1 < path.size()) ? path[current_index + 1] : from;
-    
+
                 glm::vec3 direction(to.x - from.x, 0.0f, to.z - from.z);
                 float length = glm::length(direction);
                 if (length < 0.01f) continue;
                 direction = glm::normalize(direction);
-    
+
                 float angle = std::atan2(direction.x, direction.z) - glm::pi<float>();
-    
+
                 glm::vec3 position(from.x, plane_y_, from.z);
-    
+
                 model_mat = glm::translate(glm::mat4(1.0f), position);
                 glm::mat4 rotation_mat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 1, 0));
                 glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
-    
+
                 model_mat = model_mat * rotation_mat * scale_mat;
-    
+
                 // 렌더링
                 car_arrow_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction, carArrow_anchors_[i].color);
             }
-    
-    
+
+
             if (location_pin_anchor_.anchor != nullptr) {
                 const auto& path = path_navigator_.GetPath();
                 int path_size = static_cast<int>(path.size());
                 int current_index = path_navigator_.GetCurrentPathIndex();
-    
-                if (current_index >= path_size - 5 && !path_navigator_.arrival_) {
+
+                if (path_size > 5 && current_index >= path_size - 5 && !path_navigator_.getarrival()) {
                     glm::mat4 model_mat(1.0f);
                     if (location_pin_anchor_.trackable != nullptr) {
                         UpdateAnchorColor(&location_pin_anchor_);
@@ -501,7 +502,6 @@ namespace hello_ar {
                 }
             }
         }
-        
 
         ArCamera_release(ar_camera);
     }
@@ -521,6 +521,20 @@ namespace hello_ar {
         pose_graph.savePoseGraph(v_labels);
     }
 
+    void HelloArApplication::RestartSession(JNIEnv* env, void* context, void* activity) {
+        if (ar_session_ != nullptr) {
+            ArSession_destroy(ar_session_);
+            ar_session_ = nullptr;
+        }
+
+        if (ar_frame_ != nullptr) {
+            ArFrame_destroy(ar_frame_);
+            ar_frame_ = nullptr;
+        }
+
+        // 완전한 세션 재시작
+        OnResume(env, context, activity);
+    }
     bool HelloArApplication::IsDepthSupported() {
         int32_t is_supported = 0;
         ArSession_isDepthModeSupported(ar_session_, AR_DEPTH_MODE_AUTOMATIC,
@@ -572,26 +586,26 @@ namespace hello_ar {
              } else {
                  ArFrame_hitTest(ar_session_, ar_frame_, x, y, hit_result_list);
              }
- 
+
              int32_t hit_result_list_size = 0;
              ArHitResultList_getSize(ar_session_, hit_result_list,
                                      &hit_result_list_size);
- 
+
              // The hitTest method sorts the resulting list by distance from the camera,
              // increasing.  The first hit result will usually be the most relevant when
              // responding to user input.
- 
+
              ArHitResult* ar_hit_result = nullptr;
              for (int32_t i = 0; i < hit_result_list_size; ++i) {
                  ArHitResult* ar_hit = nullptr;
                  ArHitResult_create(ar_session_, &ar_hit);
                  ArHitResultList_getItem(ar_session_, hit_result_list, i, ar_hit);
- 
+
                  if (ar_hit == nullptr) {
                      LOGE("HelloArApplication::OnTouched ArHitResultList_getItem error");
                      return;
                  }
- 
+
                  ArTrackable* ar_trackable = nullptr;
                  ArHitResult_acquireTrackable(ar_session_, ar_hit, &ar_trackable);
                  ArTrackableType ar_trackable_type = AR_TRACKABLE_NOT_VALID;
@@ -604,7 +618,7 @@ namespace hello_ar {
                      int32_t in_polygon = 0;
                      ArPlane* ar_plane = ArAsPlane(ar_trackable);
                      ArPlane_isPoseInPolygon(ar_session_, ar_plane, hit_pose, &in_polygon);
- 
+
                      // Use hit pose and camera pose to check if hittest is from the
                      // back of the plane, if it is, no need to create the anchor.
                      ArPose* camera_pose = nullptr;
@@ -615,14 +629,14 @@ namespace hello_ar {
                      ArCamera_release(ar_camera);
                      float normal_distance_to_plane = util::CalculateDistanceToPlane(
                              *ar_session_, *hit_pose, *camera_pose);
- 
+
                      ArPose_destroy(hit_pose);
                      ArPose_destroy(camera_pose);
- 
+
                      if (!in_polygon || normal_distance_to_plane < 0) {
                          continue;
                      }
- 
+
                      ar_hit_result = ar_hit;
                      break;
                  } else if (AR_TRACKABLE_POINT == ar_trackable_type) {
@@ -641,7 +655,7 @@ namespace hello_ar {
                      ar_hit_result = ar_hit;
                  }
              }
- 
+
              if (ar_hit_result) {
                  // Note that the application is responsible for releasing the anchor
                  // pointer after using it. Call ArAnchor_release(anchor) to release.
@@ -652,20 +666,20 @@ namespace hello_ar {
                              "HelloArApplication::OnTouched ArHitResult_acquireNewAnchor error");
                      return;
                  }
- 
+
                  ArTrackingState tracking_state = AR_TRACKING_STATE_STOPPED;
                  ArAnchor_getTrackingState(ar_session_, anchor, &tracking_state);
                  if (tracking_state != AR_TRACKING_STATE_TRACKING) {
                      ArAnchor_release(anchor);
                      return;
                  }
- 
+
                  if (anchors_.size() >= kMaxNumberOfAndroidsToRender) {
                      ArAnchor_release(anchors_[0].anchor);
                      ArTrackable_release(anchors_[0].trackable);
                      anchors_.erase(anchors_.begin());
                  }
- 
+
                  ArTrackable* ar_trackable = nullptr;
                  ArHitResult_acquireTrackable(ar_session_, ar_hit_result, &ar_trackable);
                  // Assign a color to the object for rendering based on the trackable type
@@ -674,19 +688,19 @@ namespace hello_ar {
                  ColoredAnchor colored_anchor;
                  colored_anchor.anchor = anchor;
                  colored_anchor.trackable = ar_trackable;
- 
+
                  UpdateAnchorColor(&colored_anchor);
                  anchors_.push_back(colored_anchor);
- 
+
                  ArHitResult_destroy(ar_hit_result);
                  ar_hit_result = nullptr;
- 
+
                  ArHitResultList_destroy(hit_result_list);
                  hit_result_list = nullptr;
              }
          }
      }
- 
+
      void HelloArApplication::UpdateAnchorColor(ColoredAnchor* colored_anchor) {
          if (colored_anchor->trackable == nullptr) {
              // 기본 흰색 설정
@@ -695,25 +709,25 @@ namespace hello_ar {
          }
          ArTrackable* ar_trackable = colored_anchor->trackable;
          float* color = colored_anchor->color;
- 
+
          ArTrackableType ar_trackable_type;
          ArTrackable_getType(ar_session_, ar_trackable, &ar_trackable_type);
- 
+
          if (ar_trackable_type == AR_TRACKABLE_POINT) {
              SetColor(66.0f, 133.0f, 244.0f, 255.0f, color);
              return;
          }
- 
+
          if (ar_trackable_type == AR_TRACKABLE_PLANE) {
              SetColor(139.0f, 195.0f, 74.0f, 255.0f, color);
              return;
          }
- 
+
          if (ar_trackable_type == AR_TRACKABLE_DEPTH_POINT) {
              SetColor(199.0f, 8.0f, 65.0f, 255.0f, color);
              return;
          }
- 
+
          if (ar_trackable_type == AR_TRACKABLE_INSTANT_PLACEMENT_POINT) {
              ArInstantPlacementPoint* ar_instant_placement_point =
                      ArAsInstantPlacementPoint(ar_trackable);
@@ -731,8 +745,8 @@ namespace hello_ar {
                  return;
              }
          }
- 
- 
+
+
          // Fallback color
          SetColor(0.0f, 0.0f, 0.0f, 0.0f, color);
      }

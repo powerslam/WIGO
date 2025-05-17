@@ -109,9 +109,9 @@ JNI_METHOD(void, setClassLoader)
     JavaBridge::SetClassLoader(classLoader);
 }
 
-JNI_METHOD(void, changeStatus)
+JNI_METHOD(void, changeStatusMain)
 (JNIEnv *, jclass, jlong native_application) {
-    native(native_application)->ChangeStatus();
+    native(native_application)->changeStatusMain();
 }
 
 JNI_METHOD(void, onGlSurfaceCreated)
@@ -174,6 +174,46 @@ JNI_METHOD(jboolean, hasDetectedPlanes)
 JNI_METHOD(void, savePoseGraph)
 (JNIEnv *, jclass, jlong native_application, jobjectArray labels) {
   native(native_application)->SavePoseGraph(labels);
+}
+
+JNI_METHOD(void, sendMultiGoalsToNative)
+(JNIEnv* env, jclass, jlong native_application, jfloatArray j_goals) {
+    int len = env->GetArrayLength(j_goals);
+    jfloat* arr = env->GetFloatArrayElements(j_goals, 0);
+
+    std::vector<Point> goals;
+    for (int i = 0; i + 1 < len; i += 2) {
+        goals.emplace_back(Point{arr[i], arr[i + 1]});
+    }
+
+    native(native_application)->path_navigator_.SetGoals(goals);
+
+    env->ReleaseFloatArrayElements(j_goals, arr, 0);
+}
+
+JNI_METHOD(void, loadPoseGraphFromFile)
+(JNIEnv* env, jclass, jlong native_application, jstring j_path, jint floor) {
+    const char* c_path = env->GetStringUTFChars(j_path, nullptr);
+    std::string path(c_path);
+    env->ReleaseStringUTFChars(j_path, c_path);
+
+    native(native_application)->path_navigator_.astar_pathfinding_.LoadPoseGraph(path, floor);
+}
+
+JNI_METHOD(void, changeStatus)
+(JNIEnv *, jclass, jlong native_application) {
+    native(native_application)->path_navigator_.ChangeStatus();
+}
+
+JNI_METHOD(void, restartSession)
+(JNIEnv* env, jclass, jlong native_application, jobject context, jobject activity) {
+    auto* app = reinterpret_cast<hello_ar::HelloArApplication*>(native_application);
+    app->RestartSession(env, context, activity);
+}
+
+JNI_METHOD(void, setCurrentFloor)
+(JNIEnv *, jclass, jlong native_application, jint current_floor) {
+    native(native_application)->path_navigator_.SetCurrentFloor(current_floor);
 }
 
 JNIEnv *GetJniEnv() {

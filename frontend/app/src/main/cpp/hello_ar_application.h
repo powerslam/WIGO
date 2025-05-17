@@ -62,7 +62,8 @@ class HelloArApplication {
   void OnResume(JNIEnv* env, void* context, void* activity);
 
   void SavePoseGraph(jobjectArray labels);
-  
+
+  void RestartSession(JNIEnv* env, void* context, void* activity);
   // OnSurfaceCreated is called on the OpenGL thread when GLSurfaceView
   // is created.
   void OnSurfaceCreated();
@@ -75,7 +76,7 @@ class HelloArApplication {
   // @param height: height of the changed surface view.
   void OnDisplayGeometryChanged(int display_rotation, int width, int height);
 
-  void ChangeStatus();
+  void changeStatusMain();
 
   // OnDrawFrame is called on the OpenGL thread to render the next frame.
   void OnDrawFrame(bool depthColorVisualizationEnabled,
@@ -95,9 +96,11 @@ class HelloArApplication {
 
   void OnSettingsChange(bool is_instant_placement_enabled);
 
-    jobject g_mappingFragment;
-    jmethodID method_id;
-    PoseGraph pose_graph;
+  PathNavigator path_navigator_;
+
+  jobject g_mappingFragment;
+  jmethodID method_id;
+  PoseGraph pose_graph;
 
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session, const ArFrame* frame);
@@ -125,8 +128,6 @@ class HelloArApplication {
   AAssetManager* const asset_manager_;
 
   JNIEnv* GetJniEnv();
-  
-  PathNavigator path_navigator_;
   DirectionHelper direction_helper_;
 
   // The anchors at which we are drawing android models using given colors.

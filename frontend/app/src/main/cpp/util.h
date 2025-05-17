@@ -60,9 +60,22 @@
 #endif  // CHECKANDTHROW
 
 struct Point {
-  float x, z;
-  bool operator<(const Point& other) const;
+    float x, z;
+
+    bool operator<(const Point& other) const {
+        // 예시 구현: 좌표값 기준 정렬 (필요에 따라 수정 가능)
+        return (x < other.x) || (x == other.x && z < other.z);
+    }
+
+    Point operator+(const Point& other) const {
+        return Point{x + other.x, z + other.z};
+    }
+
+    Point operator-(const Point& other) const {
+        return Point{x - other.x, z - other.z};
+    }
 };
+
 
 class PoseHelper {
 public:

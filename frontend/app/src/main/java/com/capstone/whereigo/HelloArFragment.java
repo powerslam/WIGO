@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.os.Looper;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -62,19 +63,29 @@ import android.os.Vibrator;
 import android.os.VibrationEffect;
 import android.os.Build;
 
+import android.widget.Button;
 
-public class HelloArFragment extends Fragment {
+
+public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
   private static final int SNACKBAR_UPDATE_INTERVAL_MILLIS = 1000;
 
-  private final int RECORD_AUDIO_REQUEST_CODE = 100;
-  private long backPressedTime = 0;
-  private final long backPressInterval = 1000;
+  private static final int RECORD_AUDIO_REQUEST_CODE = 100;
 
+  private GLSurfaceView surfaceView;
+  private boolean viewportChanged = false;
+  private int viewportWidth;
+  private int viewportHeight;
+
+  private Handler planeStatusCheckingHandler;
+  private Runnable planeStatusCheckingRunnable;
+  private View surfaceStatus;
+  private TextView surfaceStatusText;
   private DirectionCompassView compassView;
 
   private GestureDetector gestureDetector;
 
+  private long nativeApplication;
   private FragmentActivity activity;
 
   private static HelloArFragment instance;
@@ -83,6 +94,7 @@ public class HelloArFragment extends Fragment {
 
   private static Queue<String> audioQueue = new LinkedList<>();
   private static boolean isPlaying = false;
+  private static Button elevatorButton;
 
   private FragmentHelloArBinding binding;
 
@@ -95,19 +107,7 @@ public class HelloArFragment extends Fragment {
     );
 
     SearchBar searchBar = binding.searchBar;
-    SearchView searchView = binding.searchView;
-    searchView.setupWithSearchBar(searchBar);
-
-    int searchMenu = R.menu.search_menu;
-    searchBar.inflateMenu(searchMenu);
-
-    ImageButton settingsButton = binding.settingsButton;
-    settingsButton.setOnClickListener(v -> {
-      Intent intent = new Intent(requireContext(), SettingActivity.class);
-      startActivity(intent);
-      requireActivity().finish();
-    });
-
+    searchBar.inflateMenu(R.menu.search_menu);
     searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
       if (checkAudioPermission()) {
         if (SpeechRecognizer.isRecognitionAvailable(activity)) {
@@ -121,6 +121,9 @@ public class HelloArFragment extends Fragment {
       }
       return true;
     });
+
+    SearchView searchView = binding.searchView;
+    searchView.setupWithSearchBar(searchBar);
 
     RecyclerView recyclerView = searchView.findViewById(R.id.search_result);
 
@@ -153,15 +156,10 @@ public class HelloArFragment extends Fragment {
           recyclerView.setVisibility(View.VISIBLE);
           recyclerView.setLayoutManager(new LinearLayoutManager(activity));
           recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
-            // 예: "미래관 445호" → "미래관"
-            String buildingName = selected.split(" ")[0];
-            String fileName = buildingName + ".zip";
-
-            String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
-            Log.d("filename", url);
-            FileDownloader.downloadAndUnzipFile(activity, url, fileName, buildingName);
           }));
-        } else {
+        }
+
+        else {
           recyclerView.setVisibility(View.GONE);
         }
       }
@@ -172,64 +170,59 @@ public class HelloArFragment extends Fragment {
       }
     });
 
+    surfaceView.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
+    surfaceView.setPreserveEGLContextOnPause(true);
+    surfaceView.setEGLContextClientVersion(2);
+    surfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+    surfaceView.setRenderer(this);
+    surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+    surfaceView.setWillNotDraw(false);
+
+    JniInterface.assetManager = activity.getAssets();
+    nativeApplication = JniInterface.createNativeApplication(activity.getAssets(), this.getContext().getExternalFilesDir("pose_graph").getAbsolutePath(), true);
+
+    planeStatusCheckingHandler = new Handler();
+
     return binding.getRoot();
   }
 
-  @SuppressLint("ClickableViewAccessibility")
-  @Override
-  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-    super.onViewCreated(view, savedInstanceState);
-
-    TtsManager.INSTANCE.init(requireContext());
-    AudioManager.getInstance().init(requireContext());
-
-    compassView = view.findViewById(R.id.compassView);
-    setupWakeWordListener();
+  @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+    GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    JniInterface.onGlSurfaceCreated(nativeApplication);
   }
 
-  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
-    if (instance != null && instance.compassView != null) {
-//      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
-      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
-    }
+  @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+    viewportWidth = width;
+    viewportHeight = height;
+    viewportChanged = true;
   }
 
   @Override
-  public void onDestroyView() {
-    super.onDestroyView();
-    binding = null;
-  }
-
-  public void onAttach(@NonNull Context context) {
-    super.onAttach(context);
-    instance = this;
-  }
-
-  public static void vibrateOnce() {
-    Vibrator vibrator = (Vibrator) instance.requireContext().getSystemService(Context.VIBRATOR_SERVICE);
-    if (vibrator != null && vibrator.hasVibrator()) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
-        } else {
-            vibrator.vibrate(300); // deprecated but for older versions
-        }
+  public void onResume() {
+    super.onResume();
+    if (!CameraPermissionHelper.hasCameraPermission(activity)) {
+      CameraPermissionHelper.requestCameraPermission(activity);
+      return;
     }
-  }
 
+    try {
+      JniInterface.onResume(nativeApplication, activity.getApplicationContext(), activity);
+      surfaceView.onResume();
+    } catch (Exception e) {
+      Log.e(TAG, "Exception creating session", e);
+      return;
+    }
+
+    activity.getSystemService(DisplayManager.class).registerDisplayListener(this, null);
+  }
 
   private boolean checkAudioPermission() {
-    return ContextCompat.checkSelfPermission(
-            activity,
-            android.Manifest.permission.RECORD_AUDIO
-    ) == PackageManager.PERMISSION_GRANTED;
+    return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
+            == PackageManager.PERMISSION_GRANTED;
   }
 
   private void requestAudioPermission() {
-    ActivityCompat.requestPermissions(
-            activity,
-            new String[]{Manifest.permission.RECORD_AUDIO},
-            RECORD_AUDIO_REQUEST_CODE
-    );
+    ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
   }
 
   @Override
@@ -240,16 +233,133 @@ public class HelloArFragment extends Fragment {
 
     if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
       if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        Toast.makeText(activity, "음성 권한이 허용되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "음성 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show();
       } else {
-        Toast.makeText(activity, "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
       }
     }
   }
 
-  private void setupWakeWordListener() {
-    if (!checkAudioPermission()) {
-      requestAudioPermission();
+  @Override
+  public void onPause() {
+    super.onPause();
+    surfaceView.onPause();
+    JniInterface.onPause(nativeApplication);
+    if (planeStatusCheckingHandler != null && planeStatusCheckingRunnable != null) {
+      planeStatusCheckingHandler.removeCallbacks(planeStatusCheckingRunnable);
+    }
+    activity.getSystemService(DisplayManager.class).unregisterDisplayListener(this);
+  }
+
+  @SuppressLint("ClickableViewAccessibility")
+  @Override
+  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
+
+    TtsManager.INSTANCE.init(requireContext());
+    AudioManager.getInstance().init(requireContext());
+
+    elevatorButton = view.findViewById(R.id.btn_elevator);
+    compassView = view.findViewById(R.id.compassView);
+  }
+
+  public void sendMultiGoalsToNative(float[] coords) {
+    if (nativeApplication != 0 && coords != null && coords.length % 2 == 0) {
+      Log.i("HelloArFragment", "📤 sendMultiGoalsToNative: 총 " + (coords.length / 2) + "개 좌표 전송");
+
+      JniInterface.sendMultiGoalsToNative(nativeApplication, coords);
+    } else {
+      Log.e("HelloArFragment", "❌ nativeApplication 또는 coords 오류");
+    }
+  }
+
+  public void loadPoseGraphFromFile(String filePath, int floor) {
+    if (nativeApplication != 0) {
+      JniInterface.loadPoseGraphFromFile(nativeApplication, filePath, floor);
+    }
+  }
+
+  public void setCurrentFloor(int floor) {
+    JniInterface.setCurrentFloor(nativeApplication, floor);
+  }
+  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
+    if (instance != null && instance.compassView != null) {
+      // Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
+//      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
+      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
+    }
+  }
+
+  @Override public void onDrawFrame(GL10 gl) {
+    synchronized (this) {
+      if (nativeApplication == 0) return;
+      if (viewportChanged) {
+        int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        JniInterface.onDisplayGeometryChanged(nativeApplication, displayRotation, viewportWidth, viewportHeight);
+        viewportChanged = false;
+      }
+      JniInterface.onGlSurfaceDrawFrame(nativeApplication, false, false);
+    }
+  }
+
+  @Override public void onDisplayAdded(int displayId) {}
+  @Override public void onDisplayRemoved(int displayId) {}
+  @Override public void onDisplayChanged(int displayId) {
+    viewportChanged = true;
+  }
+
+  @Override
+  public void onDestroyView() {
+    super.onDestroyView();
+    synchronized (this) {
+      JniInterface.destroyNativeApplication(nativeApplication);
+      nativeApplication = 0;
+    }
+    binding = null;
+  }
+
+  public static void onGoalStatusChanged(int status) {
+    if (instance == null) return;
+
+    String message = (status == 0)
+            ? "다음 목표로 이동합니다"
+            : "목적지에 도착했습니다";
+
+    instance.requireActivity().runOnUiThread(() -> {
+      Toast.makeText(instance.requireContext(), message, Toast.LENGTH_SHORT).show();
+
+      if (elevatorButton != null) {
+        if (status == 0) {
+          elevatorButton.setVisibility(View.VISIBLE);
+
+          elevatorButton.setOnClickListener(v -> {
+            JniInterface.restartSession(instance.nativeApplication, instance.activity.getApplicationContext(), instance.activity);
+            JniInterface.changeStatus(instance.nativeApplication);
+            JniInterface.setCurrentFloor(instance.nativeApplication, SearchResultHandler.goal_floor);
+            elevatorButton.setVisibility(View.GONE); // 버튼 숨김
+          });
+
+        } else {
+          elevatorButton.setVisibility(View.GONE); // 최종 도착 시 숨김
+        }
+      }
+    });
+
+    Log.d("NativeCallback", "🎯 onGoalStatusChanged: " + message);
+  }
+
+  public void onAttach(@NonNull Context context) {
+    super.onAttach(context);
+    instance = this;
+  }
+  public static void vibrateOnce() {
+    Vibrator vibrator = (Vibrator) instance.requireContext().getSystemService(Context.VIBRATOR_SERVICE);
+    if (vibrator != null && vibrator.hasVibrator()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            vibrator.vibrate(300); // deprecated but for older versions
+        }
     }
   }
 }

@@ -131,7 +131,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
         if(!isScaledDown){
             isScaledDown = true;
 
-            JniInterface.changeStatus(nativeApplication);
+            JniInterface.changeStatusMain(nativeApplication);
             btnStartSavePoseGraph.setText("저장하기");
             animateConstraintLayout();
             fadeBtnPoseStamp();
@@ -144,7 +144,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
             animateConstraintLayout();
             fadeBtnPoseStamp();
 
-            JniInterface.changeStatus(nativeApplication);
+            JniInterface.changeStatusMain(nativeApplication);
 
             PoseStampLabelingDialog dialog = PoseStampLabelingDialog.newInstance(viewModel);
             dialog.onDismissListener = () -> {
