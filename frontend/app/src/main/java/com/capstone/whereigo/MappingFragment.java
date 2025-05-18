@@ -1,6 +1,7 @@
 package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
+import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -119,10 +120,24 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
         btnPoseStamp.setOnClickListener(v -> {
             JniInterface.getPoseStamp(nativeApplication);
 
+            byte[] data = JniInterface.getImage();
+            int width = JniInterface.getWidth();  // 사전에 알아야 함 (또는 다른 방식으로 따로 받아야)
+            int height = JniInterface.getHeight();
+
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            int[] pixels = new int[width * height];
+
+            for (int i = 0; i < width * height; i++) {
+                int gray = data[i] & 0xFF;
+                pixels[i] = 0xFF000000 | (gray << 16) | (gray << 8) | gray;  // R=G=B=gray
+            }
+
+            bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
+
             float x = JniInterface.getX();
             float z = JniInterface.getZ();
 
-            PoseStamp newPoseStamp = new PoseStamp(x, z, R.drawable.test);
+            PoseStamp newPoseStamp = new PoseStamp(x, z, bitmap);
             viewModel.addPoseStamp(newPoseStamp);
         });
     }

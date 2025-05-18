@@ -1,6 +1,7 @@
 package com.capstone.whereigo;
 
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -22,7 +23,7 @@ import java.util.Locale;
 public class PoseStampCardFragment extends Fragment {
     private static final String ARG_LABEL = "label";
     private static final String ARG_POSITION = "position";
-    private static final String ARG_IMAGE_RES_ID = "image_res_id";
+    private static final String ARG_IMAGE_BITMAP = "image_bitmap";
 
     private CardNodeLabelingBinding binding;
     public interface CardInputListener {
@@ -41,7 +42,7 @@ public class PoseStampCardFragment extends Fragment {
                         Locale.ROOT,
                         "x: %f y: %f",
                         poseStamp.x(), poseStamp.z()));
-        args.putInt(ARG_IMAGE_RES_ID, poseStamp == null ? R.drawable.test : poseStamp.imageResId());
+        args.putParcelable(ARG_IMAGE_BITMAP, poseStamp.image());
 
         fragment.setArguments(args);
 
@@ -58,13 +59,13 @@ public class PoseStampCardFragment extends Fragment {
         assert getArguments() != null;
         String label = getArguments().getString(ARG_LABEL);
         String position = getArguments().getString(ARG_POSITION);
-        int imageResId = getArguments().getInt(ARG_IMAGE_RES_ID);
+        Bitmap image = getArguments().getParcelable(ARG_IMAGE_BITMAP);
 
         EditText editLabel = binding.editStamp;
 
         if (position.charAt(0) != '-'){
             ImageView thumbnail = binding.thumbnail;
-            thumbnail.setImageResource(imageResId);
+            thumbnail.setImageBitmap(image);
 
             TextView positionText = binding.poseStamp;
             positionText.setText("위치 : " + position);
