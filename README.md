@@ -118,7 +118,7 @@
 </table>
 
 ##  4. 화면설계 및 기능 구현
-![manual](https://github.com/user-attachments/assets/9b6f9dbc-ae0d-4516-a1ce-ec51477153e4)
+![manual](https://github.com/user-attachments/assets/d5b2c748-e1f9-4923-9d9c-dd5013e6725b)
 
 ##  5.1. 최종 결과
 ### 5.1.1. 프로젝트 수행 결과물 목록 및 기술 문서 보유 여부
