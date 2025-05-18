@@ -101,11 +101,13 @@ public class HelloArFragment extends Fragment {
     int searchMenu = R.menu.search_menu;
     searchBar.inflateMenu(searchMenu);
 
-    ImageButton settingsButton = binding.settingsButton;
-    settingsButton.setOnClickListener(v -> {
-      Intent intent = new Intent(requireContext(), SettingActivity.class);
-      startActivity(intent);
-      requireActivity().finish();
+    ImageButton backButton = binding.backButton;
+    backButton.setOnClickListener(v -> {
+      if (getParentFragmentManager().getBackStackEntryCount() > 0) {
+        getParentFragmentManager().popBackStack();
+      } else {
+        requireActivity().onBackPressed();
+      }
     });
 
     searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
@@ -240,9 +242,9 @@ public class HelloArFragment extends Fragment {
 
     if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
       if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        Toast.makeText(activity, "음성 권한이 허용되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, "음성 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show();
       } else {
-        Toast.makeText(activity, "음성 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, "음성 권한이 거부되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
       }
     }
   }
