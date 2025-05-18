@@ -118,7 +118,6 @@ public class SearchActivity extends AppCompatActivity {
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String query = s.toString().trim();
@@ -159,27 +158,14 @@ public class SearchActivity extends AppCompatActivity {
 
                         constraintSet.applyTo(binding.searchMain);
 
-                        Intent intent = new Intent(SearchActivity.this, MainActivity.class);
-                        intent.putExtra("search_query", fullSelected);
-                        intent.putExtra("current_floor", currentFloor);
-                        startActivity(intent);
-                        finish();
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.path_navigation, new HelloArFragment(fullSelected, currentFloor))
+                                .commit();
                     }));
                 } else {
                     binding.searchResult.setVisibility(View.GONE);
                 }
             }
-        });
-
-        binding.searchView.getEditText().setOnEditorActionListener((TextView v, int actionId, android.view.KeyEvent event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
-                String query = binding.searchView.getText().toString().trim();
-                if (!query.isEmpty()) {
-                    navigateToMain(query);
-                }
-                return true;
-            }
-            return false;
         });
 
         binding.settingsButton.setOnClickListener(v -> {
@@ -219,13 +205,6 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         return stringBuilder.toString();  // String으로 반환
-    }
-
-    private void navigateToMain(String query) {
-        Intent intent = new Intent(SearchActivity.this, MainActivity.class);
-        intent.putExtra("search_query", query);
-        startActivity(intent);
-        finish();
     }
 
     private boolean checkAudioPermission() {

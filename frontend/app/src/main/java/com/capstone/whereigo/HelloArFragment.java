@@ -49,8 +49,6 @@ import android.os.Build;
 public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer, DisplayManager.DisplayListener {
   private static final String TAG = "HelloArFragment";
 
-  private static final int RECORD_AUDIO_REQUEST_CODE = 100;
-
   private GLSurfaceView surfaceView;
   private boolean viewportChanged = false;
   private int viewportWidth;
@@ -58,8 +56,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private Handler planeStatusCheckingHandler;
   private Runnable planeStatusCheckingRunnable;
-  private View surfaceStatus;
-  private TextView surfaceStatusText;
   private DirectionCompassView compassView;
 
   private long nativeApplication;
@@ -87,93 +83,15 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
             inflater.inflate(R.layout.fragment_hello_ar, container, false)
     );
 
-    ImageButton backButton = binding.backButton;
-    backButton.setOnClickListener(v -> {
-      if (getParentFragmentManager().getBackStackEntryCount() > 0) {
-        getParentFragmentManager().popBackStack();
-      } else {
-        requireActivity().onBackPressed();
-      }
-    });
+    planeStatusCheckingHandler = new Handler();
 
-    SearchBar searchBar = binding.searchBar;
-    searchBar.inflateMenu(R.menu.search_menu);
-    searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
-      if (checkAudioPermission()) {
-        if (SpeechRecognizer.isRecognitionAvailable(activity)) {
-          VoiceRecordDialog dialog = new VoiceRecordDialog();
-          dialog.show(activity.getSupportFragmentManager(), "VoiceRecordDialog");
-        } else {
-          Toast.makeText(activity, "음성 인식을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show();
-        }
-      } else {
-        requestAudioPermission();
-      }
-      return true;
-    });
+    return binding.getRoot();
+  }
 
-    SearchView searchView = binding.searchView;
-    searchView.setupWithSearchBar(searchBar);
-
-    RecyclerView recyclerView = searchView.findViewById(R.id.search_result);
-
-    List<String> allResults = new ArrayList<>();
-    allResults.add("미래관 445호");
-    allResults.add("미래관 447호");
-    allResults.add("미래관 449호");
-    allResults.add("미래관 444호");
-    allResults.add("미래관 425호");
-    allResults.add("미래관 415호");
-    allResults.add("미래관 405호");
-
-    searchView.getEditText().addTextChangedListener(new TextWatcher() {
-      @Override
-      public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        // 필요 없다면 비워둠
-      }
-
-      @Override
-      public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String query = s.toString().trim();
-        List<String> filtered = new ArrayList<>();
-        for (String item : allResults) {
-          if (item.toLowerCase().contains(query.toLowerCase())) {
-            filtered.add(item);
-          }
-        }
-
-        if (!query.isEmpty()) {
-          recyclerView.setVisibility(View.VISIBLE);
-          recyclerView.setLayoutManager(new LinearLayoutManager(activity));
-          recyclerView.setAdapter(new SearchResultAdapter(filtered, selected -> {
-
-            String buildingName = selected.split(" ")[0];
-            String roomNumber = selected.replaceAll("[^0-9]", "");
-
-            int currentFloor = 6;
-
-            String fullSelected = buildingName + " " + roomNumber;
-            Log.d(TAG, fullSelected);
-
-            SearchResultHandler.handle(
-                    requireContext(),
-                    fullSelected,
-                    () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container),
-                    currentFloor
-            );
-          }));
-        }
-
-        else {
-          recyclerView.setVisibility(View.GONE);
-        }
-      }
-
-      @Override
-      public void afterTextChanged(Editable s) {
-        // 필요 없다면 비워둠
-      }
-    });
+  @SuppressLint("ClickableViewAccessibility")
+  @Override
+  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
 
     surfaceView = binding.surfaceview;
     surfaceView.setPreserveEGLContextOnPause(true);
@@ -186,9 +104,52 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     JniInterface.assetManager = activity.getAssets();
     nativeApplication = JniInterface.createNativeApplication(activity.getAssets(), this.getContext().getExternalFilesDir("pose_graph").getAbsolutePath(), true);
 
-    planeStatusCheckingHandler = new Handler();
+    JniInterface.setClassLoader(this.getClass().getClassLoader());
+    TtsManager.INSTANCE.init(requireContext());
+    AudioManager.getInstance().init(requireContext());
 
-    return binding.getRoot();
+    elevatorButton = binding.btnElevator;
+    compassView = binding.compassView;
+
+    SearchBar searchBarArrive = requireActivity().findViewById(R.id.search_bar_arrive);
+    searchBarArrive.setText("도착지 : " + fullSelected);
+
+    SearchBar searchBarDeparture = requireActivity().findViewById(R.id.search_bar_departure);
+    searchBarDeparture.setText("출발지 : " + currentFloor + "층");
+
+    SearchResultHandler.handle(
+            requireContext(),
+            fullSelected,
+            () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.path_navigation),
+            currentFloor
+    );
+  }
+
+  public void sendMultiGoalsToNative(float[] coords) {
+    if (nativeApplication != 0 && coords != null && coords.length % 2 == 0) {
+      Log.i("HelloArFragment", "📤 sendMultiGoalsToNative: 총 " + (coords.length / 2) + "개 좌표 전송");
+
+      JniInterface.sendMultiGoalsToNative(nativeApplication, coords);
+    } else {
+      Log.e("HelloArFragment", "❌ nativeApplication 또는 coords 오류");
+    }
+  }
+
+  public void loadPoseGraphFromFile(String filePath, int floor) {
+    if (nativeApplication != 0) {
+      JniInterface.loadPoseGraphFromFile(nativeApplication, filePath, floor);
+    }
+  }
+
+  public void setCurrentFloor(int floor) {
+    JniInterface.setCurrentFloor(nativeApplication, floor);
+  }
+
+  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
+    if (instance != null && instance.compassView != null) {
+//      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
+      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
+    }
   }
 
   @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -230,53 +191,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
       planeStatusCheckingHandler.removeCallbacks(planeStatusCheckingRunnable);
     }
     activity.getSystemService(DisplayManager.class).unregisterDisplayListener(this);
-  }
-
-  @SuppressLint("ClickableViewAccessibility")
-  @Override
-  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-    super.onViewCreated(view, savedInstanceState);
-
-    JniInterface.setClassLoader(this.getClass().getClassLoader());
-    TtsManager.INSTANCE.init(requireContext());
-    AudioManager.getInstance().init(requireContext());
-
-    elevatorButton = view.findViewById(R.id.btn_elevator);
-    compassView = view.findViewById(R.id.compassView);
-
-    SearchResultHandler.handle(
-            requireContext(),
-            fullSelected,
-            () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.fragment_container),
-            currentFloor
-    );
-  }
-
-  public void sendMultiGoalsToNative(float[] coords) {
-    if (nativeApplication != 0 && coords != null && coords.length % 2 == 0) {
-      Log.i("HelloArFragment", "📤 sendMultiGoalsToNative: 총 " + (coords.length / 2) + "개 좌표 전송");
-
-      JniInterface.sendMultiGoalsToNative(nativeApplication, coords);
-    } else {
-      Log.e("HelloArFragment", "❌ nativeApplication 또는 coords 오류");
-    }
-  }
-
-  public void loadPoseGraphFromFile(String filePath, int floor) {
-    if (nativeApplication != 0) {
-      JniInterface.loadPoseGraphFromFile(nativeApplication, filePath, floor);
-    }
-  }
-
-  public void setCurrentFloor(int floor) {
-    JniInterface.setCurrentFloor(nativeApplication, floor);
-  }
-
-  public static void updateYawFromNative(float cameraYaw, float pathYaw) {
-    if (instance != null && instance.compassView != null) {
-//      Log.d("HelloArFragment", "updateYawFromNative called: cameraYaw=" + cameraYaw + ", pathYaw=" + pathYaw);
-      instance.compassView.post(() -> instance.compassView.setYawValues(cameraYaw, pathYaw));
-    }
   }
 
   @Override public void onDrawFrame(GL10 gl) {
@@ -350,36 +264,6 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
         } else {
             vibrator.vibrate(300); // deprecated but for older versions
         }
-    }
-  }
-
-  private boolean checkAudioPermission() {
-    return ContextCompat.checkSelfPermission(
-            activity,
-            android.Manifest.permission.RECORD_AUDIO
-    ) == PackageManager.PERMISSION_GRANTED;
-  }
-
-  private void requestAudioPermission() {
-    ActivityCompat.requestPermissions(
-            activity,
-            new String[]{Manifest.permission.RECORD_AUDIO},
-            RECORD_AUDIO_REQUEST_CODE
-    );
-  }
-
-  @Override
-  public void onRequestPermissionsResult(int requestCode,
-                                         @NonNull String[] permissions,
-                                         @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-    if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
-      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        Toast.makeText(activity, "음성 권한이 허용되었습니다.", Toast.LENGTH_SHORT).show();
-      } else {
-        Toast.makeText(activity, "음성 권한이 거부되었습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
-      }
     }
   }
 }
