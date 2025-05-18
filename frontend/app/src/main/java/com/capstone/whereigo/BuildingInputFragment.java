@@ -69,6 +69,15 @@ public class BuildingInputFragment extends Fragment {
                 binding.buttonPrev.setVisibility(View.VISIBLE);
                 binding.buttonNext.setText("지도 작성 하기");
 
+                ArrayAdapter<String> floorItemAdapter = new ArrayAdapter<>(
+                        requireContext(),
+                        android.R.layout.simple_spinner_item,
+                        viewModel.getFloorItem()
+                );
+                floorItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                binding.spinnerFloor.setAdapter(floorItemAdapter);
+                binding.spinnerFloor.setSelection(viewModel.getFloorIdx());
+
                 binding.inputGroup1.setVisibility(View.GONE);
                 binding.inputGroup2.setVisibility(View.VISIBLE);
 
