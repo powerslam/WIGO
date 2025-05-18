@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/search_main"
     tools:context=".SearchActivity"
     android:background="#133e33">
 
@@ -39,12 +40,28 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.search.SearchBar
-        android:id="@+id/search_bar"
+        android:id="@+id/search_bar_departure"
+        style="@style/Widget.Material3.SearchBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="출발지 : 현재 위치 탐색 중..."
+        android:layout_marginBottom="10dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/guideline_top_05"
+        app:layout_constraintBottom_toTopOf="@id/search_bar_arrive"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp" />
+
+    <com.google.android.material.search.SearchBar
+        android:id="@+id/search_bar_arrive"
         style="@style/Widget.Material3.SearchBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="@string/searchbar_hint"
-        app:layout_constraintTop_toTopOf="@id/guideline_top_40"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/guideline_top_40"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="16dp"
@@ -57,7 +74,7 @@
         android:layout_height="wrap_content"
         android:hint="@string/searchbar_hint"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/search_bar"
+        app:layout_constraintTop_toBottomOf="@id/search_bar_arrive"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -83,5 +100,14 @@
         android:scaleType="fitCenter"
         app:layout_constraintTop_toTopOf="@id/guideline_top_05"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <FrameLayout
+        android:id="@+id/path_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -14,6 +14,8 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 
+#include <jni.h>
+
 #include "keyframe.h"
 #include "parameters.h"
 #include "../utility/tic_toc.h"
@@ -67,7 +69,7 @@ public:
 	Eigen::Vector3d last_t = Eigen::Vector3d(-100, -100, -100);
 
 public:
-    pair<float, float> getLastElementOfKeyFrameList();
+    pair<pair<jbyteArray, pair<int, int>>, pair<float, float>> getLastElementOfKeyFrameList(JNIEnv* env);
 	int detectLoop(KeyFramePtr keyframe, int frame_index);
 	void addKeyFrameIntoVoc(KeyFramePtr keyframe);
 	void addKeyFrameBuf(KeyFramePtr data);

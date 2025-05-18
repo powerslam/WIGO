@@ -1,6 +1,7 @@
 package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
+import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -44,7 +45,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
 
     private boolean isScaledDown = false;
 
-    private TextView tvNumberOfRecordedNode;
+    private TextView tvNumberOfRecordedNode, tvNumberOfMovedNode;
     private Button btnStartSavePoseGraph, btnPoseStamp;
     private GLSurfaceView surfaceView;
 
@@ -94,20 +95,21 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
 
         viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
         viewModel.getPoseStampList().observe(getViewLifecycleOwner(), poseStampList -> {
-            if(!poseStampList.isEmpty()){
+            if (!poseStampList.isEmpty()) {
+
                 PoseStamp last = poseStampList.get(poseStampList.size() - 1);
                 poseStampRecyclerViewAdapter.addPoseStamp(last);
+                tvNumberOfRecordedNode.setText("기록한 위치 수 : " + poseStampList.size());
                 recyclerView.post(() -> {
                     recyclerView.scrollToPosition(poseStampRecyclerViewAdapter.getItemCount() - 1);
                 });
-            }
-
-            else {
+            } else {
                 poseStampRecyclerViewAdapter.clearPoseStampList();
             }
         });
 
         tvNumberOfRecordedNode = binding.numberOfRecordedNode;
+        tvNumberOfMovedNode = binding.numberOfMovedNode;
 
         main_layout = binding.buttonGroup;
 
@@ -117,10 +119,25 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
         btnPoseStamp = binding.buttonPoseStamp;
         btnPoseStamp.setOnClickListener(v -> {
             JniInterface.getPoseStamp(nativeApplication);
+
+            byte[] data = JniInterface.getImage();
+            int width = JniInterface.getWidth();  // 사전에 알아야 함 (또는 다른 방식으로 따로 받아야)
+            int height = JniInterface.getHeight();
+
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            int[] pixels = new int[width * height];
+
+            for (int i = 0; i < width * height; i++) {
+                int gray = data[i] & 0xFF;
+                pixels[i] = 0xFF000000 | (gray << 16) | (gray << 8) | gray;  // R=G=B=gray
+            }
+
+            bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
+
             float x = JniInterface.getX();
             float z = JniInterface.getZ();
 
-            PoseStamp newPoseStamp = new PoseStamp(x, z, R.drawable.test);
+            PoseStamp newPoseStamp = new PoseStamp(x, z, bitmap);
             viewModel.addPoseStamp(newPoseStamp);
         });
     }
@@ -167,13 +184,13 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
         }
 
         else /* isScaledDown && !indexList.isEmpty() */ {
-            Toast.makeText(requireContext(), "Stamp가 찍히지 않았습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "위치가 한 번도 기록되지 않았습니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void updateKeyFrameListSize(int size){
-        tvNumberOfRecordedNode.post(() -> {
-            tvNumberOfRecordedNode.setText("지금까지 기록된 노드 수 : " + size);
+        tvNumberOfMovedNode.post(() -> {
+            tvNumberOfMovedNode.setText("이동한 노드 수 : " + size);
         });
     }
 

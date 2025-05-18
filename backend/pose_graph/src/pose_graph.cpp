@@ -79,18 +79,28 @@ int PoseGraph::getKeyFrameListSize(){
     return size;
 }
 
-pair<float, float> PoseGraph::getLastElementOfKeyFrameList() {
-    pair<float, float> ret = {0., 0.};
+pair<pair<jbyteArray, pair<int, int>>, pair<float, float>> PoseGraph::getLastElementOfKeyFrameList(JNIEnv* env) {
+    pair<pair<jbyteArray, pair<int, int>>, pair<float, float>> ret;
 
     while(!m_keyframelist.try_lock());
 
     if (!keyframelist.empty()){
-        ret.first = keyframelist.back()->T_w_i.x();
-        ret.second = keyframelist.back()->T_w_i.z();
+        cv::Mat rotated;
+        cv::rotate(keyframelist.back()->image, rotated, cv::ROTATE_90_CLOCKWISE);
+        int size = rotated.total() * rotated.elemSize();
+        jbyteArray image = env->NewByteArray(size);
+        env->SetByteArrayRegion(image, 0, size, reinterpret_cast<jbyte*>(rotated.data));
+
+        ret.first.first = image;
+        ret.first.second.first = rotated.cols;
+        ret.first.second.second = rotated.rows;
+
+        ret.second.first = keyframelist.back()->T_w_i.x();
+        ret.second.second = keyframelist.back()->T_w_i.z();
 
         labeled_index.push_back(keyframelist.back()->index);
     }
-    
+
     m_keyframelist.unlock();
 
     return ret;

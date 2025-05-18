@@ -1,22 +1,22 @@
 package com.capstone.whereigo;
 
+import android.graphics.Bitmap;
+
 public class PoseStamp {
     private final float x, z;
-    private final int imageResId;
+    private final Bitmap image;
 
-    public PoseStamp(float x, float z, int imageResId) {
+    public PoseStamp(float x, float z, Bitmap image) {
         this.x = x;
         this.z = z;
-        this.imageResId = imageResId;
+        this.image = image;
     }
 
-    public float x() {
-        return this.x;
-    }
+    public float x() { return this.x; }
     public float z() {
         return this.z;
     }
-    public int imageResId() {
-        return this.imageResId;
+    public Bitmap image() {
+        return this.image;
     }
 }
