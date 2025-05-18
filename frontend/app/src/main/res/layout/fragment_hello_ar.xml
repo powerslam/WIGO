@@ -18,6 +18,19 @@
         android:adjustViewBounds="true"
         android:padding="4dp" />
 
+    <ImageButton
+        android:id="@+id/backButton"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="top|start"
+        android:layout_marginTop="30dp"
+        android:layout_marginStart="7dp"
+        android:src="@drawable/ic_back_black"
+        android:background="?android:attr/windowBackground"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:padding="4dp" />
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -28,7 +41,7 @@
             android:layout_width="310dp"
             android:layout_height="50dp"
             android:layout_marginTop="30dp"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="60dp"
             android:layout_marginEnd="60dp"
             android:hint="@string/searchbar_hint"
             android:layout_gravity="top" />
