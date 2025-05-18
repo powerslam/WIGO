@@ -37,7 +37,7 @@ public class BuildingInputFragment extends Fragment {
     private PoseStampViewModel viewModel;
 
     private ProgressBar progressBar;
-    private Button btnPrev, btnNext;
+    private Button btnPrev, btnNext, btnCancel;
 
     private static final String ARG_IS_SCALED_DOWN = "ARG_IS_SCALED_DOWN";
     private boolean isScaledDown = false;
@@ -59,6 +59,7 @@ public class BuildingInputFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
 
         binding = FragmentBuildingInputBinding.inflate(inflater, container, false);
+        viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
 
         Bundle args = getArguments();
         if (args != null) {
@@ -107,8 +108,6 @@ public class BuildingInputFragment extends Fragment {
                 }
         );
 
-        viewModel = new ViewModelProvider(requireActivity()).get(PoseStampViewModel.class);
-
         binding.editBuildingName.setText(viewModel.getBuildingName());
 
         progressBar = binding.progressBar;
@@ -156,6 +155,13 @@ public class BuildingInputFragment extends Fragment {
                         .replace(R.id.layout_mapping_main, new MappingFragment())
                         .commit();
             }
+        });
+
+        btnCancel = binding.buttonCancel;
+        btnCancel.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), SearchActivity.class);
+            startActivity(intent);
+            requireActivity().finish();
         });
 
         ArrayAdapter<String> floorMinItemAdapter = new ArrayAdapter<>(
