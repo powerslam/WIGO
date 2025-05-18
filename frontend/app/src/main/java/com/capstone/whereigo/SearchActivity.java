@@ -16,9 +16,13 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.transition.AutoTransition;
+import androidx.transition.Transition;
+import androidx.transition.TransitionManager;
 
 import com.capstone.whereigo.databinding.ActivitySearchBinding;
 
@@ -47,8 +51,8 @@ public class SearchActivity extends AppCompatActivity {
         binding = ActivitySearchBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        binding.searchBar.inflateMenu(R.menu.search_menu);
-        binding.searchBar.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
+        binding.searchBarArrive.inflateMenu(R.menu.search_menu);
+        binding.searchBarArrive.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
             if (checkAudioPermission()) {
                 if (SpeechRecognizer.isRecognitionAvailable(this)) {
                     VoiceRecordDialog dialog = new VoiceRecordDialog();
@@ -62,7 +66,22 @@ public class SearchActivity extends AppCompatActivity {
             return true;
         });
 
-        binding.searchView.setupWithSearchBar(binding.searchBar);
+        binding.searchView.setupWithSearchBar(binding.searchBarArrive);
+
+        binding.searchBarDeparture.inflateMenu(R.menu.search_menu);
+        binding.searchBarDeparture.getMenu().findItem(R.id.action_voice_search).setOnMenuItemClickListener(item -> {
+            if (checkAudioPermission()) {
+                if (SpeechRecognizer.isRecognitionAvailable(this)) {
+                    VoiceRecordDialog dialog = new VoiceRecordDialog();
+                    dialog.show(getSupportFragmentManager(), "VoiceRecordDialog");
+                } else {
+                    Toast.makeText(this, "음성 인식을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                requestAudioPermission();
+            }
+            return true;
+        });
 
         allResults = new ArrayList<>();
         File[] folders = getExternalFilesDir(null).listFiles();
@@ -96,7 +115,6 @@ public class SearchActivity extends AppCompatActivity {
             }
         }
 
-
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
@@ -122,6 +140,24 @@ public class SearchActivity extends AppCompatActivity {
                         int currentFloor = 6;
 
                         String fullSelected = buildingName + " " + roomNumber;
+
+                        binding.searchView.hide();
+
+                        binding.searchBarDeparture.setVisibility(View.VISIBLE);
+                        binding.settingsButton.setVisibility(View.GONE);
+
+                        final ConstraintSet constraintSet = new ConstraintSet();
+                        constraintSet.clone(binding.searchMain);
+
+                        constraintSet.clear(binding.searchBarArrive.getId(), ConstraintSet.TOP);
+                        constraintSet.connect(binding.searchBarArrive.getId(), ConstraintSet.TOP,
+                                binding.searchBarDeparture.getId(), ConstraintSet.BOTTOM, 10);
+
+                        Transition transition = new AutoTransition();
+                        transition.setDuration(300);
+                        TransitionManager.beginDelayedTransition(binding.searchMain, transition);
+
+                        constraintSet.applyTo(binding.searchMain);
 
                         Intent intent = new Intent(SearchActivity.this, MainActivity.class);
                         intent.putExtra("search_query", fullSelected);
