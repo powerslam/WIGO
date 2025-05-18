@@ -61,8 +61,13 @@ public class JniInterface {
   public static native void onTouched(long nativeApplication, float x, float y);
 
   /** Get plane count in current session. Used to disable the "searching for surfaces" snackbar. */
-  public static native boolean hasDetectedPlanes(long nativeApplication);
+  public static native void sendMultiGoalsToNative(long nativeApplication, float[] coords);
 
+  public static native void loadPoseGraphFromFile(long nativeApplication, String filePath, int floor);
+
+  public static native void changeStatusMain(long nativeApplication);
+
+  public static native void setCurrentFloor(long nativeApplication, int current_floor);
   public static native boolean isDepthSupported(long nativeApplication);
 
   public static native void changeStatus(long nativeApplication);
@@ -87,6 +92,7 @@ public class JniInterface {
   public static void loadTexture(int target, Bitmap bitmap) {
     GLUtils.texImage2D(target, 0, bitmap, 0);
   }
-  
+
   public static native void savePoseGraph(long nativeApplication, String[] labels);
+  public static native void restartSession(long nativeApp, Context context, Activity activity);
 }

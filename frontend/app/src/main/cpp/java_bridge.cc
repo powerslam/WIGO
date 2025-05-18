@@ -1,5 +1,6 @@
 #include "java_bridge.h"
 #include <android/log.h>
+#include <cassert>
 
 JavaVM* JavaBridge::java_vm_ = nullptr;
 jobject JavaBridge::class_loader_ = nullptr;
@@ -24,14 +25,14 @@ jclass JavaBridge::FindClass(const char* class_name) {
 //        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: env is null");
 //        return nullptr;
 //    }
-//    if (!class_loader_) {
-//        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: class_loader_ is null");
-//        return nullptr;
-//    }
-//    if (!find_class_method_) {
-//        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: find_class_method_ is null");
-//        return nullptr;
-//    }
+    if (!class_loader_) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: class_loader_ is null");
+        return nullptr;
+    }
+    if (!find_class_method_) {
+        __android_log_print(ANDROID_LOG_ERROR, "JavaBridge", "FindClass 실패: find_class_method_ is null");
+        return nullptr;
+    }
 
     jstring str_class_name = env->NewStringUTF(class_name);
     jobject clazz = env->CallObjectMethod(class_loader_, find_class_method_, str_class_name);
@@ -113,6 +114,21 @@ void JavaBridge::EnqueueAudio(const char* filename) {
     env->CallVoidMethod(instance, enqueueMethod, jFilename);
     env->DeleteLocalRef(jFilename);
 }
+
+
+void JavaBridge::NotifyGoalStatus(int status) {
+    JNIEnv* env = GetEnv();
+    if (!env) return;
+
+    jclass clazz = env->FindClass("com/capstone/whereigo/HelloArFragment");
+    if (!clazz) return;
+
+    jmethodID method = env->GetStaticMethodID(clazz, "onGoalStatusChanged", "(I)V");
+    if (!method) return;
+
+    env->CallStaticVoidMethod(clazz, method, status);
+}
+
 
 void JavaBridge::UpdateYaw(float cameraYaw, float pathYaw) {
     JNIEnv* env = GetEnv();

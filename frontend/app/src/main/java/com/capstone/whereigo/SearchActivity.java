@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.view.View;
 import android.widget.TextView;
@@ -113,7 +114,21 @@ public class SearchActivity extends AppCompatActivity {
                 if (!query.isEmpty()) {
                     binding.searchResult.setVisibility(View.VISIBLE);
                     binding.searchResult.setLayoutManager(new LinearLayoutManager(SearchActivity.this));
-                    binding.searchResult.setAdapter(new SearchResultAdapter(filtered, SearchActivity.this::navigateToMain));
+                    binding.searchResult.setAdapter(new SearchResultAdapter(filtered, selected -> {
+
+                        String buildingName = selected.split(" ")[0];
+                        String roomNumber = selected.replaceAll("[^0-9]", "");
+
+                        int currentFloor = 6;
+
+                        String fullSelected = buildingName + " " + roomNumber;
+
+                        Intent intent = new Intent(SearchActivity.this, MainActivity.class);
+                        intent.putExtra("search_query", fullSelected);
+                        intent.putExtra("current_floor", currentFloor);
+                        startActivity(intent);
+                        finish();
+                    }));
                 } else {
                     binding.searchResult.setVisibility(View.GONE);
                 }

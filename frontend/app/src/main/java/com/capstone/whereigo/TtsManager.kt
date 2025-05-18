@@ -20,7 +20,7 @@ object TtsManager {
     }
 
     fun speak(text: String) {
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, null)
     }
 
     fun shutdown() {

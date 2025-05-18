@@ -10,9 +10,10 @@ public:
     static jclass FindClass(const char* class_name);
     static void SpeakText(const char* text);
     static void EnqueueAudio(const char* filename);
-
     static void UpdateYaw(float cameraYaw, float pathYaw);
     static void VibrateOnce();
+
+    static void NotifyGoalStatus(int status);
 
 private:
     static JavaVM* java_vm_;

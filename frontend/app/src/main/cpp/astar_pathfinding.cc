@@ -3,77 +3,120 @@
 #include <algorithm>
 #include <memory>
 #include <queue>
+#include <fstream>
+#include <sstream>
+#include <set>
+#include <limits>
 
 float heuristic(const Point& a, const Point& b) {
     return std::hypot(a.x - b.x, a.z - b.z);
 }
 
-bool isObstacle(const Point& pos, const std::set<Point>& obstacles, float radius) {
-    for (const auto& obs : obstacles) {
-        if (heuristic(pos, obs) < radius)
-            return true;
+void AStarPathfinder::LoadPoseGraph(const std::string& path, int floor) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        LOGI("❌ pose_graph.txt 열기 실패: %s", path.c_str());
+        return;
     }
-    return false;
+
+    std::string line;
+    std::vector<Point> original_path;
+
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
+        while (iss >> token) tokens.push_back(token);
+
+        float x = std::stof(tokens[5]);
+        float z = std::stof(tokens[7]);
+        original_path.emplace_back(Point{x, z});
+    }
+    file.close();
+
+    std::vector<Point>& graph = pose_graph_by_floor_[floor];
+    if (!original_path.empty()) {
+        graph.push_back(original_path[0]);
+        for (size_t i = 1; i < original_path.size(); ++i) {
+            if (heuristic(original_path[i], graph.back()) >= 1.0f) {
+                graph.push_back(original_path[i]);
+            }
+        }
+    }
+
+    LOGI("✅ %d층 pose_graph.txt → 원본 %zu개 → 리샘플링 %zu개 노드", floor, original_path.size(), graph.size());
+
+    int n = graph.size();
+    adjacency_list_by_floor_[floor].resize(n);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            float dist = heuristic(graph[i], graph[j]);
+            if (dist <= threshold) {
+                adjacency_list_by_floor_[floor][i].emplace_back(j, dist);
+                adjacency_list_by_floor_[floor][j].emplace_back(i, dist);
+            }
+        }
+    }
 }
 
-std::vector<Point> generateWall(const Point& start, const Point& end, float step) {
-    std::vector<Point> wall;
-    float dx = end.x - start.x;
-    float dz = end.z - start.z;
-    float dist = std::hypot(dx, dz);
-    int steps = static_cast<int>(dist / step);
-    for (int i = 0; i <= steps; ++i) {
-        float x = std::round((start.x + dx * i / steps) * 100.0f) / 100.0f;
-        float z = std::round((start.z + dz * i / steps) * 100.0f) / 100.0f;
-        wall.push_back({x, z});
+int AStarPathfinder::FindClosestNode(const Point& coord, int floor) {
+    float min_dist = std::numeric_limits<float>::max();
+    int closest = -1;
+    const auto& graph = pose_graph_by_floor_[floor];
+    for (int i = 0; i < graph.size(); ++i) {
+        float dist = heuristic(coord, graph[i]);
+        if (dist < min_dist) {
+            min_dist = dist;
+            closest = i;
+        }
     }
-    return wall;
+    return closest;
 }
 
-std::vector<Point> astar(const Point& start, const Point& goal, const std::set<Point>& obstacles, float step_size) {
-    struct Node {
-        Point pos;
-        std::shared_ptr<Node> parent;
-        float g, h, f;
-        Node(Point p, std::shared_ptr<Node> par = nullptr)
-                : pos(p), parent(par), g(0), h(0), f(0) {}
-        bool operator>(const Node& other) const { return f > other.f; }
-    };
+std::vector<Point> AStarPathfinder::astar(const Point& start_coord, const Point& goal_coord, int floor) {
+    const auto& pose_graph = pose_graph_by_floor_[floor];
+    const auto& adjacency_list = adjacency_list_by_floor_[floor];
 
-    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open;
-    std::set<Point> closed;
-    open.emplace(start);
+    int start = FindClosestNode(start_coord, floor);
+    int goal = FindClosestNode(goal_coord, floor);
+    if (start == -1 || goal == -1) return {};
 
-    while (!open.empty()) {
-        Node current = open.top();
-        open.pop();
+    using Node = std::pair<float, int>;
+    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> open_set;
+    std::vector<float> g_score(pose_graph.size(), std::numeric_limits<float>::max());
+    std::vector<float> f_score(pose_graph.size(), std::numeric_limits<float>::max());
+    std::vector<int> came_from(pose_graph.size(), -1);
 
-        if (closed.find(current.pos) != closed.end()) continue;
-        closed.insert(current.pos);
+    g_score[start] = 0;
+    f_score[start] = heuristic(pose_graph[start], pose_graph[goal]);
+    open_set.emplace(f_score[start], start);
 
-        if (heuristic(current.pos, goal) < step_size) {
+    while (!open_set.empty()) {
+        int current = open_set.top().second;
+        open_set.pop();
+
+        if (current == goal) {
             std::vector<Point> path;
-            for (auto node = std::make_shared<Node>(current); node; node = node->parent)
-                path.push_back(node->pos);
+            for (int at = goal; at != -1; at = came_from[at]) {
+                path.push_back(pose_graph[at]);
+            }
             std::reverse(path.begin(), path.end());
+
+//            LOGI("🟢 A* 경로 (%zu개 노드):", path.size());
+//            for (const auto& p : path) {
+//                LOGI("   📍 Point(x=%.2f, z=%.2f)", p.x, p.z);
+//            }
+
             return path;
         }
 
-        for (float dx : {-step_size, 0.f, step_size}) {
-            for (float dz : {-step_size, 0.f, step_size}) {
-                if (dx == 0 && dz == 0) continue;
-                Point next {
-                        std::round((current.pos.x + dx) * 100.0f) / 100.0f,
-                        std::round((current.pos.z + dz) * 100.0f) / 100.0f
-                };
-
-                if (isObstacle(next, obstacles, 0.5f) || closed.count(next)) continue;
-
-                Node neighbor(next, std::make_shared<Node>(current));
-                neighbor.g = current.g + step_size;
-                neighbor.h = heuristic(next, goal);
-                neighbor.f = neighbor.g + neighbor.h;
-                open.push(neighbor);
+        for (const auto& [neighbor, cost] : adjacency_list[current]) {
+            float tentative_g = g_score[current] + cost;
+            if (tentative_g < g_score[neighbor]) {
+                came_from[neighbor] = current;
+                g_score[neighbor] = tentative_g;
+                f_score[neighbor] = tentative_g + heuristic(pose_graph[neighbor], pose_graph[goal]);
+                open_set.emplace(f_score[neighbor], neighbor);
             }
         }
     }
