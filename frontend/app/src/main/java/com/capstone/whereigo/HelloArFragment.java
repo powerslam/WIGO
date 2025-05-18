@@ -56,14 +56,15 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
   private Handler planeStatusCheckingHandler;
   private Runnable planeStatusCheckingRunnable;
-  private DirectionCompassView compassView;
 
   private long nativeApplication;
   private FragmentActivity activity;
 
   private static HelloArFragment instance;
 
-  private static Button elevatorButton;
+  private static DirectionCompassView compassView;
+  private static ImageButton elevatorButton;
+  private static TextView tvElevator;
 
   private FragmentHelloArBinding binding;
 
@@ -109,6 +110,7 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     AudioManager.getInstance().init(requireContext());
 
     elevatorButton = binding.btnElevator;
+    tvElevator = binding.tvElevator;
     compassView = binding.compassView;
 
     SearchBar searchBarArrive = requireActivity().findViewById(R.id.search_bar_arrive);
@@ -233,17 +235,22 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
 
       if (elevatorButton != null) {
         if (status == 0) {
+          compassView.setVisibility(View.GONE);
           elevatorButton.setVisibility(View.VISIBLE);
+          tvElevator.setVisibility(View.VISIBLE);
 
           elevatorButton.setOnClickListener(v -> {
             JniInterface.restartSession(instance.nativeApplication, instance.activity.getApplicationContext(), instance.activity);
             JniInterface.changeStatus(instance.nativeApplication);
             JniInterface.setCurrentFloor(instance.nativeApplication, SearchResultHandler.goal_floor);
-            elevatorButton.setVisibility(View.GONE); // 버튼 숨김
+            elevatorButton.setVisibility(View.GONE);
+            tvElevator.setVisibility(View.GONE);
+            compassView.setVisibility(View.VISIBLE);
           });
 
         } else {
-          elevatorButton.setVisibility(View.GONE); // 최종 도착 시 숨김
+          elevatorButton.setVisibility(View.GONE);
+          tvElevator.setVisibility(View.GONE);
         }
       }
     });
