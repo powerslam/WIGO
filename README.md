@@ -19,6 +19,7 @@
 (추후 업로드)
 
 ## 2.1. 프로젝트 개요
+![캡스톤디자인_포스터_1차_시안_최종 (2)_250518_182049](https://github.com/user-attachments/assets/f5471e33-b4d0-4d97-89a0-abd4ed261ae4)
 ### 작성한 논문 초록
 <img src="https://github.com/user-attachments/assets/33537586-9c77-4079-ab55-e915b4463773" width="500px" />
 <img src="https://github.com/user-attachments/assets/2bb07bba-86dc-4898-aa32-641098d77859" width="500px" />
