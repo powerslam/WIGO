@@ -40,7 +40,7 @@ static jmethodID g_load_class_method = nullptr;
 static jobject g_mappingFragment = nullptr;
 static jmethodID g_mapping_method = nullptr;
 
-pair<float, float> data;
+pair<pair<jbyteArray, pair<int, int>>, pair<float, float>> data;
 
 inline jlong jptr(hello_ar::HelloArApplication *native_hello_ar_application) {
   return reinterpret_cast<intptr_t>(native_hello_ar_application);
@@ -146,18 +146,33 @@ Java_com_capstone_whereigo_MappingFragment_registerNativeSelf(JNIEnv* env, jobje
 }
 
 JNI_METHOD(void, getPoseStamp)
-(JNIEnv *, jclass, jlong native_application) {
-    data = native(native_application)->pose_graph.getLastElementOfKeyFrameList();
+(JNIEnv* env, jclass, jlong native_application) {
+    data = native(native_application)->pose_graph.getLastElementOfKeyFrameList(env);
+}
+
+JNI_METHOD(jbyteArray, getImage)
+(JNIEnv *, jclass) {
+    return data.first.first;
+}
+
+JNI_METHOD(int, getWidth)
+(JNIEnv *, jclass) {
+    return data.first.second.first;
+}
+
+JNI_METHOD(int, getHeight)
+(JNIEnv *, jclass) {
+    return data.first.second.second;
 }
 
 JNI_METHOD(float, getX)
 (JNIEnv *, jclass) {
-    return data.first;
+    return data.second.first;
 }
 
 JNI_METHOD(float, getZ)
 (JNIEnv *, jclass) {
-    return data.second;
+    return data.second.second;
 }
 
 JNI_METHOD(void, onTouched)

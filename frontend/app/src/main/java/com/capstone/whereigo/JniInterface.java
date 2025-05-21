@@ -73,6 +73,9 @@ public class JniInterface {
   public static native void changeStatus(long nativeApplication);
 
   public static native void getPoseStamp(long nativeApplication);
+  public static native byte[] getImage();
+  public static native int getWidth();
+  public static native int getHeight();
   public static native float getX();
   public static native float getZ();
 

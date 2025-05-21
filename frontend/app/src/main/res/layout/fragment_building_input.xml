@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     android:background="@color/white">
 
-    <!-- 상단 진행 바 -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progress_bar"
         android:layout_width="0dp"
@@ -22,7 +21,6 @@
         app:indicatorColor="@color/md_theme_onPrimaryContainer"
         style="@style/Widget.MaterialComponents.LinearProgressIndicator" />
 
-    <!-- 가이드라인 -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guide_form_top"
         android:layout_width="wrap_content"
@@ -51,7 +49,6 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.9" />
 
-    <!-- 안내 텍스트 -->
     <TextView
         android:id="@+id/tv_building_input"
         android:layout_width="0dp"
@@ -66,7 +63,6 @@
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
         app:layout_constraintEnd_toEndOf="@id/guide_form_end" />
 
-    <!-- 입력 그룹 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/input_group_1"
         android:layout_width="0dp"
@@ -160,7 +156,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 입력 그룹 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/input_group_2"
         android:layout_width="0dp"
@@ -231,7 +226,6 @@
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
         app:layout_constraintEnd_toStartOf="@id/button_next" />
 
-    <!-- 다음 버튼 -->
     <Button
         android:id="@+id/button_next"
         android:layout_width="0dp"
@@ -243,5 +237,17 @@
         app:layout_constraintTop_toBottomOf="@id/guide_form_bottom"
         app:layout_constraintStart_toStartOf="@id/guide_form_start"
         app:layout_constraintEnd_toEndOf="@id/guide_form_end" />
+
+    <Button
+        android:id="@+id/button_cancel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="취소"
+        android:backgroundTint="#FFCFCFCF"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/button_next"
+        app:layout_constraintStart_toStartOf="@id/guide_form_start"
+        app:layout_constraintEnd_toEndOf="@id/guide_form_end"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
