@@ -8,11 +8,24 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.preference.SwitchPreferenceCompat;
+
+import java.util.Objects;
 
 public class SetPreferenceFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.download_preference, rootKey);
+
+
+        SwitchPreferenceCompat vibratePref = findPreference("vibrate");
+        if (vibratePref != null) {
+            boolean isVibrateOn = Objects.requireNonNull(getPreferenceManager().getSharedPreferences())
+                    .getBoolean("vibrate", true);
+        }
+
+        SwitchPreferenceCompat sdcardPref = findPreference("sdcard");
+        //여기에 마저 sdcard 설정 하기
 
         Preference mapItemPreference = findPreference("download_map");
         if (mapItemPreference != null) {

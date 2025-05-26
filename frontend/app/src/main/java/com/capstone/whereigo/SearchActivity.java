@@ -3,9 +3,13 @@ package com.capstone.whereigo;
 import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -26,6 +30,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.transition.AutoTransition;
 import androidx.transition.Transition;
@@ -53,6 +58,9 @@ public class SearchActivity extends AppCompatActivity {
     private final long backPressInterval = 1000;
     private List<String> allResults;
 
+    private SharedPreferences sharedPreferences;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +78,27 @@ public class SearchActivity extends AppCompatActivity {
                             runOnUiThread(() -> {
                                 if(Objects.equals(command, "navigate")){
                                     startNavigationTransition(context, 6); //일단 6층으로 설정
+                                } else if (Objects.equals(command, "settings")) {
+                                    if(Objects.equals(context, "vibrate")){
+                                        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(SearchActivity.this);
+                                        boolean currentVibrate = sharedPreferences.getBoolean("vibrate", true);
+                                        boolean newVibrate = !currentVibrate;
+                                        sharedPreferences.edit().putBoolean("vibrate", newVibrate).apply();
+
+                                        if (newVibrate) {
+                                            Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                                            if (vibrator != null && vibrator.hasVibrator()) {
+                                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                                    vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+                                                } else {
+                                                    vibrator.vibrate(300);
+                                                }
+                                            }
+                                        }
+                                    } else if (command.equals("sdcard")) {
+                                        //여기에 sdcard 토글 부분 마저 구현하기
+                                        Toast.makeText(SearchActivity.this, "sdcard 설정 변경", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
                             });
                         }
@@ -297,4 +326,5 @@ public class SearchActivity extends AppCompatActivity {
             }
         }
     }
+
 }
