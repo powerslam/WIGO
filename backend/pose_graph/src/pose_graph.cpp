@@ -2,6 +2,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <fstream>
+#include <sstream>
+#include "rapidjson/include/rapidjson/document.h"
+#include "rapidjson/include/rapidjson/writer.h"
+#include "rapidjson/include/rapidjson/stringbuffer.h"
 
 int ROW, COL;
 std::string EXTERNAL_PATH;
@@ -532,16 +537,34 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
 
     LOGI("%s", save_folder.c_str());
 
-    FILE *pFile, *labeled_pFile;
+    FILE *pFile;
     string file_path = save_folder + floor_name + "pose_graph.txt";
     pFile = fopen(file_path.c_str(), "w");
     assert(pFile != nullptr);
 
     string labeled_file_path = save_folder + "label.txt";
-    labeled_pFile = fopen(labeled_file_path.c_str(), "a");
-    assert(labeled_pFile != nullptr);
+    rapidjson::Document label_json;
 
-    fprintf(labeled_pFile, "{\n");
+    // 해당 건물에 대해 한 번이라도 라벨링한 경우
+    std::ifstream ifs(labeled_file_path);
+    if (ifs.is_open()) {
+        std::stringstream buffer;
+        buffer << ifs.rdbuf(); // 전체 내용을 문자열로 읽음
+        std::string jsonContent = buffer.str();
+
+        if(label_json.Parse(jsonContent.c_str()).HasParseError()){
+            std::cerr << "Error : JSON parse\n";
+            return;
+        }
+    }
+
+    // 해당 건물에 대해 한 번도 라벨링 하지 않은 경우
+    else {
+        label_json.SetObject();
+    }
+
+    ifs.close();
+    auto& allocator = label_json.GetAllocator();
 
     list<KeyFramePtr>::iterator it;
     vector<int>::iterator it2;
@@ -565,15 +588,14 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
                  (int)(*it)->keypoints.size());
 
         if(it2 != labeled_index.end() && (*it)->index == *it2){
-            fprintf (labeled_pFile, "\t\"%s\": [%f, %f]", it3->c_str(), PG_tmp_T.x(), PG_tmp_T.z());
+            rapidjson::Value pt(rapidjson::kArrayType);
+            pt.PushBack(PG_tmp_T.x(), allocator);
+            pt.PushBack(PG_tmp_T.z(), allocator);
 
-            if(it2 != labeled_index.end() - 1){
-                fprintf(labeled_pFile, ",\n");
-            }
-
-            else {
-                fprintf(labeled_pFile, "\n");
-            }
+            label_json.AddMember(
+                    rapidjson::Value(it3->c_str(), static_cast<rapidjson::SizeType>(it3->length()), allocator),
+                    pt,
+                    allocator);
 
             it2++;
             it3++;
@@ -599,10 +621,21 @@ void PoseGraph::savePoseGraph(const std::vector<std::string>& labels)
         fclose(keypoints_file);
     }
 
-    fprintf(labeled_pFile, "}");
-
-    fclose(labeled_pFile);
     fclose(pFile);
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    label_json.Accept(writer);
+
+    std::ofstream ofs(labeled_file_path);
+    if (ofs.is_open()) {
+        ofs << buffer.GetString();  // JSON 문자열을 파일에 저장
+        ofs.close();
+    }
+
+    else {
+        std::cerr << "Failed to open label file for writing\n";
+    }
 
     m_keyframelist.unlock();
 }
