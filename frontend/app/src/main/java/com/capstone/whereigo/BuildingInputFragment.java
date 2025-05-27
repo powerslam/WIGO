@@ -1,12 +1,14 @@
 package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -102,19 +104,17 @@ public class BuildingInputFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         requireActivity().getOnBackPressedDispatcher().addCallback(
-                getViewLifecycleOwner(),
-                new OnBackPressedCallback(true) {
-                    @Override
-                    public void handleOnBackPressed() {
-                        if(!isScaledDown) {
-                            Intent intent = new Intent(requireContext(), SettingActivity.class);
-                            startActivity(intent);
-                            requireActivity().finish();
-                        }
-
-                        prevEvent();
+            getViewLifecycleOwner(),
+            new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    if(!isScaledDown) {
+                        ((MappingActivity) requireActivity()).checkDialog();
                     }
+
+                    prevEvent();
                 }
+            }
         );
 
         binding.editBuildingName.setText(viewModel.getBuildingName());
