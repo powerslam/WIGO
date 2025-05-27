@@ -7,27 +7,30 @@
     android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_top_05"
+        android:id="@+id/guideline_top_005"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.5"
+        app:layout_constraintGuide_percent="0.05"
         android:orientation="horizontal" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_start_05"
+        android:id="@+id/guideline_start_005"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintGuide_percent="0.5"
+        app:layout_constraintGuide_percent="0.05"
         android:orientation="vertical" />
 
     <ImageButton
         android:id="@+id/back_button"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:src="@drawable/ic_back"
+        android:elevation="10dp"
+        android:src="@drawable/ic_arrow_back"
+        android:background="@android:color/transparent"
         android:scaleType="fitCenter"
-        app:layout_constraintTop_toTopOf="@id/guideline_top_05"
-        app:layout_constraintStart_toStartOf="@id/guideline_start_05" />
+        app:layout_constraintTop_toTopOf="@id/guideline_top_005"
+        app:layout_constraintStart_toStartOf="@id/guideline_start_005"
+        app:tint="@color/md_theme_onPrimaryContainer" />
 
     <FrameLayout
         android:id="@+id/fragment_frame"
