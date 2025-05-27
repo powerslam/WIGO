@@ -112,7 +112,7 @@ class VoiceRecordDialog : DialogFragment() {
                                             1. 짧고 간결하게 공손하게 답해
                                             2. 답변의 형식은 { 'command': ~명령~, 'context': ~명령 내용~} 으로 나오게
                                             3. 길 찾는 것과 관련 된 명령 일 시, 반환은 'navigate', 목적지
-                                            4. 설정 변경에 관련 된 명령 일 시, 반환은 'settings', 설정내용
+                                            4. 설정 변경에 관련 된 명령 일 시, 반환은 'settings', ~viberate, sdcard~ 중 하나
                                             5. 그 외 답변 일 시, 반환은 'except', 자율적인 답변
                                             6. 답변이 이상하면 너가 약간의 추론을 통해서 올바른 답변이 나오게 해
                                             7. 답변은 항상 단답식으로 반환해
