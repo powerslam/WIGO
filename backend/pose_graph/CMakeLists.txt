@@ -60,6 +60,7 @@ target_include_directories(pose_graph PUBLIC
     ${Boost_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/../../backend/third_party
     ${CMAKE_SOURCE_DIR}/../../backend/third_party/eigen3
+    ${CMAKE_SOURCE_DIR}/../../backend/third_party/rapidjson/include
 )
 
 target_link_libraries(pose_graph
