@@ -2,6 +2,7 @@ package com.capstone.whereigo;
 
 import android.animation.ObjectAnimator;
 import android.graphics.Bitmap;
+import android.graphics.PorterDuff;
 import android.hardware.display.DisplayManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -15,6 +16,7 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,6 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -105,6 +108,7 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
 
         registerNativeSelf(nativeApplication);
 
+        requireActivity().findViewById(R.id.back_button).setVisibility(View.GONE);
         binding.loading.setVisibility(View.VISIBLE);
 
         View splash = getLayoutInflater().inflate(R.layout.activity_splash, binding.loading, false);
@@ -126,7 +130,14 @@ public class MappingFragment extends Fragment implements GLSurfaceView.Renderer,
         binding.loading.addView(splash);
         splash.postDelayed(() -> {
             splashIcon.clearAnimation();
-            splash.setVisibility(View.GONE);
+            binding.loading.setVisibility(View.GONE);
+
+            ImageButton backButton = requireActivity().findViewById(R.id.back_button);
+            backButton.setColorFilter(
+                    ContextCompat.getColor(requireContext(), R.color.white),
+                    PorterDuff.Mode.SRC_IN
+            );
+            backButton.setVisibility(View.VISIBLE);
         }, 3000);
 
         poseStampRecyclerViewAdapter = new PoseStampRecyclerViewAdapter();
