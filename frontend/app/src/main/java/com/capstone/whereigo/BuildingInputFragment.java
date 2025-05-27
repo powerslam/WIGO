@@ -6,12 +6,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -117,7 +119,26 @@ public class BuildingInputFragment extends Fragment {
             }
         );
 
+        view.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (getActivity() != null && getActivity().getCurrentFocus() != null) {
+                    View focusedView = getActivity().getCurrentFocus();
+                    if (focusedView instanceof EditText) {
+                        hideKeyboard(focusedView);
+                        focusedView.clearFocus();
+                    }
+                }
+            }
+            v.performClick();
+            return true;
+        });
+
         binding.editBuildingName.setText(viewModel.getBuildingName());
+        binding.editBuildingName.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                hideKeyboard(v);
+            }
+        });
 
         progressBar = binding.progressBar;
 
@@ -180,7 +201,14 @@ public class BuildingInputFragment extends Fragment {
         );
         floorMinItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.spinnerMin.setAdapter(floorMinItemAdapter);
-        binding.spinnerMax.setSelection(viewModel.getFloorMinIdx());
+        binding.spinnerMin.setSelection(viewModel.getFloorMinIdx());
+        binding.spinnerMin.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                hideKeyboard(v);
+            }
+            v.performClick();
+            return false;
+        });
         binding.spinnerMin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -188,7 +216,9 @@ public class BuildingInputFragment extends Fragment {
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+                Toast.makeText(requireContext(), "안녕", Toast.LENGTH_SHORT).show();
+            }
         });
 
         ArrayAdapter<String> floorMaxItemAdapter = new ArrayAdapter<>(
@@ -199,6 +229,13 @@ public class BuildingInputFragment extends Fragment {
         floorMaxItemAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.spinnerMax.setAdapter(floorMaxItemAdapter);
         binding.spinnerMax.setSelection(viewModel.getFloorMaxIdx());
+        binding.spinnerMax.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                hideKeyboard(v);
+            }
+            v.performClick();
+            return false;
+        });
         binding.spinnerMax.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -329,5 +366,12 @@ public class BuildingInputFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    private void hideKeyboard(View v) {
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+        }
     }
 }
