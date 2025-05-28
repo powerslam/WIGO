@@ -136,13 +136,13 @@
                 app:layout_constraintEnd_toEndOf="parent" />
 
             <Button
-                android:text="위치 기록"
-                android:visibility="gone"
                 android:id="@+id/button_pose_stamp"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:textColor="@color/md_theme_onPrimaryContainer"
-                android:backgroundTint="@android:color/holo_blue_dark"
+                android:backgroundTint="@color/md_theme_onPrimaryContainer"
+                android:text="위치 기록"
+                android:textColor="@android:color/white"
+                android:visibility="gone"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="@id/button_group_guide_line_right"
