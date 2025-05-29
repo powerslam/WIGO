@@ -3,9 +3,13 @@ package com.capstone.whereigo;
 import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -26,6 +30,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.transition.AutoTransition;
 import androidx.transition.Transition;
@@ -43,6 +48,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class SearchActivity extends AppCompatActivity {
     private final String TAG = "SearchActivity";
@@ -51,6 +57,9 @@ public class SearchActivity extends AppCompatActivity {
     private long backPressedTime = 0;
     private final long backPressInterval = 1000;
     private List<String> allResults;
+
+    private SharedPreferences sharedPreferences;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +72,37 @@ public class SearchActivity extends AppCompatActivity {
             if (checkAudioPermission()) {
                 if (SpeechRecognizer.isRecognitionAvailable(this)) {
                     VoiceRecordDialog dialog = new VoiceRecordDialog();
+                    dialog.setVoiceResultListener(new VoiceRecordDialog.VoiceResultListener() {
+                        @Override
+                        public void onVoiceResult(String command, String context) {
+                            runOnUiThread(() -> {
+                                if(Objects.equals(command, "navigate")){
+                                    startNavigationTransition(context, 6); //일단 6층으로 설정
+                                } else if (Objects.equals(command, "settings")) {
+                                    if(Objects.equals(context, "vibrate")){
+                                        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(SearchActivity.this);
+                                        boolean currentVibrate = sharedPreferences.getBoolean("vibrate", true);
+                                        boolean newVibrate = !currentVibrate;
+                                        sharedPreferences.edit().putBoolean("vibrate", newVibrate).apply();
+
+                                        if (newVibrate) {
+                                            Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                                            if (vibrator != null && vibrator.hasVibrator()) {
+                                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                                    vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+                                                } else {
+                                                    vibrator.vibrate(300);
+                                                }
+                                            }
+                                        }
+                                    } else if (command.equals("sdcard")) {
+                                        //여기에 sdcard 토글 부분 마저 구현하기
+                                        Toast.makeText(SearchActivity.this, "sdcard 설정 변경", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                        }
+                    });
                     dialog.show(getSupportFragmentManager(), "VoiceRecordDialog");
                 } else {
                     Toast.makeText(this, "음성 인식을 사용할 수 없습니다.", Toast.LENGTH_SHORT).show();
@@ -147,71 +187,7 @@ public class SearchActivity extends AppCompatActivity {
 
                         String fullSelected = buildingName + " " + roomNumber;
 
-                        binding.searchView.hide();
-
-                        binding.searchBarDeparture.setVisibility(View.VISIBLE);
-                        binding.settingsButton.setVisibility(View.GONE);
-
-                        final ConstraintSet constraintSet = new ConstraintSet();
-                        constraintSet.clone(binding.searchMain);
-                        constraintSet.clear(binding.searchBarArrive.getId(), ConstraintSet.TOP);
-                        constraintSet.connect(binding.searchBarArrive.getId(), ConstraintSet.TOP,
-                                binding.searchBarDeparture.getId(), ConstraintSet.BOTTOM, 10);
-
-                        Transition transition = new AutoTransition();
-                        transition.setDuration(300);
-                        transition.addListener(new Transition.TransitionListener() {
-                            @Override
-                            public void onTransitionStart(Transition transition) {
-                                // 시작 시
-                            }
-
-                            @Override
-                            public void onTransitionEnd(Transition transition) {
-                                getSupportFragmentManager().beginTransaction()
-                                        .replace(R.id.path_navigation, new HelloArFragment(fullSelected, currentFloor))
-                                        .commit();
-
-                                binding.loading.setVisibility(View.VISIBLE);
-                                binding.searchBarDeparture.setVisibility(View.INVISIBLE);
-                                binding.searchBarArrive.setVisibility(View.INVISIBLE);
-
-                                View splash = getLayoutInflater().inflate(R.layout.activity_splash, binding.loading, false);
-                                ImageView splashIcon = splash.findViewById(R.id.splash_icon);
-                                DisplayMetrics displayMetrics = new DisplayMetrics();
-                                getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-                                int screenWidth = displayMetrics.widthPixels;
-
-                                int moveX = (int) (screenWidth * 0.2f);
-
-                                ObjectAnimator animator = ObjectAnimator.ofFloat(splashIcon, "translationX", -moveX, moveX);
-                                animator.setDuration(2000);
-                                animator.setRepeatCount(ValueAnimator.INFINITE);
-                                animator.setRepeatMode(ValueAnimator.RESTART);
-                                animator.start();
-
-                                TextView tvSplashText = splash.findViewById(R.id.splash_text);
-                                tvSplashText.setText("WIGO가 경로 안내를 준비 중...");
-
-                                binding.loading.addView(splash);
-
-                                splash.postDelayed(() -> {
-                                    animator.cancel();
-                                    splash.setVisibility(View.GONE);
-                                    binding.searchBarDeparture.setVisibility(View.VISIBLE);
-                                    binding.searchBarArrive.setVisibility(View.VISIBLE);
-                                }, 3000);
-                            }
-
-                            @Override
-                            public void onTransitionCancel(Transition transition) {}
-                            @Override
-                            public void onTransitionPause(Transition transition) {}
-                            @Override
-                            public void onTransitionResume(Transition transition) {}
-                        });
-                        TransitionManager.beginDelayedTransition(binding.searchMain, transition);
-                        constraintSet.applyTo(binding.searchMain);
+                        startNavigationTransition(fullSelected, currentFloor);
                     }));
                 } else {
                     binding.searchResult.setVisibility(View.GONE);
@@ -242,6 +218,75 @@ public class SearchActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void startNavigationTransition(String fullSelected, int currentFloor) {
+        binding.searchView.hide();
+
+        binding.searchBarDeparture.setVisibility(View.VISIBLE);
+        binding.settingsButton.setVisibility(View.GONE);
+
+        final ConstraintSet constraintSet = new ConstraintSet();
+        constraintSet.clone(binding.searchMain);
+        constraintSet.clear(binding.searchBarArrive.getId(), ConstraintSet.TOP);
+        constraintSet.connect(binding.searchBarArrive.getId(), ConstraintSet.TOP,
+                binding.searchBarDeparture.getId(), ConstraintSet.BOTTOM, 10);
+
+        Transition transition = new AutoTransition();
+        transition.setDuration(300);
+        transition.addListener(new Transition.TransitionListener() {
+            @Override
+            public void onTransitionStart(Transition transition) {
+                // 시작 시
+            }
+
+            @Override
+            public void onTransitionEnd(Transition transition) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.path_navigation, new HelloArFragment(fullSelected, currentFloor))
+                        .commit();
+
+                binding.loading.setVisibility(View.VISIBLE);
+                binding.searchBarDeparture.setVisibility(View.INVISIBLE);
+                binding.searchBarArrive.setVisibility(View.INVISIBLE);
+
+                View splash = getLayoutInflater().inflate(R.layout.activity_splash, binding.loading, false);
+                ImageView splashIcon = splash.findViewById(R.id.splash_icon);
+                DisplayMetrics displayMetrics = new DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+                int screenWidth = displayMetrics.widthPixels;
+
+                int moveX = (int) (screenWidth * 0.2f);
+
+                ObjectAnimator animator = ObjectAnimator.ofFloat(splashIcon, "translationX", -moveX, moveX);
+                animator.setDuration(2000);
+                animator.setRepeatCount(ValueAnimator.INFINITE);
+                animator.setRepeatMode(ValueAnimator.RESTART);
+                animator.start();
+
+                TextView tvSplashText = splash.findViewById(R.id.splash_text);
+                tvSplashText.setText("WIGO가 경로 안내를 준비 중...");
+
+                binding.loading.addView(splash);
+
+                splash.postDelayed(() -> {
+                    animator.cancel();
+                    splash.setVisibility(View.GONE);
+                    binding.searchBarDeparture.setVisibility(View.VISIBLE);
+                    binding.searchBarArrive.setVisibility(View.VISIBLE);
+                }, 3000);
+            }
+
+            @Override
+            public void onTransitionCancel(Transition transition) {}
+            @Override
+            public void onTransitionPause(Transition transition) {}
+            @Override
+            public void onTransitionResume(Transition transition) {}
+        });
+        TransitionManager.beginDelayedTransition(binding.searchMain, transition);
+        constraintSet.applyTo(binding.searchMain);
+    }
+
 
     public String readFileToString(File file) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -281,4 +326,5 @@ public class SearchActivity extends AppCompatActivity {
             }
         }
     }
+
 }

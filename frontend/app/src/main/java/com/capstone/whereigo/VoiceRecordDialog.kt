@@ -21,6 +21,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.*
 
 class VoiceRecordDialog : DialogFragment() {
+    fun interface VoiceResultListener {
+        fun onVoiceResult(command: String, context: String)
+    }
+
+    var voiceResultListener: VoiceResultListener? = null
     private var _binding: DialogVoiceRecordBinding? = null
     private val binding get() = _binding!!
 
@@ -87,6 +92,8 @@ class VoiceRecordDialog : DialogFragment() {
                 binding.txtRecording.text = "인식 중..."
             }
 
+
+
             override fun onResults(results: Bundle?) {
                 isListening = false
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -103,11 +110,12 @@ class VoiceRecordDialog : DialogFragment() {
                                             너는 사회적 약자를 위한 실내 네비게이션 앱 'wigo'야
                                             질문에 대해 다음 시퀀스를 따라가
                                             1. 짧고 간결하게 공손하게 답해
-                                            2. 답변의 형식은 { 'command': ~명령~, 'context': ~명령 내용~ } 으로 나오게
-                                            3. 길 찾는 명령: command='navigate'
-                                            4. 설정 명령: command='settings'
-                                            5. 그 외: command='except'
-                                            6. 이상할 경우, 추론하여 바르게 답해
+                                            2. 답변의 형식은 { 'command': ~명령~, 'context': ~명령 내용~} 으로 나오게
+                                            3. 길 찾는 것과 관련 된 명령 일 시, 반환은 'navigate', 목적지
+                                            4. 설정 변경에 관련 된 명령 일 시, 반환은 'settings', ~viberate, sdcard~ 중 하나
+                                            5. 그 외 답변 일 시, 반환은 'except', 자율적인 답변
+                                            6. 답변이 이상하면 너가 약간의 추론을 통해서 올바른 답변이 나오게 해
+                                            7. 답변은 항상 단답식으로 반환해
                                         """.trimIndent()),
                                         GPTMessage("user", resultText)
                                     )
@@ -121,16 +129,9 @@ class VoiceRecordDialog : DialogFragment() {
                                 val command = json.getString("command")
                                 val reply = json.getString("context")
 
+                                voiceResultListener?.onVoiceResult(command, reply)
+
                                 when (command) {
-                                    "navigate" -> {
-                                        //
-                                    }
-                                    "settings" -> {
-                                        if (reply == "volume") {
-                                            val value = json.getInt("value")
-                                            //
-                                        }
-                                    }
                                     "except" -> {
                                         tts.speak(reply, TextToSpeech.QUEUE_FLUSH, null, null)
                                     }
@@ -180,4 +181,5 @@ class VoiceRecordDialog : DialogFragment() {
         dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         dialog?.window?.setGravity(Gravity.CENTER)
     }
+
 }
