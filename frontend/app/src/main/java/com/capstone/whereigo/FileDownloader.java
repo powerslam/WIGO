@@ -126,4 +126,72 @@ public class FileDownloader {
             }
         }
     }
+
+    public static void ensureBuildingInfoDownloaded(Context context) {
+        File file = new File(context.getExternalFilesDir(null), "building_info.txt");
+        if (file.exists()) {
+            Log.d("FileDownloader", "이미 building_info.txt 있음 → 다운로드 생략");
+            return;
+        }
+
+        downloadBuildingInfoFile(
+                context,
+                "https://media-server-jubin.s3.amazonaws.com/building_info.txt",
+                new OnUnzipCompleteListener() {
+                    @Override
+                    public void onComplete() {
+                        Log.d("FileDownloader", "building_info.txt 다운로드 완료");
+                    }
+
+                    @Override
+                    public void onFailure(String errorMessage) {
+                        Log.e("FileDownloader", "building_info.txt 다운로드 실패: " + errorMessage);
+                    }
+                }
+        );
+    }
+
+    public static void downloadBuildingInfoFile(
+            Context context,
+            String url,
+            OnUnzipCompleteListener listener
+    ) {
+        File outFile = new File(context.getExternalFilesDir(null), "building_info.txt");
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                handler.post(() -> {
+                    Toast.makeText(context, "building_info.txt 다운로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    listener.onFailure(e.getMessage());
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    handler.post(() -> {
+                        Toast.makeText(context, "서버 응답 실패", Toast.LENGTH_SHORT).show();
+                        listener.onFailure("서버 응답 실패");
+                    });
+                    return;
+                }
+
+                BufferedSink sink = Okio.buffer(Okio.sink(outFile));
+                sink.writeAll(response.body().source());
+                sink.close();
+
+                handler.post(() -> {
+                    Toast.makeText(context, "building_info.txt 다운로드 완료", Toast.LENGTH_SHORT).show();
+                    listener.onComplete();
+                });
+            }
+        });
+    }
+
+
 }
