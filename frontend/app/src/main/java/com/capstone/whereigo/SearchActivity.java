@@ -91,35 +91,29 @@ public class SearchActivity extends AppCompatActivity {
         });
 
         allResults = new ArrayList<>();
-        File[] folders = getExternalFilesDir(null).listFiles();
-        if (folders != null) {
-            for (File folder : folders) {
-                if (folder.isDirectory()) {
-                    File file = new File(folder, "label.txt");
+        File buildingInfo = new File(getExternalFilesDir(null), "building_info.txt");
 
-                    if (!file.exists()) {
-                        continue;
-                    }
-
-                    String jsonString = readFileToString(file);
-                    if (jsonString == null || jsonString.trim().isEmpty()) {
-                        android.util.Log.w(TAG, "label.txt is empty in folder: " + folder.getName());
-                        continue;
-                    }
-
-                    try {
-                        JSONObject jsonObject = new JSONObject(jsonString);
-                        Iterator<String> keys = jsonObject.keys();
-
-                        while (keys.hasNext()) {
-                            allResults.add(folder.getName() + " " + keys.next());
+        if (buildingInfo.exists()) {
+            // 이미 파일이 있으면 바로 로드
+            loadBuildingInfo(buildingInfo);
+        } else {
+            // 없으면 다운로드하고, 완료 후 로드
+            FileDownloader.downloadBuildingInfoFile(
+                    this,
+                    "https://media-server-jubin.s3.amazonaws.com/building_info.txt",
+                    new FileDownloader.OnUnzipCompleteListener() {
+                        @Override
+                        public void onComplete() {
+                            File file = new File(getExternalFilesDir(null), "building_info.txt");
+                            loadBuildingInfo(file);
                         }
-                    } catch (JSONException e) {
-                        android.util.Log.e(TAG, "Invalid JSON in folder: " + folder.getName(), e);
-                        continue;
+
+                        @Override
+                        public void onFailure(String errorMessage) {
+                            Toast.makeText(SearchActivity.this, "building_info.txt 다운로드 실패", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                }
-            }
+            );
         }
 
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
@@ -168,6 +162,8 @@ public class SearchActivity extends AppCompatActivity {
 
                             @Override
                             public void onTransitionEnd(Transition transition) {
+                                Toast.makeText(getApplicationContext(), fullSelected, Toast.LENGTH_SHORT).show();
+
                                 getSupportFragmentManager().beginTransaction()
                                         .replace(R.id.path_navigation, new HelloArFragment(fullSelected, currentFloor))
                                         .commit();
@@ -281,4 +277,16 @@ public class SearchActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void loadBuildingInfo(File file) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                allResults.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

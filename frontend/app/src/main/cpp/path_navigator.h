@@ -14,6 +14,8 @@
 #include "astar_pathfinding.h"
 #include "java_bridge.h"
 
+#include <mutex>
+
 class PathNavigator {
 public:
     PathNavigator();
