@@ -12,6 +12,7 @@ import android.speech.SpeechRecognizer;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,10 +70,11 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
   private FragmentHelloArBinding binding;
 
   private int currentFloor;
-  private String fullSelected;
+  private String fullSelected, buildingName;
 
-  public HelloArFragment(String fullSelected, int currentFloor){
+  public HelloArFragment(String fullSelected, String buildingName, int currentFloor){
     this.fullSelected = fullSelected;
+    this.buildingName = buildingName;
     this.currentFloor = currentFloor;
   }
 
@@ -119,12 +121,57 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     SearchBar searchBarDeparture = requireActivity().findViewById(R.id.search_bar_departure);
     searchBarDeparture.setText("출발지 : " + currentFloor + "층");
 
-    SearchResultHandler.handle(
-            requireContext(),
-            fullSelected,
-            () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.path_navigation),
-            currentFloor
-    );
+//    SearchResultHandler.handle(
+//            requireContext(),
+//            fullSelected,
+//            () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.path_navigation),
+//            currentFloor
+//    );
+    sendMultiGoals(this.fullSelected, this.buildingName, this.currentFloor);
+  }
+
+
+  private void sendMultiGoals(String selected, String buildingName, int currentFloor) {
+    setCurrentFloor(currentFloor);
+
+    // pose_graph 전체 로드
+    PoseGraphLoader.loadAll(requireContext(), buildingName, this);
+
+    // 목적지 방번호 추출
+    String roomNumber = selected.replaceAll("[^0-9]", "");
+    int goalFloor = Character.getNumericValue(roomNumber.charAt(0));  // 예: 445 → 4
+
+    Log.i("SearchResultHandler", "currentFloor: " + currentFloor + ", roomNumber: " + roomNumber + ", goalFloor: " + goalFloor);
+
+    List<Pair<Float, Float>> goalCoords = new ArrayList<>();
+
+    if (currentFloor != goalFloor) {
+      // 층 다르면 엘리베이터 경유 목표 설정
+      Pair<Float, Float> toElevator = LabelReader.getCoordinates(requireContext(), buildingName, "elevator" + currentFloor);
+      Pair<Float, Float> fromElevator = LabelReader.getCoordinates(requireContext(), buildingName, "elevator" + goalFloor);
+      Pair<Float, Float> destination = LabelReader.getCoordinates(requireContext(), buildingName, roomNumber);
+
+      if (toElevator != null) goalCoords.add(toElevator);
+      if (fromElevator != null) goalCoords.add(fromElevator);
+      if (destination != null) goalCoords.add(destination);
+    } else {
+      // 층 같으면 바로 목적지
+      Pair<Float, Float> destination = LabelReader.getCoordinates(requireContext(), buildingName, roomNumber);
+      if (destination != null) goalCoords.add(destination);
+    }
+
+    if (!goalCoords.isEmpty()) {
+      float[] goalArray = new float[goalCoords.size() * 2];
+      for (int i = 0; i < goalCoords.size(); i++) {
+        goalArray[2 * i] = goalCoords.get(i).first;
+        goalArray[2 * i + 1] = goalCoords.get(i).second;
+      }
+
+      Log.i("SearchResultHandler", "📍 다중 경로 전달: " + goalCoords.size() + "개 지점");
+      sendMultiGoalsToNative(goalArray);
+    } else {
+      Log.e("SearchResultHandler", "❌ 유효한 좌표가 없어 목표 설정 실패");
+    }
   }
 
   public void sendMultiGoalsToNative(float[] coords) {

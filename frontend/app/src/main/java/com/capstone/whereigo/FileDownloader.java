@@ -58,7 +58,7 @@ public class FileDownloader {
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 Log.d("DownloadFailure", Objects.requireNonNull(e.getMessage()));
                 handler.post(() -> {
-                    Toast.makeText(context, "다운로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "다운로드 실패: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     listener.onFailure(e.getMessage());
                 });
             }
@@ -76,6 +76,10 @@ public class FileDownloader {
                 BufferedSink sink = Okio.buffer(Okio.sink(zipFile));
                 sink.writeAll(response.body().source());
                 sink.close();
+
+                if(zipFile.exists()){
+                    Toast.makeText(context, "있긴 한데...", Toast.LENGTH_SHORT).show();
+                }
 
                 try {
                     unzip(zipFile, extractDir);

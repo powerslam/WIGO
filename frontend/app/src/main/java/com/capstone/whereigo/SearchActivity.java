@@ -90,16 +90,28 @@ public class SearchActivity extends AppCompatActivity {
             return true;
         });
 
+        // 이 부분은 이제 실제로 건물이 없는 경우에 다운로드 하는 용도로 드가기
         allResults = new ArrayList<>();
+
+        String[] buildingNames = {
+                "미래관",
+                "법학관",
+                "복지관",
+                "형설관",
+                "조형관"
+        };
+
         File[] folders = getExternalFilesDir(null).listFiles();
         if (folders != null) {
-            for (File folder : folders) {
-                if (folder.isDirectory()) {
-                    File file = new File(folder, "label.txt");
+            for (String buildingName : buildingNames) {
+                File folder = new File(getExternalFilesDir(null), buildingName);
 
-                    if (!file.exists()) {
-                        continue;
-                    }
+                if(!folder.exists()){
+                    allResults.add(buildingName);
+                }
+
+                else {
+                    File file = new File(folder, "label.txt");
 
                     String jsonString = readFileToString(file);
                     if (jsonString == null || jsonString.trim().isEmpty()) {
@@ -116,7 +128,6 @@ public class SearchActivity extends AppCompatActivity {
                         }
                     } catch (JSONException e) {
                         android.util.Log.e(TAG, "Invalid JSON in folder: " + folder.getName(), e);
-                        continue;
                     }
                 }
             }
@@ -138,81 +149,7 @@ public class SearchActivity extends AppCompatActivity {
                 if (!query.isEmpty()) {
                     binding.searchResult.setVisibility(View.VISIBLE);
                     binding.searchResult.setLayoutManager(new LinearLayoutManager(SearchActivity.this));
-                    binding.searchResult.setAdapter(new SearchResultAdapter(filtered, selected -> {
-
-                        String buildingName = selected.split(" ")[0];
-                        String roomNumber = selected.replaceAll("[^0-9]", "");
-
-                        int currentFloor = 6;
-
-                        String fullSelected = buildingName + " " + roomNumber;
-
-                        binding.searchView.hide();
-
-                        binding.searchBarDeparture.setVisibility(View.VISIBLE);
-                        binding.settingsButton.setVisibility(View.GONE);
-
-                        final ConstraintSet constraintSet = new ConstraintSet();
-                        constraintSet.clone(binding.searchMain);
-                        constraintSet.clear(binding.searchBarArrive.getId(), ConstraintSet.TOP);
-                        constraintSet.connect(binding.searchBarArrive.getId(), ConstraintSet.TOP,
-                                binding.searchBarDeparture.getId(), ConstraintSet.BOTTOM, 10);
-
-                        Transition transition = new AutoTransition();
-                        transition.setDuration(300);
-                        transition.addListener(new Transition.TransitionListener() {
-                            @Override
-                            public void onTransitionStart(Transition transition) {
-                                // 시작 시
-                            }
-
-                            @Override
-                            public void onTransitionEnd(Transition transition) {
-                                getSupportFragmentManager().beginTransaction()
-                                        .replace(R.id.path_navigation, new HelloArFragment(fullSelected, currentFloor))
-                                        .commit();
-
-                                binding.loading.setVisibility(View.VISIBLE);
-                                binding.searchBarDeparture.setVisibility(View.INVISIBLE);
-                                binding.searchBarArrive.setVisibility(View.INVISIBLE);
-
-                                View splash = getLayoutInflater().inflate(R.layout.activity_splash, binding.loading, false);
-                                ImageView splashIcon = splash.findViewById(R.id.splash_icon);
-                                DisplayMetrics displayMetrics = new DisplayMetrics();
-                                getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-                                int screenWidth = displayMetrics.widthPixels;
-
-                                int moveX = (int) (screenWidth * 0.2f);
-
-                                ObjectAnimator animator = ObjectAnimator.ofFloat(splashIcon, "translationX", -moveX, moveX);
-                                animator.setDuration(2000);
-                                animator.setRepeatCount(ValueAnimator.INFINITE);
-                                animator.setRepeatMode(ValueAnimator.RESTART);
-                                animator.start();
-
-                                TextView tvSplashText = splash.findViewById(R.id.splash_text);
-                                tvSplashText.setText("WIGO가 경로 안내를 준비 중...");
-
-                                binding.loading.addView(splash);
-
-                                splash.postDelayed(() -> {
-                                    animator.cancel();
-                                    splash.setVisibility(View.GONE);
-                                    binding.searchBarDeparture.setVisibility(View.VISIBLE);
-                                    binding.searchBarArrive.setVisibility(View.VISIBLE);
-                                }, 3000);
-                            }
-
-                            @Override
-                            public void onTransitionCancel(Transition transition) {}
-                            @Override
-                            public void onTransitionPause(Transition transition) {}
-                            @Override
-                            public void onTransitionResume(Transition transition) {}
-                        });
-                        TransitionManager.beginDelayedTransition(binding.searchMain, transition);
-                        constraintSet.applyTo(binding.searchMain);
-                    }));
+                    binding.searchResult.setAdapter(new SearchResultAdapter(filtered, selected -> selectSearchItem(selected)));
                 } else {
                     binding.searchResult.setVisibility(View.GONE);
                 }
@@ -241,6 +178,95 @@ public class SearchActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void selectSearchItem(String selected){
+        String buildingName = selected.split(" ")[0];
+        String roomNumber = selected.replaceAll("[^0-9]", "");
+        String fullSelected = buildingName + " " + roomNumber;
+
+        int currentFloor = 4;
+
+        if(roomNumber.isEmpty()){
+            Toast.makeText(getApplicationContext(), "우하하 파일이 없네용... 다운로드 하겠습니다 다람쥐... " + buildingName, Toast.LENGTH_SHORT).show();
+            SearchResultHandler.handle(
+                    this,
+                    buildingName,
+                    currentFloor
+            );
+        }
+
+        else {
+            binding.searchView.hide();
+
+            binding.searchBarDeparture.setVisibility(View.VISIBLE);
+            binding.settingsButton.setVisibility(View.GONE);
+
+            final ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(binding.searchMain);
+            constraintSet.clear(binding.searchBarArrive.getId(), ConstraintSet.TOP);
+            constraintSet.connect(binding.searchBarArrive.getId(), ConstraintSet.TOP,
+                    binding.searchBarDeparture.getId(), ConstraintSet.BOTTOM, 10);
+
+            Transition transition = new AutoTransition();
+            transition.setDuration(300);
+            transition.addListener(new Transition.TransitionListener() {
+                @Override
+                public void onTransitionEnd(Transition transition) {
+                    binding.loading.setVisibility(View.VISIBLE);
+                    binding.searchBarDeparture.setVisibility(View.INVISIBLE);
+                    binding.searchBarArrive.setVisibility(View.INVISIBLE);
+
+                    View splash = getLayoutInflater().inflate(R.layout.activity_splash, binding.loading, false);
+                    ImageView splashIcon = splash.findViewById(R.id.splash_icon);
+                    DisplayMetrics displayMetrics = new DisplayMetrics();
+                    getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+                    int screenWidth = displayMetrics.widthPixels;
+
+                    int moveX = (int) (screenWidth * 0.2f);
+
+                    ObjectAnimator animator = ObjectAnimator.ofFloat(splashIcon, "translationX", -moveX, moveX);
+                    animator.setDuration(2000);
+                    animator.setRepeatCount(ValueAnimator.INFINITE);
+                    animator.setRepeatMode(ValueAnimator.RESTART);
+                    animator.start();
+
+                    TextView tvSplashText = splash.findViewById(R.id.splash_text);
+                    tvSplashText.setText("WIGO가 경로 안내를 준비 중...");
+
+                    binding.loading.addView(splash);
+
+                    splash.postDelayed(() -> {
+                        animator.cancel();
+                        splash.setVisibility(View.GONE);
+                        binding.searchBarDeparture.setVisibility(View.VISIBLE);
+                        binding.searchBarArrive.setVisibility(View.VISIBLE);
+                    }, 3000); // 이 부분도 HelloARFramgment 쪽에서 값을 가져오든지 해야 함!!
+
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.path_navigation, new HelloArFragment(fullSelected, buildingName, currentFloor))
+                            .commit();
+                }
+
+                @Override
+                public void onTransitionStart(Transition transition) {
+                }
+
+                @Override
+                public void onTransitionCancel(Transition transition) {
+                }
+
+                @Override
+                public void onTransitionPause(Transition transition) {
+                }
+
+                @Override
+                public void onTransitionResume(Transition transition) {
+                }
+            });
+            TransitionManager.beginDelayedTransition(binding.searchMain, transition);
+            constraintSet.applyTo(binding.searchMain);
+        }
     }
 
     public String readFileToString(File file) {
