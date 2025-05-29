@@ -37,6 +37,7 @@ public class SearchResultHandler {
                 public void onComplete() {
                     waitForLabelFile(labelFile);
                     Toast.makeText(context, "오예! 다운로드가 완료되었어용가리치킨더조이", Toast.LENGTH_SHORT).show();
+                    
 //                    sendMultiGoals(context, selected, buildingName, provider, currentFloor);
                 }
 

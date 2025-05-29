@@ -189,11 +189,14 @@ public class SearchActivity extends AppCompatActivity {
 
         if(roomNumber.isEmpty()){
             Toast.makeText(getApplicationContext(), "우하하 파일이 없네용... 다운로드 하겠습니다 다람쥐... " + buildingName, Toast.LENGTH_SHORT).show();
+            binding.loadingSpin.setVisibility(View.VISIBLE);
             SearchResultHandler.handle(
                     this,
                     buildingName,
                     currentFloor
             );
+            // 몰라 있다가 interface 해서 코드 추가해야 함.
+            binding.loadingSpin.setVisibility(View.GONE);
         }
 
         else {
