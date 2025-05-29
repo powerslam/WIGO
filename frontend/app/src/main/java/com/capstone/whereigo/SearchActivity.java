@@ -77,7 +77,7 @@ public class SearchActivity extends AppCompatActivity {
                         public void onVoiceResult(String command, String context) {
                             runOnUiThread(() -> {
                                 if(Objects.equals(command, "navigate")){
-                                    startNavigationTransition(context, 6); //일단 6층으로 설정
+                                    startNavigationTransition(context, 1);
                                 } else if (Objects.equals(command, "settings")) {
                                     if(Objects.equals(context, "vibrate")){
                                         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(SearchActivity.this);
@@ -181,7 +181,7 @@ public class SearchActivity extends AppCompatActivity {
 
 //                        String fullSelected = buildingName + " " + roomNumber;
 
-                        startNavigationTransition(roomName, 6);
+                        startNavigationTransition(roomName, 1);
                     }));
                 } else {
                     binding.searchResult.setVisibility(View.GONE);
@@ -236,7 +236,7 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onTransitionEnd(Transition transition) {
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.path_navigation, new HelloArFragment("본부관", roomName, currentFloor))
+                        .replace(R.id.path_navigation, new HelloArFragment("본부관", roomName, 1))
                         .commit();
 
                 binding.loading.setVisibility(View.VISIBLE);

@@ -123,9 +123,9 @@ public class HelloArFragment extends Fragment implements GLSurfaceView.Renderer,
     SearchResultHandler.handle(
             requireContext(),
             roomName,
-            buildingName,
+            this.buildingName,
             () -> (HelloArFragment) requireActivity().getSupportFragmentManager().findFragmentById(R.id.path_navigation),
-            currentFloor
+            this.currentFloor
     );
   }
 

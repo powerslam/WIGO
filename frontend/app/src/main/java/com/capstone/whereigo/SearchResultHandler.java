@@ -19,7 +19,6 @@ public class SearchResultHandler {
     }
 
     public static void handle(Context context, String roomName, String buildingName, FragmentProvider provider, int currentFloor) {
-//        String buildingName = selected.split(" ")[0];
         String fileName = buildingName + ".zip";
         String url = "https://media-server-jubin.s3.amazonaws.com/" + buildingName + "/" + fileName;
 
@@ -95,6 +94,9 @@ public class SearchResultHandler {
 //            if (destination != null) goalCoords.add(destination);
         } else {
             // 층 같으면 바로 목적지
+
+            Log.d("SearchResultHandler", "buildingName: " + buildingName + ", roomName: " + roomName);
+
             Pair<Float, Float> destination = LabelReader.getCoordinates(context, buildingName, roomName);
             if (destination != null) goalCoords.add(destination);
         }
